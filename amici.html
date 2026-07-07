@@ -751,9 +751,6 @@
   .conn-status.disconnected { color: #ef4444; border-color: rgba(239,68,68,0.3); }
 
   /* Dama Game */
-  .sfida-btn { background: none; border: 1px solid var(--borderLight); font-size: 0.65rem; padding: 0.15rem 0.35rem; border-radius: 6px; cursor: pointer; color: var(--accentText); opacity: 0.6; transition: opacity 0.2s, background 0.2s; animation: none; margin-left: auto; white-space: nowrap; }
-  .online-user:hover .sfida-btn, .sfida-btn:hover { opacity: 1; background: rgba(139,92,246,0.2); }
-
   .game-overlay {
     display: none; position: fixed; inset: 0; z-index: 1000;
     background: rgba(0,0,0,0.75); align-items: center; justify-content: center;
@@ -799,6 +796,15 @@
   .game-btn:hover { transform: scale(1.05); }
   .game-btn::after { display: none; }
   .game-challenge-actions { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
+
+  .dama-btn { width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; background: rgba(139,92,246,0.15); border: 1px solid var(--borderLight); cursor: pointer; transition: transform 0.2s, background 0.2s; }
+  .dama-btn:hover { transform: scale(1.15); background: rgba(139,92,246,0.3); }
+  .dama-btn::after { display: none; }
+
+  .challenge-list { max-height: 200px; overflow-y: auto; margin: 0.5rem 0; text-align: left; }
+  .challenge-list .cl-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.8rem; }
+  .challenge-list .cl-item:hover { background: rgba(139,92,246,0.1); }
+  .challenge-list .cl-item .avatar { font-size: 1.1rem; }
 
   @media (max-width: 768px) {
     body { overflow: auto; overflow-x: hidden; align-items: flex-start; padding: 0.25rem; }
@@ -934,6 +940,7 @@
     <div class="lh-right">
       <div class="online-count" id="onlineCount">👤 0 online</div>
       <button class="theme-btn" id="themeBtn" title="Tema">🎨</button>
+      <button class="dama-btn" id="damaBtn" title="Sfida a Dama">♟</button>
       <div class="theme-picker" id="themePicker">
         <div class="th-opt active" data-theme="default"><div class="th-preview"><span style="background:#0a0a12"></span><span style="background:#1a1a2e"></span><span style="background:#7c3aed"></span></div>Dark</div>
         <div class="th-opt" data-theme="galaxy"><div class="th-preview"><span style="background:#050510"></span><span style="background:#0d0d2b"></span><span style="background:#6366f1"></span></div>Galaxy</div>
@@ -1022,6 +1029,15 @@
       <button class="game-btn" id="challengeAccept">ACCETTA</button>
       <button class="game-btn" id="challengeDecline" style="background:rgba(255,255,255,0.1);">RIFIUTA</button>
     </div>
+  </div>
+</div>
+
+<!-- Challenge User List Popup -->
+<div class="overlay" id="challengeListOverlay">
+  <div class="popup" style="max-width:300px;padding:1.5rem;">
+    <h2 style="font-size:1.1rem;">♟ Sfida un utente</h2>
+    <div class="challenge-list" id="challengeList"></div>
+    <button class="game-btn" id="challengeListClose" style="margin-top:0.5rem;font-size:0.7rem;padding:0.35rem 0.75rem;background:rgba(255,255,255,0.1);">ANNULLA</button>
   </div>
 </div>
 
@@ -1397,39 +1413,45 @@
   let selectedCell = null;
   let validMoves = [];
   let challengeFrom = null;
+  let onlineUsers = [];
 
-  document.querySelectorAll('.online-user').forEach(function(el) {
-    const btn = document.createElement('button');
-    btn.className = 'sfida-btn';
-    btn.textContent = '♟';
-    btn.title = 'Sfida a Dama';
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const sid = this.dataset.sid;
-      if (sid) socket.emit('game challenge', { to: sid });
-    });
-    el.appendChild(btn);
+  document.getElementById('damaBtn').addEventListener('click', function() {
+    const overlay = document.getElementById('challengeListOverlay');
+    const list = document.getElementById('challengeList');
+    list.innerHTML = '';
+    const others = onlineUsers.filter(function(u) { return u.id !== socket.id; });
+    if (others.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:0.5rem;color:rgba(255,255,255,0.3);font-size:0.75rem;">Nessun altro utente online</div>';
+    } else {
+      others.forEach(function(u) {
+        const item = document.createElement('div');
+        item.className = 'cl-item';
+        item.innerHTML = '<span class="avatar">' + u.avatar + '</span> ' + u.nick;
+        item.addEventListener('click', function() {
+          socket.emit('game challenge', { to: u.id });
+          overlay.classList.remove('active');
+        });
+        list.appendChild(item);
+      });
+    }
+    overlay.classList.add('active');
+  });
+
+  document.getElementById('challengeListClose').addEventListener('click', function() {
+    document.getElementById('challengeListOverlay').classList.remove('active');
+  });
+  document.getElementById('challengeListOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
   });
 
   socket.on('users online', function(users) {
+    onlineUsers = users;
     const list = document.getElementById('onlineList');
     list.innerHTML = '';
     users.forEach(function(u) {
       const div = document.createElement('div');
       div.className = 'online-user';
       div.innerHTML = '<span class="online-dot"></span><span class="avatar">' + u.avatar + '</span>' + u.nick;
-      if (u.id !== socket.id) {
-        const btn = document.createElement('button');
-        btn.className = 'sfida-btn';
-        btn.textContent = '♟';
-        btn.title = 'Sfida a Dama';
-        btn.dataset.sid = u.id;
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          if (this.dataset.sid) socket.emit('game challenge', { to: this.dataset.sid });
-        });
-        div.appendChild(btn);
-      }
       list.appendChild(div);
     });
   });
