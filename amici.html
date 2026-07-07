@@ -800,6 +800,10 @@
   .dama-btn { width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; background: rgba(139,92,246,0.15); border: 1px solid var(--borderLight); cursor: pointer; transition: transform 0.2s, background 0.2s; }
   .dama-btn:hover { transform: scale(1.15); background: rgba(139,92,246,0.3); }
   .dama-btn::after { display: none; }
+  .dama-btn.active { background: rgba(34,197,94,0.3); border-color: rgba(34,197,94,0.4); }
+
+  .voice-indicators { display: flex; gap: 0.2rem; position: absolute; bottom: -6px; right: 0; }
+  .voice-avatar { width: 16px; height: 16px; border-radius: 50%; font-size: 0.5rem; display: flex; align-items: center; justify-content: center; background: rgba(34,197,94,0.3); border: 1px solid rgba(34,197,94,0.4); }
 
   .challenge-list { max-height: 200px; overflow-y: auto; margin: 0.5rem 0; text-align: left; }
   .challenge-list .cl-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.8rem; }
@@ -941,6 +945,8 @@
       <div class="online-count" id="onlineCount">👤 0 online</div>
       <button class="theme-btn" id="themeBtn" title="Tema">🎨</button>
       <button class="dama-btn" id="damaBtn" title="Sfida a Dama">♟</button>
+      <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
+      <div class="voice-indicators" id="voiceIndicators"></div>
       <div class="theme-picker" id="themePicker">
         <div class="th-opt active" data-theme="default"><div class="th-preview"><span style="background:#0a0a12"></span><span style="background:#1a1a2e"></span><span style="background:#7c3aed"></span></div>Dark</div>
         <div class="th-opt" data-theme="galaxy"><div class="th-preview"><span style="background:#050510"></span><span style="background:#0d0d2b"></span><span style="background:#6366f1"></span></div>Galaxy</div>
@@ -1533,6 +1539,7 @@
     challengeFrom = data.from;
     document.getElementById('challengeText').textContent = data.nick + ' ti sfida a Dama!';
     document.getElementById('challengeOverlay').classList.add('active');
+    playSound('challenge');
   });
 
   document.getElementById('challengeAccept').addEventListener('click', function() {
@@ -1549,6 +1556,7 @@
     myGame = game;
     selectedCell = null;
     validMoves = [];
+    playSound('challenge');
     document.getElementById('gameTitle').textContent = '♛ ' + game.nick1 + ' vs ' + game.nick2;
     document.getElementById('gameInfo').textContent = game.turn === socket.id ? 'Tuo turno' : 'Turno avversario';
     document.getElementById('gameOverlay').classList.add('active');
@@ -1566,6 +1574,7 @@
     if (game.status === 'won') {
       const won = game.winner === socket.id;
       document.getElementById('gTurn').textContent = won ? '🎉 Hai vinto!' : '😞 Hai perso!';
+      if (won) playSound('gamewin');
     }
   });
 
@@ -1586,6 +1595,214 @@
     validMoves = [];
     document.getElementById('gameOverlay').classList.remove('active');
   });
+
+  // ===== SUONI MINECRAFT =====
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playSound(type) {
+    try {
+      const ctx = getAudioCtx();
+      if (ctx.state === 'suspended') ctx.resume();
+      const now = ctx.currentTime;
+      if (type === 'join') {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.setValueAtTime(600, now); o.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+        g.gain.setValueAtTime(0.15, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        o.start(now); o.stop(now + 0.2);
+      } else if (type === 'leave') {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.type = 'triangle'; o.connect(g); g.connect(ctx.destination);
+        o.frequency.setValueAtTime(500, now); o.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+        g.gain.setValueAtTime(0.12, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        o.start(now); o.stop(now + 0.3);
+      } else if (type === 'message') {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.setValueAtTime(1200, now); o.frequency.setValueAtTime(800, now + 0.02);
+        g.gain.setValueAtTime(0.08, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+        o.start(now); o.stop(now + 0.06);
+      } else if (type === 'challenge') {
+        [1,2].forEach(function(i) {
+          const o = ctx.createOscillator(); const g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          o.frequency.setValueAtTime(800, now + i * 0.12);
+          o.frequency.exponentialRampToValueAtTime(1200, now + i * 0.12 + 0.1);
+          g.gain.setValueAtTime(0.12, now + i * 0.12); g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.12 + 0.15);
+          o.start(now + i * 0.12); o.stop(now + i * 0.12 + 0.15);
+        });
+      } else if (type === 'gamewin') {
+        [0,0.12,0.24].forEach(function(d, i) {
+          const o = ctx.createOscillator(); const g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          const freq = 600 + i * 200;
+          o.frequency.setValueAtTime(freq, now + d);
+          g.gain.setValueAtTime(0.1, now + d); g.gain.exponentialRampToValueAtTime(0.01, now + d + 0.2);
+          o.start(now + d); o.stop(now + d + 0.2);
+        });
+      } else if (type === 'voice') {
+        const bufferSize = ctx.sampleRate * 0.1;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.15));
+        }
+        const src = ctx.createBufferSource(); const g = ctx.createGain();
+        src.buffer = buffer; src.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.06, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+        src.start(now); src.stop(now + 0.12);
+      }
+    } catch(e) {}
+  }
+
+  // Trigger sounds on socket events
+  socket.on('chat message', function(msg) {
+    if (msg.system) {
+      if (msg.msg.includes('è entrato')) playSound('join');
+      else if (msg.msg.includes('è uscito')) playSound('leave');
+    } else {
+      playSound('message');
+    }
+  });
+  socket.on('users online', function(users) { /* handled elsewhere */ });
+  socket.on('voice user joined', function() { playSound('voice'); });
+
+  // ===== VOCE (WebRTC) =====
+  let voiceActive = false;
+  let localStream = null;
+  const peerConnections = {};
+
+  document.getElementById('voiceBtn').addEventListener('click', function() {
+    if (!voiceActive) startVoice(); else stopVoice();
+  });
+
+  function startVoice() {
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      .then(function(stream) {
+        localStream = stream;
+        voiceActive = true;
+        document.getElementById('voiceBtn').classList.add('active');
+        document.getElementById('voiceBtn').textContent = '🔴';
+        socket.emit('voice join');
+      })
+      .catch(function(err) {
+        alert('Impossibile accedere al microfono: ' + err.message);
+      });
+  }
+
+  function stopVoice() {
+    if (localStream) {
+      localStream.getTracks().forEach(function(t) { t.stop(); });
+      localStream = null;
+    }
+    Object.keys(peerConnections).forEach(function(id) {
+      peerConnections[id].close();
+      delete peerConnections[id];
+    });
+    voiceActive = false;
+    document.getElementById('voiceBtn').classList.remove('active');
+    document.getElementById('voiceBtn').textContent = '📞';
+    document.getElementById('voiceIndicators').innerHTML = '';
+    socket.emit('voice leave');
+  }
+
+  function createPeerConnection(targetId) {
+    const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+    peerConnections[targetId] = pc;
+    if (localStream) localStream.getTracks().forEach(function(t) { pc.addTrack(t, localStream); });
+    pc.onicecandidate = function(e) {
+      if (e.candidate) socket.emit('voice signal', { to: targetId, signal: { type: 'ice', candidate: e.candidate } });
+    };
+    pc.ontrack = function(e) {
+      const audio = document.createElement('audio');
+      audio.srcObject = e.streams[0];
+      audio.autoplay = true;
+      audio.volume = 0.8;
+      document.body.appendChild(audio);
+      e.streams[0].onremovetrack = function() { audio.remove(); };
+    };
+    return pc;
+  }
+
+  socket.on('voice user joined', function(data) {
+    if (!voiceActive) return;
+    if (peerConnections[data.id]) return;
+    const pc = createPeerConnection(data.id);
+    pc.createOffer().then(function(offer) {
+      return pc.setLocalDescription(offer);
+    }).then(function() {
+      socket.emit('voice signal', { to: data.id, signal: { type: 'offer', sdp: pc.localDescription } });
+    }).catch(function(e) { console.log('Offer error:', e); });
+    // Show indicator
+    const ind = document.getElementById('voiceIndicators');
+    const el = document.createElement('span');
+    el.className = 'voice-avatar';
+    el.id = 'va_' + data.id;
+    el.textContent = '🎤';
+    el.title = data.nick + ' in chiamata';
+    ind.appendChild(el);
+  });
+
+  socket.on('voice user left', function(data) {
+    if (peerConnections[data.id]) {
+      peerConnections[data.id].close();
+      delete peerConnections[data.id];
+    }
+    const el = document.getElementById('va_' + data.id);
+    if (el) el.remove();
+  });
+
+  socket.on('voice signal', function(data) {
+    if (!voiceActive && data.signal.type !== 'offer') return;
+    if (data.signal.type === 'offer') {
+      if (!voiceActive) {
+        startVoiceFromPeer();
+        setTimeout(function() { handleSignal(data); }, 500);
+      } else {
+        handleSignal(data);
+      }
+    } else {
+      handleSignal(data);
+    }
+  });
+
+  function startVoiceFromPeer() {
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      .then(function(stream) {
+        localStream = stream;
+        voiceActive = true;
+        document.getElementById('voiceBtn').classList.add('active');
+        document.getElementById('voiceBtn').textContent = '🔴';
+        socket.emit('voice join');
+      });
+  }
+
+  function handleSignal(data) {
+    const pc = peerConnections[data.from] || createPeerConnection(data.from);
+    if (data.signal.type === 'offer') {
+      pc.setRemoteDescription(new RTCSessionDescription(data.signal.sdp)).then(function() {
+        return pc.createAnswer();
+      }).then(function(answer) {
+        return pc.setLocalDescription(answer);
+      }).then(function() {
+        socket.emit('voice signal', { to: data.from, signal: { type: 'answer', sdp: pc.localDescription } });
+      }).catch(function(e) { console.log('Answer error:', e); });
+    } else if (data.signal.type === 'answer') {
+      pc.setRemoteDescription(new RTCSessionDescription(data.signal.sdp)).catch(function(e) { console.log('Set answer error:', e); });
+    } else if (data.signal.type === 'ice') {
+      pc.addIceCandidate(new RTCIceCandidate(data.signal.candidate)).catch(function(e) { console.log('ICE error:', e); });
+    }
+  }
+
+  // Stop voice on disconnect
+  socket.on('disconnect', function() {
+    if (voiceActive) stopVoice();
+  });
+
   const avatars = [
     { emoji: '🦸', name: 'Iron Man', bg: 'linear-gradient(135deg,#dc2626,#991b1b)' },
     { emoji: '🕷', name: 'Spider-Man', bg: 'linear-gradient(135deg,#2563eb,#1e40af)' },

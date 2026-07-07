@@ -328,6 +328,21 @@ io.on('connection', (socket) => {
     delete games[gameId];
   });
 
+  // Voice Chat signaling
+  socket.on('voice join', () => {
+    const u = users[socket.id];
+    if (!u) return;
+    socket.broadcast.emit('voice user joined', { id: socket.id, nick: u.nick });
+  });
+
+  socket.on('voice leave', () => {
+    socket.broadcast.emit('voice user left', { id: socket.id });
+  });
+
+  socket.on('voice signal', ({ to, signal }) => {
+    io.to(to).emit('voice signal', { from: socket.id, signal });
+  });
+
   socket.on('disconnect', () => {
     const u = users[socket.id];
     if (u) {
