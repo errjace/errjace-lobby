@@ -47,6 +47,24 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('music play', (data) => {
+    const u = users[socket.id];
+    console.log(`[${new Date().toLocaleTimeString()}] Musica: ${u ? u.nick + ' ha avviato' : 'Qualcuno ha avviato'} "${data.title}"`);
+    io.emit('music play', data);
+  });
+
+  socket.on('music pause', () => {
+    io.emit('music pause');
+  });
+
+  socket.on('music resume', () => {
+    io.emit('music resume');
+  });
+
+  socket.on('music stop', () => {
+    io.emit('music stop');
+  });
+
   socket.on('disconnect', () => {
     const u = users[socket.id];
     if (u) {
