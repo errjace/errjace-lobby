@@ -751,9 +751,8 @@
   .conn-status.disconnected { color: #ef4444; border-color: rgba(239,68,68,0.3); }
 
   /* Dama Game */
-  .sfida-btn { background: none; border: none; font-size: 0.55rem; padding: 0.1rem 0.3rem; border-radius: 4px; cursor: pointer; color: var(--accentText); opacity: 0; transition: opacity 0.2s; animation: none; margin-left: auto; }
-  .online-user:hover .sfida-btn { opacity: 1; }
-  .sfida-btn:hover { background: rgba(139,92,246,0.2); }
+  .sfida-btn { background: none; border: 1px solid var(--borderLight); font-size: 0.65rem; padding: 0.15rem 0.35rem; border-radius: 6px; cursor: pointer; color: var(--accentText); opacity: 0.6; transition: opacity 0.2s, background 0.2s; animation: none; margin-left: auto; white-space: nowrap; }
+  .online-user:hover .sfida-btn, .sfida-btn:hover { opacity: 1; background: rgba(139,92,246,0.2); }
 
   .game-overlay {
     display: none; position: fixed; inset: 0; z-index: 1000;
