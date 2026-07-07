@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ERRJACE - Area Riservata</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,6 +11,7 @@
 <script src="https://www.youtube.com/iframe_api"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { overflow-x: hidden; }
 
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px) scale(0.95); }
@@ -589,7 +590,8 @@
   .conn-status.disconnected { color: #ef4444; border-color: rgba(239,68,68,0.3); }
 
   @media (max-width: 768px) {
-    body { overflow: auto; align-items: flex-start; padding: 0.25rem; }
+    body { overflow: auto; overflow-x: hidden; align-items: flex-start; padding: 0.25rem; }
+    .orb { display: none; }
     .container, .popup { padding: 1rem; max-width: 100%; }
     #lobbyBox { max-width: 100% !important; width: 100% !important; height: 98vh !important; max-height: none !important; padding: 0.5rem !important; }
     .lobby-header { flex-wrap: wrap; gap: 0.25rem; padding-bottom: 0.4rem; margin-bottom: 0.5rem; }
