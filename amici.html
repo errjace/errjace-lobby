@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Black+Ops+One&display=swap" rel="stylesheet">
 <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -481,6 +482,16 @@
   .music-controls button.muted { background: rgba(239,68,68,0.3); border-color: rgba(239,68,68,0.3); }
   .music-idle { color: rgba(255,255,255,0.2); font-size: 0.75rem; font-style: italic; }
 
+  .yt-player-wrap {
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 16/9;
+    max-height: 250px;
+  }
+  .yt-player-wrap iframe { width: 100%; height: 100%; }
+
   .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
   .star { position: absolute; width: 3px; height: 3px; background: #fff; border-radius: 50%; animation: sparkle 3s ease-in-out infinite; }
 </style>
@@ -545,15 +556,17 @@
       <!-- Music Player -->
       <div class="music-bar" id="musicBar">
         <div class="music-search-row">
-          <input type="text" id="musicSearch" placeholder="Cerca una canzone..." autocomplete="off">
+          <input type="text" id="musicSearch" placeholder="Cerca un video..." autocomplete="off">
           <button id="musicSearchBtn">Cerca</button>
         </div>
         <div class="music-results" id="musicResults"></div>
+        <div class="yt-player-wrap" id="ytPlayerWrap" style="display:none;">
+          <div id="ytPlayer"></div>
+        </div>
         <div class="music-now" id="musicNow">
-          <img id="musicCover" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='42' height='42'><rect fill='%23333' width='42' height='42' rx='8'/></svg>" alt="">
           <div class="info">
-            <div class="title" id="musicTitle">Nessuna canzone in riproduzione</div>
-            <div class="artist" id="musicArtist">Cerca una canzone per iniziare</div>
+            <div class="title" id="musicTitle">Nessun video in riproduzione</div>
+            <div class="artist" id="musicArtist">Cerca un video per iniziare</div>
           </div>
           <div class="music-controls">
             <button id="musicPlayBtn" title="Play/Pause">▶</button>
@@ -574,37 +587,70 @@
 
   const socket = io();
 
-  // ===== MUSIC PLAYER =====
-  let audio = new Audio();
-  let currentSong = null;
+  // ===== YOUTUBE PLAYER =====
+  let ytPlayer = null;
+  let currentVideo = null;
   let isPlaying = false;
   let isMuted = false;
   let searchResults = [];
+  let ytReady = false;
+
+  function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('ytPlayer', {
+      height: '100%',
+      width: '100%',
+      playerVars: {
+        autoplay: 0,
+        controls: 1,
+        disablekb: 1,
+        fs: 0,
+        modestbranding: 1,
+        rel: 0,
+      },
+      events: {
+        onStateChange: onYtStateChange,
+        onReady: function() { ytReady = true; },
+      }
+    });
+  }
+
+  function onYtStateChange(e) {
+    if (e.data === YT.PlayerState.PLAYING) {
+      isPlaying = true;
+      document.getElementById('musicPlayBtn').textContent = '⏸';
+    } else if (e.data === YT.PlayerState.PAUSED) {
+      isPlaying = false;
+      document.getElementById('musicPlayBtn').textContent = '▶';
+    } else if (e.data === YT.PlayerState.ENDED) {
+      isPlaying = false;
+      document.getElementById('musicPlayBtn').textContent = '▶';
+    }
+  }
 
   function searchMusic(query) {
     const container = document.getElementById('musicResults');
     container.innerHTML = '<div class="music-result" style="justify-content:center;color:rgba(255,255,255,0.3);">🔍 Ricerca in corso...</div>';
     container.classList.add('active');
-    fetch(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=8`)
-      .then(r => { if (!r.ok) throw new Error('Errore API'); return r.json(); })
+    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+      .then(r => { if (!r.ok) throw new Error('Errore server'); return r.json(); })
       .then(data => {
-        searchResults = data.data || [];
+        searchResults = data.results || [];
         container.innerHTML = '';
         if (searchResults.length === 0) {
           container.innerHTML = '<div class="music-result" style="justify-content:center;color:rgba(255,255,255,0.3);">Nessun risultato</div>';
           container.classList.add('active');
           return;
         }
-        searchResults.forEach((track, i) => {
+        searchResults.forEach((video, i) => {
           const div = document.createElement('div');
           div.className = 'music-result';
           div.innerHTML = `
-            <img src="${track.album.cover_small}" alt="">
+            <img src="${video.cover}" alt="">
             <div class="info">
-              <div class="title">${track.title}</div>
-              <div class="artist">${track.artist.name}</div>
+              <div class="title">${video.title}</div>
+              <div class="artist">${video.artist} · ${video.duration}</div>
             </div>
-            <span class="play-btn" data-idx="${i}">🎵</span>`;
+            <span class="play-btn" data-idx="${i}">▶</span>`;
           div.querySelector('.play-btn').addEventListener('click', function(e) {
             e.stopPropagation();
             const idx = parseInt(this.dataset.idx);
@@ -615,34 +661,34 @@
         container.classList.add('active');
       })
       .catch(err => {
-        console.error('Errore ricerca Deezer:', err);
+        console.error('Errore ricerca:', err);
         container.innerHTML = '<div class="music-result" style="justify-content:center;color:#ef4444;">❌ Errore di rete. Riprova.</div>';
         container.classList.add('active');
       });
   }
 
   function playForEveryone(idx) {
-    const track = searchResults[idx];
-    if (!track || !track.preview) return;
+    const video = searchResults[idx];
+    if (!video || !video.videoId) return;
     document.getElementById('musicResults').classList.remove('active');
     socket.emit('music play', {
-      url: track.preview,
-      title: track.title,
-      artist: track.artist.name,
-      cover: track.album.cover_medium || track.album.cover_small,
+      videoId: video.videoId,
+      title: video.title,
+      artist: video.artist,
+      cover: video.cover,
     });
   }
 
   function actuallyPlay(data) {
-    currentSong = data;
-    audio.src = data.url;
-    audio.play();
-    isPlaying = true;
-    document.getElementById('musicCover').src = data.cover;
+    currentVideo = data;
+    document.getElementById('ytPlayerWrap').style.display = 'block';
     document.getElementById('musicTitle').textContent = data.title;
     document.getElementById('musicArtist').textContent = data.artist;
     document.getElementById('musicPlayBtn').textContent = '⏸';
     document.getElementById('musicSearch').value = '';
+    if (ytPlayer && ytPlayer.loadVideoById) {
+      ytPlayer.loadVideoById(data.videoId);
+    }
   }
 
   socket.on('music play', function(data) {
@@ -650,25 +696,21 @@
   });
 
   socket.on('music pause', function() {
-    audio.pause();
-    isPlaying = false;
-    document.getElementById('musicPlayBtn').textContent = '▶';
+    if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
   });
 
   socket.on('music resume', function() {
-    audio.play();
-    isPlaying = true;
-    document.getElementById('musicPlayBtn').textContent = '⏸';
+    if (ytPlayer && ytPlayer.playVideo) ytPlayer.playVideo();
   });
 
   socket.on('music stop', function() {
-    audio.pause();
-    audio.currentTime = 0;
+    if (ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
     isPlaying = false;
-    currentSong = null;
+    currentVideo = null;
     document.getElementById('musicPlayBtn').textContent = '▶';
-    document.getElementById('musicTitle').textContent = 'Nessuna canzone in riproduzione';
-    document.getElementById('musicArtist').textContent = 'Cerca una canzone per iniziare';
+    document.getElementById('musicTitle').textContent = 'Nessun video in riproduzione';
+    document.getElementById('musicArtist').textContent = 'Cerca un video per iniziare';
+    document.getElementById('ytPlayerWrap').style.display = 'none';
   });
 
   document.getElementById('musicSearchBtn').addEventListener('click', function() {
@@ -681,7 +723,7 @@
   });
 
   document.getElementById('musicPlayBtn').addEventListener('click', function() {
-    if (!currentSong) return;
+    if (!currentVideo) return;
     if (isPlaying) {
       socket.emit('music pause');
     } else {
@@ -696,14 +738,11 @@
 
   document.getElementById('musicMuteBtn').addEventListener('click', function() {
     isMuted = !isMuted;
-    audio.muted = isMuted;
+    if (ytPlayer && ytPlayer.isMuted !== undefined) {
+      if (isMuted) ytPlayer.mute(); else ytPlayer.unMute();
+    }
     this.textContent = isMuted ? '🔇' : '🔊';
     this.classList.toggle('muted', isMuted);
-  });
-
-  audio.addEventListener('ended', function() {
-    isPlaying = false;
-    document.getElementById('musicPlayBtn').textContent = '▶';
   });
 
   // ===== AVATAR =====

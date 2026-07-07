@@ -17,6 +17,28 @@ app.get('/amici.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'amici.html'));
 });
 
+const ytSearch = require('yt-search');
+
+app.get('/api/search', async (req, res) => {
+  const q = req.query.q;
+  if (!q || q.length < 2) return res.json({ results: [] });
+  try {
+    const r = await ytSearch(q);
+    const results = r.videos.slice(0, 10).map(v => ({
+      videoId: v.videoId,
+      title: v.title,
+      artist: v.author.name,
+      cover: v.image || v.thumbnail,
+      duration: v.duration.timestamp,
+      url: v.url,
+    }));
+    res.json({ results });
+  } catch (err) {
+    console.error('Errore ricerca YouTube:', err);
+    res.status(500).json({ error: 'Errore ricerca' });
+  }
+});
+
 const users = {};
 
 io.on('connection', (socket) => {
