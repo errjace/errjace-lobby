@@ -582,11 +582,13 @@
   let searchResults = [];
 
   function searchMusic(query) {
+    const container = document.getElementById('musicResults');
+    container.innerHTML = '<div class="music-result" style="justify-content:center;color:rgba(255,255,255,0.3);">🔍 Ricerca in corso...</div>';
+    container.classList.add('active');
     fetch(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=8`)
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('Errore API'); return r.json(); })
       .then(data => {
         searchResults = data.data || [];
-        const container = document.getElementById('musicResults');
         container.innerHTML = '';
         if (searchResults.length === 0) {
           container.innerHTML = '<div class="music-result" style="justify-content:center;color:rgba(255,255,255,0.3);">Nessun risultato</div>';
@@ -610,6 +612,11 @@
           });
           container.appendChild(div);
         });
+        container.classList.add('active');
+      })
+      .catch(err => {
+        console.error('Errore ricerca Deezer:', err);
+        container.innerHTML = '<div class="music-result" style="justify-content:center;color:#ef4444;">❌ Errore di rete. Riprova.</div>';
         container.classList.add('active');
       });
   }
