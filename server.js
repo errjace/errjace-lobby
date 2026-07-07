@@ -40,6 +40,9 @@ app.get('/api/search', async (req, res) => {
 });
 
 const users = {};
+const queue = [];
+const messageReactions = {};
+let msgCounter = 0;
 
 io.on('connection', (socket) => {
   const ip = socket.handshake.address;
@@ -49,12 +52,15 @@ io.on('connection', (socket) => {
     users[socket.id] = { id: socket.id, nick, avatar, ip };
     console.log(`[${new Date().toLocaleTimeString()}] ${nick} è entrato — IP: ${ip}`);
     io.emit('users online', Object.values(users));
+    io.emit('queue update', queue);
     io.emit('chat message', {
+      id: ++msgCounter,
       nick: 'Sistema',
       avatar: '💬',
       msg: `${nick} è entrato in lobby!`,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       system: true,
+      reactions: {},
     });
   });
 
@@ -62,17 +68,49 @@ io.on('connection', (socket) => {
     const u = users[socket.id];
     if (!u) return;
     io.emit('chat message', {
+      id: ++msgCounter,
       nick: u.nick,
       avatar: u.avatar,
       msg,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      reactions: {},
     });
+  });
+
+  socket.on('typing start', () => {
+    const u = users[socket.id];
+    if (!u) return;
+    socket.broadcast.emit('typing start', u.nick);
+  });
+
+  socket.on('typing stop', () => {
+    socket.broadcast.emit('typing stop');
+  });
+
+  socket.on('message react', ({ msgId, emoji }) => {
+    if (!messageReactions[msgId]) messageReactions[msgId] = {};
+    if (!messageReactions[msgId][emoji]) messageReactions[msgId][emoji] = 0;
+    const u = users[socket.id];
+    if (!u) return;
+    const key = `${msgId}-${emoji}-${socket.id}`;
+    if (socket.reactedKeys && socket.reactedKeys[key]) {
+      messageReactions[msgId][emoji]--;
+      delete socket.reactedKeys[key];
+    } else {
+      messageReactions[msgId][emoji]++;
+      if (!socket.reactedKeys) socket.reactedKeys = {};
+      socket.reactedKeys[key] = true;
+    }
+    io.emit('message reactions', { msgId, reactions: messageReactions[msgId] });
   });
 
   socket.on('music play', (data) => {
     const u = users[socket.id];
-    console.log(`[${new Date().toLocaleTimeString()}] Musica: ${u ? u.nick + ' ha avviato' : 'Qualcuno ha avviato'} "${data.title}"`);
+    data.addedBy = u ? u.nick : 'Qualcuno';
+    queue.push(data);
+    console.log(`[${new Date().toLocaleTimeString()}] Musica: ${data.addedBy} ha aggiunto "${data.title}"`);
     io.emit('music play', data);
+    io.emit('queue update', queue);
   });
 
   socket.on('music pause', () => {
@@ -87,15 +125,36 @@ io.on('connection', (socket) => {
     io.emit('music stop');
   });
 
+  socket.on('music ended', () => {
+    queue.shift();
+    io.emit('queue update', queue);
+    if (queue.length > 0) {
+      io.emit('music play', queue[0]);
+    } else {
+      io.emit('music stop');
+    }
+  });
+
+  socket.on('queue remove', (index) => {
+    const u = users[socket.id];
+    if (!u) return;
+    if (index >= 0 && index < queue.length) {
+      queue.splice(index, 1);
+      io.emit('queue update', queue);
+    }
+  });
+
   socket.on('disconnect', () => {
     const u = users[socket.id];
     if (u) {
       io.emit('chat message', {
+        id: ++msgCounter,
         nick: 'Sistema',
         avatar: '💬',
         msg: `${u.nick} è uscito dalla lobby.`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         system: true,
+        reactions: {},
       });
       delete users[socket.id];
       io.emit('users online', Object.values(users));
