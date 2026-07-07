@@ -667,20 +667,25 @@
     });
   }
 
+  let remoteAction = false;
+
   function onYtStateChange(e) {
     if (e.data === YT.PlayerState.PLAYING) {
       isPlaying = true;
       document.getElementById('musicPlayBtn').textContent = '⏸';
+      if (!remoteAction) socket.emit('music resume');
     } else if (e.data === YT.PlayerState.PAUSED) {
       isPlaying = false;
       document.getElementById('musicPlayBtn').textContent = '▶';
+      if (!remoteAction) socket.emit('music pause');
     } else if (e.data === YT.PlayerState.ENDED) {
       isPlaying = false;
       document.getElementById('musicPlayBtn').textContent = '▶';
     }
+    remoteAction = false;
   }
 
-  function searchMusic(query) {
+  function searchMusic(query, autoPlay) {
     const container = document.getElementById('musicResults');
     container.innerHTML = '<div class="music-result" style="justify-content:center;color:rgba(255,255,255,0.3);">🔍 Ricerca in corso...</div>';
     container.classList.add('active');
@@ -711,7 +716,11 @@
           });
           container.appendChild(div);
         });
-        container.classList.add('active');
+        if (autoPlay && searchResults.length > 0) {
+          playForEveryone(0);
+        } else {
+          container.classList.add('active');
+        }
       })
       .catch(err => {
         console.error('Errore ricerca:', err);
@@ -749,10 +758,12 @@
   });
 
   socket.on('music pause', function() {
+    remoteAction = true;
     if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
   });
 
   socket.on('music resume', function() {
+    remoteAction = true;
     if (ytPlayer && ytPlayer.playVideo) ytPlayer.playVideo();
   });
 
@@ -768,7 +779,7 @@
 
   document.getElementById('musicSearchBtn').addEventListener('click', function() {
     const query = document.getElementById('musicSearch').value.trim();
-    if (query.length > 1) searchMusic(query);
+    if (query.length > 1) searchMusic(query, true);
   });
 
   document.getElementById('musicSearch').addEventListener('keydown', function(e) {
@@ -776,16 +787,23 @@
   });
 
   document.getElementById('musicPlayBtn').addEventListener('click', function() {
-    if (!currentVideo) return;
+    if (!currentVideo || !ytPlayer) return;
     if (isPlaying) {
-      socket.emit('music pause');
+      ytPlayer.pauseVideo();
     } else {
-      socket.emit('music resume');
+      ytPlayer.playVideo();
     }
   });
 
   document.getElementById('musicSkipBtn').addEventListener('click', function() {
+    if (ytPlayer) ytPlayer.stopVideo();
     socket.emit('music stop');
+    isPlaying = false;
+    currentVideo = null;
+    document.getElementById('musicPlayBtn').textContent = '▶';
+    document.getElementById('musicTitle').textContent = 'Nessun video in riproduzione';
+    document.getElementById('musicArtist').textContent = 'Cerca un video per iniziare';
+    document.getElementById('ytPlayerWrap').style.display = 'none';
     document.getElementById('musicResults').classList.add('active');
   });
 
