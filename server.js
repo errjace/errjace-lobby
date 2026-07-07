@@ -23,6 +23,27 @@ app.get('/amici.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'amici.html'));
 });
 
+app.get('/manifest.json', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.sendFile(path.join(__dirname, 'manifest.json'));
+});
+
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.sendFile(path.join(__dirname, 'sw.js'));
+});
+
+app.get('/icon-192.svg', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.sendFile(path.join(__dirname, 'icon-192.svg'));
+});
+
 const ytSearch = require('yt-search');
 
 app.get('/api/search', async (req, res) => {
