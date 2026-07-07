@@ -332,7 +332,7 @@ io.on('connection', (socket) => {
   socket.on('voice join', () => {
     const u = users[socket.id];
     if (!u) return;
-    socket.broadcast.emit('voice user joined', { id: socket.id, nick: u.nick });
+    socket.broadcast.emit('voice user joined', { id: socket.id, nick: u.nick, avatar: u.avatar });
   });
 
   socket.on('voice leave', () => {

@@ -802,8 +802,10 @@
   .dama-btn::after { display: none; }
   .dama-btn.active { background: rgba(34,197,94,0.3); border-color: rgba(34,197,94,0.4); }
 
-  .voice-indicators { display: flex; gap: 0.2rem; position: absolute; bottom: -6px; right: 0; }
-  .voice-avatar { width: 16px; height: 16px; border-radius: 50%; font-size: 0.5rem; display: flex; align-items: center; justify-content: center; background: rgba(34,197,94,0.3); border: 1px solid rgba(34,197,94,0.4); }
+  .voice-indicators { display: flex; flex-wrap: wrap; gap: 0.25rem; position: absolute; bottom: -18px; right: 0; }
+  .voice-avatar { width: 20px; height: 20px; border-radius: 50%; font-size: 0.6rem; display: flex; align-items: center; justify-content: center; background: rgba(34,197,94,0.2); border: 1.5px solid rgba(34,197,94,0.5); position: relative; }
+  .voice-avatar .v-name { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 2px; white-space: nowrap; background: rgba(0,0,0,0.8); color: #fff; font-size: 0.55rem; padding: 0.1rem 0.3rem; border-radius: 4px; z-index: 10; }
+  .voice-avatar:hover .v-name { display: block; }
 
   .challenge-list { max-height: 200px; overflow-y: auto; margin: 0.5rem 0; text-align: left; }
   .challenge-list .cl-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.8rem; }
@@ -1687,6 +1689,9 @@
         voiceActive = true;
         document.getElementById('voiceBtn').classList.add('active');
         document.getElementById('voiceBtn').textContent = '🔴';
+        // Show local indicator
+        const ind = document.getElementById('voiceIndicators');
+        ind.innerHTML = '<span class="voice-avatar" id="va_me">🎤<span class="v-name">Tu</span></span>';
         socket.emit('voice join');
       })
       .catch(function(err) {
@@ -1737,13 +1742,14 @@
     }).then(function() {
       socket.emit('voice signal', { to: data.id, signal: { type: 'offer', sdp: pc.localDescription } });
     }).catch(function(e) { console.log('Offer error:', e); });
-    // Show indicator
+    // Show indicator with user avatar
     const ind = document.getElementById('voiceIndicators');
     const el = document.createElement('span');
     el.className = 'voice-avatar';
     el.id = 'va_' + data.id;
-    el.textContent = '🎤';
-    el.title = data.nick + ' in chiamata';
+    el.textContent = data.avatar || '🎤';
+    el.innerHTML += '<span class="v-name">' + data.nick + '</span>';
+    el.title = data.nick;
     ind.appendChild(el);
   });
 
