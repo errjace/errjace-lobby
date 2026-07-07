@@ -201,13 +201,28 @@
     font-size: 0.6rem; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold;
   }
 
-  /* Popup Buon Divertimento */
+  /* Age Verification */
+  .age-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 1rem; }
+  .age-btn { padding: 0.75rem 2rem; font-size: 1.1rem; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; text-transform: uppercase; letter-spacing: 0.1em; }
+  .age-btn.yes { background: linear-gradient(135deg, #7c3aed, #3b82f6); color: #fff; }
+  .age-btn.yes:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(124,58,237,0.5); }
+  .age-btn.no { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+  .age-btn.no:hover { background: rgba(239,68,68,0.25); transform: scale(1.05); }
+  .age-blocked { display: none; animation: fadeIn 0.4s ease-out; }
+  .age-blocked.active { display: block; }
+  .age-blocked h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .age-blocked .lock-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+  .age-blocked p { color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-top: 1rem; }
+  .age-question { display: block; }
+  .age-question.hidden { display: none; }
+
+  /* Popup Buon Divertimento - redesigned */
   .popup-boom {
-    max-width: 500px !important;
-    padding: 3rem 2.5rem !important;
-    background: linear-gradient(135deg, rgba(20,0,40,0.98) 0%, rgba(10,10,30,0.98) 100%) !important;
-    border: 2px solid rgba(139,92,246,0.4) !important;
-    box-shadow: 0 0 60px rgba(124,58,237,0.3), 0 0 120px rgba(59,130,246,0.15) !important;
+    max-width: 480px !important;
+    padding: 2.5rem 2rem !important;
+    background: linear-gradient(160deg, rgba(30,10,60,0.98) 0%, rgba(15,20,45,0.98) 100%) !important;
+    border: 1px solid rgba(139,92,246,0.3) !important;
+    box-shadow: 0 0 50px rgba(124,58,237,0.2), 0 0 100px rgba(59,130,246,0.1) !important;
     position: relative;
     overflow: hidden;
   }
@@ -216,61 +231,47 @@
     position: absolute;
     top: -50%; left: -50%;
     width: 200%; height: 200%;
-    background: conic-gradient(from 0deg, transparent, rgba(139,92,246,0.08), transparent, rgba(59,130,246,0.08), transparent);
-    animation: spinGlow 6s linear infinite;
-  }
-  @keyframes spinGlow { to { transform: rotate(360deg); } }
-  .popup-boom::after {
-    content: ''; position: absolute; inset: 2px;
-    background: linear-gradient(135deg, rgba(20,0,40,0.98) 0%, rgba(10,10,30,0.98) 100%);
-    border-radius: 14px; z-index: 0;
+    background: radial-gradient(circle at 30% 40%, rgba(139,92,246,0.06) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(59,130,246,0.06) 0%, transparent 50%);
+    pointer-events: none;
   }
   .popup-boom > * { position: relative; z-index: 1; }
+  .popup-boom .welcome-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
   .popup-boom h2 {
-    font-family: 'Black Ops One', 'Anton', sans-serif !important;
-    font-size: 2.8rem !important;
-    letter-spacing: 0.08em !important;
+    font-family: 'Anton', 'Bebas Neue', sans-serif !important;
+    font-size: 2rem !important;
+    letter-spacing: 0.1em !important;
     text-transform: uppercase !important;
-    background: linear-gradient(135deg, #a78bfa, #60a5fa, #7c3aed);
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    filter: drop-shadow(0 0 20px rgba(139,92,246,0.4));
-    animation: boomPulse 1.5s ease-in-out infinite;
-    margin-bottom: 0.75rem !important;
+    margin-bottom: 0.4rem !important;
   }
-  @keyframes boomPulse {
-    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(139,92,246,0.4)); }
-    50% { transform: scale(1.05); filter: drop-shadow(0 0 40px rgba(139,92,246,0.7)); }
+  .popup-boom .sub-line {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
   }
   .popup-boom .errjace-name {
     font-family: 'Anton', 'Bebas Neue', sans-serif !important;
-    font-size: 2.2rem !important; letter-spacing: 0.15em !important;
-    color: #fff !important; -webkit-text-fill-color: #fff !important;
-    text-shadow: 0 0 15px rgba(139,92,246,0.6), 0 0 40px rgba(59,130,246,0.3);
-    margin-bottom: 2rem !important; display: block;
+    font-size: 1.6rem !important; letter-spacing: 0.15em !important;
+    color: #fff !important;
+    text-shadow: 0 0 15px rgba(139,92,246,0.4);
+    margin-bottom: 1.5rem !important; display: block;
   }
-  .popup-boom .errjace-name span { color: #8b5cf6; -webkit-text-fill-color: #8b5cf6; }
+  .popup-boom .errjace-name span { color: #8b5cf6; }
   #grazieBtn {
-    font-family: 'Black Ops One', 'Anton', sans-serif;
-    font-size: 1.3rem !important; letter-spacing: 0.15em;
-    padding: 1rem 2rem !important;
-    background: linear-gradient(135deg, #7c3aed, #3b82f6, #7c3aed) !important;
-    background-size: 300% auto !important;
-    animation: shimmer 3s linear infinite, boomPulse 2s ease-in-out infinite !important;
-    border-radius: 12px !important; text-transform: uppercase;
+    font-family: 'Anton', sans-serif;
+    font-size: 1.1rem !important; letter-spacing: 0.15em;
+    padding: 0.8rem 2rem !important;
+    background: linear-gradient(135deg, #7c3aed, #3b82f6) !important;
+    border-radius: 10px !important; text-transform: uppercase;
+    transition: transform 0.2s, box-shadow 0.2s !important;
+    animation: none !important;
   }
-  #grazieBtn:hover { transform: scale(1.08) !important; box-shadow: 0 0 40px rgba(124,58,237,0.6) !important; }
-  .popup-boom .particles { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-  .popup-boom .particle {
-    position: absolute; width: 4px; height: 4px; background: #8b5cf6;
-    border-radius: 50%; animation: particleFloat 3s ease-in-out infinite;
-  }
-  @keyframes particleFloat {
-    0% { transform: translateY(0) scale(0); opacity: 0; }
-    50% { opacity: 1; }
-    100% { transform: translateY(-100px) scale(1); opacity: 0; }
-  }
+  #grazieBtn:hover { transform: scale(1.06) !important; box-shadow: 0 0 30px rgba(124,58,237,0.5) !important; }
 
   /* LOBBY - Chat */
   #lobbyBox {
@@ -545,7 +546,27 @@
 <div class="orb orb-3"></div>
 <div class="stars" id="stars"></div>
 
-<div class="container" id="loginBox">
+<!-- Age Verification -->
+<div class="overlay active" id="ageOverlay">
+  <div class="popup">
+    <div class="age-question" id="ageQuestion">
+      <h2>🎂 Verifica età</h2>
+      <p>Sei maggiorenne?</p>
+      <div class="age-buttons">
+        <button class="age-btn yes" id="ageYes">Sì</button>
+        <button class="age-btn no" id="ageNo">No</button>
+      </div>
+    </div>
+    <div class="age-blocked" id="ageBlocked">
+      <span class="lock-icon">🚫</span>
+      <h2>Mi spiace!</h2>
+      <p>Arrivederci.</p>
+      <p style="color:rgba(255,255,255,0.3);font-size:0.75rem;">Devi essere maggiorenne per accedere.</p>
+    </div>
+  </div>
+</div>
+
+<div class="container" id="loginBox" style="display:none;">
   <h1><span>ERRJACE</span> Accesso</h1>
   <form id="loginForm">
     <label for="password">Password</label>
@@ -572,8 +593,9 @@
 <!-- Popup buon divertimento -->
 <div class="overlay" id="buonDivOverlay">
   <div class="popup popup-boom">
-    <div class="particles" id="particles"></div>
+    <span class="welcome-icon">🎉</span>
     <h2>BUON DIVERTIMENTO!</h2>
+    <div class="sub-line">Sei pronto per la lobby</div>
     <div class="errjace-name">da <span>ERRJACE</span></div>
     <button id="grazieBtn">GRAZIE</button>
   </div>
@@ -849,18 +871,6 @@
     grid.appendChild(div);
   });
 
-  for (let i = 0; i < 30; i++) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    p.style.left = Math.random() * 100 + '%';
-    p.style.top = Math.random() * 100 + '%';
-    p.style.animationDelay = Math.random() * 4 + 's';
-    p.style.animationDuration = (Math.random() * 2 + 2) + 's';
-    p.style.width = p.style.height = (Math.random() * 4 + 2) + 'px';
-    p.style.background = ['#8b5cf6', '#7c3aed', '#3b82f6', '#a78bfa'][Math.floor(Math.random() * 4)];
-    document.getElementById('particles').appendChild(p);
-  }
-
   for (let i = 0; i < 50; i++) {
     const star = document.createElement('div');
     star.className = 'star';
@@ -871,6 +881,17 @@
     star.style.animationDuration = (Math.random() * 3 + 2) + 's';
     document.getElementById('stars').appendChild(star);
   }
+
+  // Age verification
+  document.getElementById('ageYes').addEventListener('click', function() {
+    document.getElementById('ageOverlay').classList.remove('active');
+    document.getElementById('loginBox').style.display = '';
+  });
+
+  document.getElementById('ageNo').addEventListener('click', function() {
+    document.getElementById('ageQuestion').classList.add('hidden');
+    document.getElementById('ageBlocked').classList.add('active');
+  });
 
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
