@@ -202,76 +202,159 @@
   }
 
   /* Age Verification */
-  .age-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 1rem; }
-  .age-btn { padding: 0.75rem 2rem; font-size: 1.1rem; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; text-transform: uppercase; letter-spacing: 0.1em; }
-  .age-btn.yes { background: linear-gradient(135deg, #7c3aed, #3b82f6); color: #fff; }
-  .age-btn.yes:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(124,58,237,0.5); }
-  .age-btn.no { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
-  .age-btn.no:hover { background: rgba(239,68,68,0.25); transform: scale(1.05); }
-  .age-blocked { display: none; animation: fadeIn 0.4s ease-out; }
+  .popup-age {
+    max-width: 420px !important;
+    padding: 2.5rem 2rem !important;
+    background: linear-gradient(160deg, rgba(18,8,35,0.98) 0%, rgba(12,15,35,0.98) 100%) !important;
+    border: 1px solid rgba(139,92,246,0.2) !important;
+    box-shadow: 0 0 60px rgba(124,58,237,0.15), inset 0 1px 0 rgba(139,92,246,0.1) !important;
+    position: relative;
+    overflow: hidden;
+  }
+  .popup-age::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 30%, rgba(139,92,246,0.04) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(59,130,246,0.04) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .popup-age > * { position: relative; z-index: 1; }
+  .popup-age .age-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(59,130,246,0.1));
+    border: 1px solid rgba(139,92,246,0.2);
+    font-size: 1.4rem;
+    color: #a78bfa;
+  }
+  .popup-age h2 {
+    font-family: 'Anton', 'Black Ops One', sans-serif !important;
+    font-size: 1.6rem !important;
+    letter-spacing: 0.12em !important;
+    color: #fff !important;
+    margin-bottom: 0.5rem !important;
+  }
+  .popup-age .age-desc {
+    color: rgba(255,255,255,0.45);
+    font-size: 0.9rem;
+    margin-bottom: 1.75rem;
+  }
+  .age-buttons { display: flex; gap: 0.75rem; justify-content: center; }
+  .age-btn {
+    flex: 1; padding: 0.7rem; font-size: 0.95rem; font-weight: 700;
+    border-radius: 8px; border: none; cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    text-transform: uppercase; letter-spacing: 0.12em;
+  }
+  .age-btn.yes {
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    color: #fff;
+    border: 1px solid rgba(139,92,246,0.3);
+  }
+  .age-btn.yes:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(124,58,237,0.35); }
+  .age-btn.no {
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .age-btn.no:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); transform: translateY(-1px); }
+  .age-blocked { display: none; animation: fadeIn 0.5s ease-out; }
   .age-blocked.active { display: block; }
-  .age-blocked h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
-  .age-blocked .lock-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
-  .age-blocked p { color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-top: 1rem; }
+  .age-blocked .blocked-icon { font-size: 2.8rem; margin-bottom: 1rem; display: block; color: #ef4444; }
+  .age-blocked h2 { color: #ef4444 !important; }
+  .age-blocked .blocked-sub { color: rgba(255,255,255,0.3); font-size: 0.8rem; margin-top: 1.5rem; letter-spacing: 0.05em; }
   .age-question { display: block; }
   .age-question.hidden { display: none; }
 
-  /* Popup Buon Divertimento - redesigned */
+  /* Popup Buon Divertimento */
   .popup-boom {
-    max-width: 480px !important;
-    padding: 2.5rem 2rem !important;
-    background: linear-gradient(160deg, rgba(30,10,60,0.98) 0%, rgba(15,20,45,0.98) 100%) !important;
-    border: 1px solid rgba(139,92,246,0.3) !important;
-    box-shadow: 0 0 50px rgba(124,58,237,0.2), 0 0 100px rgba(59,130,246,0.1) !important;
+    max-width: 460px !important;
+    padding: 3rem 2.5rem !important;
+    background: linear-gradient(160deg, rgba(20,10,40,0.98) 0%, rgba(12,15,35,0.98) 100%) !important;
+    border: 1px solid rgba(139,92,246,0.25) !important;
+    box-shadow: 0 0 80px rgba(124,58,237,0.12), 0 0 160px rgba(59,130,246,0.06), inset 0 1px 0 rgba(139,92,246,0.08) !important;
     position: relative;
     overflow: hidden;
   }
   .popup-boom::before {
     content: '';
     position: absolute;
-    top: -50%; left: -50%;
-    width: 200%; height: 200%;
-    background: radial-gradient(circle at 30% 40%, rgba(139,92,246,0.06) 0%, transparent 50%),
-                radial-gradient(circle at 70% 60%, rgba(59,130,246,0.06) 0%, transparent 50%);
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 100%, rgba(59,130,246,0.04) 0%, transparent 60%);
     pointer-events: none;
   }
+  .popup-boom::after {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139,92,246,0.4), rgba(59,130,246,0.4), transparent);
+    animation: shimmerLine 3s ease-in-out infinite;
+  }
+  @keyframes shimmerLine {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
   .popup-boom > * { position: relative; z-index: 1; }
-  .popup-boom .welcome-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+  .popup-boom .welcome-icon {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.25rem;
+    background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(59,130,246,0.08));
+    border: 1px solid rgba(139,92,246,0.2);
+    font-size: 1.6rem;
+    color: #a78bfa;
+    animation: welcomePulse 2.5s ease-in-out infinite;
+  }
+  @keyframes welcomePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139,92,246,0.15); }
+    50% { box-shadow: 0 0 0 12px rgba(139,92,246,0); }
+  }
   .popup-boom h2 {
-    font-family: 'Anton', 'Bebas Neue', sans-serif !important;
-    font-size: 2rem !important;
-    letter-spacing: 0.1em !important;
-    text-transform: uppercase !important;
-    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    font-family: 'Black Ops One', 'Anton', sans-serif !important;
+    font-size: 2.2rem !important;
+    letter-spacing: 0.08em !important;
+    background: linear-gradient(135deg, #c4b5fd, #818cf8, #a78bfa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 0.4rem !important;
+    margin-bottom: 0.3rem !important;
+    line-height: 1.2 !important;
   }
   .popup-boom .sub-line {
-    color: rgba(255,255,255,0.5);
-    font-size: 0.9rem;
-    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.3);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
     margin-bottom: 1.5rem;
   }
   .popup-boom .errjace-name {
     font-family: 'Anton', 'Bebas Neue', sans-serif !important;
-    font-size: 1.6rem !important; letter-spacing: 0.15em !important;
-    color: #fff !important;
-    text-shadow: 0 0 15px rgba(139,92,246,0.4);
-    margin-bottom: 1.5rem !important; display: block;
+    font-size: 1.3rem !important;
+    letter-spacing: 0.2em !important;
+    color: rgba(255,255,255,0.6) !important;
+    margin-bottom: 2rem !important;
   }
-  .popup-boom .errjace-name span { color: #8b5cf6; }
+  .popup-boom .errjace-name span { color: #a78bfa; }
   #grazieBtn {
     font-family: 'Anton', sans-serif;
-    font-size: 1.1rem !important; letter-spacing: 0.15em;
-    padding: 0.8rem 2rem !important;
-    background: linear-gradient(135deg, #7c3aed, #3b82f6) !important;
-    border-radius: 10px !important; text-transform: uppercase;
-    transition: transform 0.2s, box-shadow 0.2s !important;
+    font-size: 1rem !important;
+    letter-spacing: 0.15em;
+    padding: 0.75rem 2.5rem !important;
+    background: linear-gradient(135deg, #7c3aed, #5b21b6) !important;
+    border: 1px solid rgba(139,92,246,0.3) !important;
+    border-radius: 8px !important;
+    text-transform: uppercase;
+    transition: transform 0.25s, box-shadow 0.25s !important;
     animation: none !important;
   }
-  #grazieBtn:hover { transform: scale(1.06) !important; box-shadow: 0 0 30px rgba(124,58,237,0.5) !important; }
+  #grazieBtn:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 30px rgba(124,58,237,0.4) !important; }
 
   /* LOBBY - Chat */
   #lobbyBox {
@@ -548,20 +631,21 @@
 
 <!-- Age Verification -->
 <div class="overlay active" id="ageOverlay">
-  <div class="popup">
+  <div class="popup popup-age">
     <div class="age-question" id="ageQuestion">
-      <h2>🎂 Verifica età</h2>
-      <p>Sei maggiorenne?</p>
+      <div class="age-icon">🔐</div>
+      <h2>VERIFICA ETÀ</h2>
+      <p class="age-desc">Per accedere all'area riservata devi essere maggiorenne.</p>
       <div class="age-buttons">
-        <button class="age-btn yes" id="ageYes">Sì</button>
+        <button class="age-btn yes" id="ageYes">Sì, ho +18</button>
         <button class="age-btn no" id="ageNo">No</button>
       </div>
     </div>
     <div class="age-blocked" id="ageBlocked">
-      <span class="lock-icon">🚫</span>
-      <h2>Mi spiace!</h2>
-      <p>Arrivederci.</p>
-      <p style="color:rgba(255,255,255,0.3);font-size:0.75rem;">Devi essere maggiorenne per accedere.</p>
+      <span class="blocked-icon">⛔</span>
+      <h2>ACCESSO NEGATO</h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.9rem;">Devi essere maggiorenne per proseguire.</p>
+      <div class="blocked-sub">— Arrivederci —</div>
     </div>
   </div>
 </div>
