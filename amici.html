@@ -1,3 +1,417 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERRJACE - Area Riservata</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Black+Ops+One&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(139,92,246,0.1); }
+    50%      { box-shadow: 0 0 40px rgba(139,92,246,0.3), 0 0 60px rgba(59,130,246,0.15); }
+  }
+  @keyframes floatBG {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50%      { transform: translate(-50%, -50%) scale(1.05); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes sparkle {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50%      { opacity: 1; transform: scale(1.2); }
+  }
+  @keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(30px, -20px) scale(1.1); }
+    66%      { transform: translate(-20px, 15px) scale(0.9); }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0a0a12;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  body::before {
+    content: "ERRJACE";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(4rem, 20vw, 14rem);
+    font-weight: 900;
+    color: rgba(255,255,255,0.03);
+    pointer-events: none;
+    white-space: nowrap;
+    letter-spacing: 0.1em;
+    z-index: 0;
+    animation: floatBG 8s ease-in-out infinite;
+  }
+  body::after {
+    content: "© copyright by ERRJACE";
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.15);
+    pointer-events: none;
+    letter-spacing: 0.15em;
+    z-index: 0;
+  }
+
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(60px);
+    opacity: 0.15;
+  }
+  .orb-1 { width: 300px; height: 300px; background: #7c3aed; top: -100px; left: -100px; animation: orbFloat 12s ease-in-out infinite; }
+  .orb-2 { width: 250px; height: 250px; background: #3b82f6; bottom: -80px; right: -80px; animation: orbFloat 10s ease-in-out infinite reverse; }
+  .orb-3 { width: 180px; height: 180px; background: #8b5cf6; top: 50%; left: 50%; animation: orbFloat 14s ease-in-out infinite 2s; }
+
+  .container, .popup {
+    background: linear-gradient(135deg, rgba(26,10,46,0.95) 0%, rgba(22,33,62,0.95) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    padding: 2.5rem;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.1);
+    position: relative;
+    z-index: 1;
+    animation: fadeIn 0.6s ease-out, pulseGlow 3s ease-in-out infinite;
+  }
+
+  h1, h2 { font-size: 1.5rem; margin-bottom: 1.5rem; text-align: center; color: #fff; }
+  h1 span, h2 span { color: #8b5cf6; }
+
+  label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: #a78bfa; letter-spacing: 0.05em; }
+
+  input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+    background: rgba(15, 15, 30, 0.8);
+    color: #fff;
+    font-size: 1rem;
+    margin-bottom: 1.25rem;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+  }
+  input:focus { border-color: #8b5cf6; box-shadow: 0 0 12px rgba(139, 92, 246, 0.2); transform: scale(1.01); }
+  input::placeholder { color: rgba(255,255,255,0.2); }
+
+  button {
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #7c3aed, #3b82f6);
+    background-size: 200% auto;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.25s, box-shadow 0.25s;
+    letter-spacing: 0.05em;
+    animation: shimmer 4s linear infinite;
+    position: relative;
+    overflow: hidden;
+  }
+  button::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  button:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 30px rgba(124, 58, 237, 0.5); }
+  button:hover::after { opacity: 1; }
+  button:active { transform: translateY(0) scale(0.98); }
+
+  .error { color: #ef4444; text-align: center; margin-top: 1rem; display: none; font-size: 0.85rem; animation: fadeIn 0.3s ease-out; }
+  .hint { text-align: center; margin-top: 1rem; font-size: 0.75rem; color: rgba(167, 139, 250, 0.4); letter-spacing: 0.05em; }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    backdrop-filter: blur(4px);
+  }
+  .overlay.active { display: flex; animation: fadeIn 0.3s ease-out; }
+  .overlay.active .popup { animation: fadeIn 0.5s ease-out 0.1s both; }
+  .popup { text-align: center; }
+  .popup h2 { font-size: 1.4rem; }
+  .popup p { color: #a78bfa; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  .popup input { text-align: center; }
+  .nick-error { color: #ef4444; font-size: 0.85rem; margin-bottom: 0.75rem; display: none; }
+
+  .avatar-label { color: #a78bfa; font-size: 0.8rem; margin-bottom: 0.75rem; text-align: center; letter-spacing: 0.05em; }
+  .avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .avatar-opt {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    border: 2px solid rgba(139,92,246,0.2);
+    background: rgba(15,15,30,0.6);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .avatar-opt:hover { transform: scale(1.1); border-color: rgba(139,92,246,0.6); box-shadow: 0 0 15px rgba(139,92,246,0.2); }
+  .avatar-opt.selected { border-color: #8b5cf6; box-shadow: 0 0 20px rgba(139,92,246,0.4); transform: scale(1.08); }
+  .avatar-opt.selected::after {
+    content: '✓'; position: absolute; top: -4px; right: -4px;
+    width: 18px; height: 18px; background: #8b5cf6; border-radius: 50%;
+    font-size: 0.6rem; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold;
+  }
+
+  /* Popup Buon Divertimento */
+  .popup-boom {
+    max-width: 500px !important;
+    padding: 3rem 2.5rem !important;
+    background: linear-gradient(135deg, rgba(20,0,40,0.98) 0%, rgba(10,10,30,0.98) 100%) !important;
+    border: 2px solid rgba(139,92,246,0.4) !important;
+    box-shadow: 0 0 60px rgba(124,58,237,0.3), 0 0 120px rgba(59,130,246,0.15) !important;
+    position: relative;
+    overflow: hidden;
+  }
+  .popup-boom::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: conic-gradient(from 0deg, transparent, rgba(139,92,246,0.08), transparent, rgba(59,130,246,0.08), transparent);
+    animation: spinGlow 6s linear infinite;
+  }
+  @keyframes spinGlow { to { transform: rotate(360deg); } }
+  .popup-boom::after {
+    content: ''; position: absolute; inset: 2px;
+    background: linear-gradient(135deg, rgba(20,0,40,0.98) 0%, rgba(10,10,30,0.98) 100%);
+    border-radius: 14px; z-index: 0;
+  }
+  .popup-boom > * { position: relative; z-index: 1; }
+  .popup-boom h2 {
+    font-family: 'Black Ops One', 'Anton', sans-serif !important;
+    font-size: 2.8rem !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 20px rgba(139,92,246,0.4));
+    animation: boomPulse 1.5s ease-in-out infinite;
+    margin-bottom: 0.75rem !important;
+  }
+  @keyframes boomPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(139,92,246,0.4)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 40px rgba(139,92,246,0.7)); }
+  }
+  .popup-boom .errjace-name {
+    font-family: 'Anton', 'Bebas Neue', sans-serif !important;
+    font-size: 2.2rem !important; letter-spacing: 0.15em !important;
+    color: #fff !important; -webkit-text-fill-color: #fff !important;
+    text-shadow: 0 0 15px rgba(139,92,246,0.6), 0 0 40px rgba(59,130,246,0.3);
+    margin-bottom: 2rem !important; display: block;
+  }
+  .popup-boom .errjace-name span { color: #8b5cf6; -webkit-text-fill-color: #8b5cf6; }
+  #grazieBtn {
+    font-family: 'Black Ops One', 'Anton', sans-serif;
+    font-size: 1.3rem !important; letter-spacing: 0.15em;
+    padding: 1rem 2rem !important;
+    background: linear-gradient(135deg, #7c3aed, #3b82f6, #7c3aed) !important;
+    background-size: 300% auto !important;
+    animation: shimmer 3s linear infinite, boomPulse 2s ease-in-out infinite !important;
+    border-radius: 12px !important; text-transform: uppercase;
+  }
+  #grazieBtn:hover { transform: scale(1.08) !important; box-shadow: 0 0 40px rgba(124,58,237,0.6) !important; }
+  .popup-boom .particles { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .popup-boom .particle {
+    position: absolute; width: 4px; height: 4px; background: #8b5cf6;
+    border-radius: 50%; animation: particleFloat 3s ease-in-out infinite;
+  }
+  @keyframes particleFloat {
+    0% { transform: translateY(0) scale(0); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(-100px) scale(1); opacity: 0; }
+  }
+
+  /* LOBBY - Chat */
+  #lobbyBox {
+    max-width: 800px !important;
+    width: 95vw !important;
+    padding: 1.5rem !important;
+    height: 85vh;
+    max-height: 700px;
+    display: flex;
+    flex-direction: column;
+  }
+  .lobby-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(139,92,246,0.15);
+  }
+  .lobby-header h2 { margin-bottom: 0; font-size: 1.2rem; }
+  .online-count {
+    font-size: 0.8rem;
+    color: #a78bfa;
+    background: rgba(139,92,246,0.1);
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid rgba(139,92,246,0.15);
+  }
+  .lobby-body {
+    display: flex;
+    gap: 1rem;
+    flex: 1;
+    min-height: 0;
+  }
+  /* Online users sidebar */
+  .online-sidebar {
+    width: 180px;
+    flex-shrink: 0;
+    background: rgba(15,15,30,0.5);
+    border-radius: 12px;
+    border: 1px solid rgba(139,92,246,0.1);
+    padding: 0.75rem;
+    overflow-y: auto;
+  }
+  .online-sidebar h3 {
+    font-size: 0.75rem;
+    color: #a78bfa;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    text-align: center;
+  }
+  .online-user {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 8px;
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+  }
+  .online-user:hover { background: rgba(139,92,246,0.08); }
+  .online-user .avatar { font-size: 1.2rem; }
+  .online-user .name { color: #ccc; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .online-dot {
+    width: 7px; height: 7px;
+    background: #22c55e;
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+  /* Chat area */
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    border: 1px solid rgba(139,92,246,0.08);
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-track { background: transparent; }
+  .chat-messages::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 4px; }
+  .msg {
+    padding: 0.4rem 0.75rem;
+    border-radius: 10px;
+    background: rgba(139,92,246,0.06);
+    animation: fadeIn 0.2s ease-out;
+    max-width: 85%;
+  }
+  .msg.system {
+    text-align: center;
+    background: transparent;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.3);
+    max-width: 100%;
+    font-style: italic;
+  }
+  .msg .msg-head {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.15rem;
+  }
+  .msg .msg-avatar { font-size: 1rem; }
+  .msg .msg-nick {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #a78bfa;
+  }
+  .msg .msg-time {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.2);
+    margin-left: auto;
+  }
+  .msg .msg-text { font-size: 0.9rem; color: #e0e0e0; word-break: break-word; }
+  .chat-input-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .chat-input-row input {
+    margin-bottom: 0;
+    flex: 1;
+  }
+  .chat-input-row button {
+    width: auto;
+    padding: 0.75rem 1.25rem;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+  }
+
   /* Music Player */
   .music-bar {
     border-top: 1px solid rgba(139,92,246,0.15);
@@ -318,3 +732,121 @@
     grid.appendChild(div);
   });
 
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.top = Math.random() * 100 + '%';
+    p.style.animationDelay = Math.random() * 4 + 's';
+    p.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    p.style.width = p.style.height = (Math.random() * 4 + 2) + 'px';
+    p.style.background = ['#8b5cf6', '#7c3aed', '#3b82f6', '#a78bfa'][Math.floor(Math.random() * 4)];
+    document.getElementById('particles').appendChild(p);
+  }
+
+  for (let i = 0; i < 50; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.width = star.style.height = (Math.random() * 3 + 1) + 'px';
+    star.style.animationDelay = Math.random() * 5 + 's';
+    star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+    document.getElementById('stars').appendChild(star);
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+
+  // if (token !== SECRET_TOKEN) {
+  //   document.body.innerHTML = `
+  //     <div class="container" style="text-align:center;">
+  //       <h1 style="color:#ef4444;">Accesso Negato</h1>
+  //       <p style="color:#a78bfa;">Token non valido.</p>
+  //       <p style="margin-top:1rem;color:rgba(255,255,255,0.3);font-size:0.85rem;">Se hai ricevuto un link, assicurati di averlo copiato per intero.</p>
+  //     </div>`;
+  //   throw new Error("Token non valido");
+  // }
+
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const pwd = document.getElementById('password').value;
+    if (pwd === CORRECT_PASSWORD) {
+      document.getElementById('loginBox').style.display = 'none';
+      document.getElementById('nickOverlay').classList.add('active');
+    } else {
+      document.getElementById('errorMsg').style.display = 'block';
+    }
+  });
+
+  document.getElementById('enterLobbyBtn').addEventListener('click', function() {
+    const nick = document.getElementById('nickInput').value.trim();
+    if (nick.length < 2) {
+      document.getElementById('nickError').style.display = 'block';
+      return;
+    }
+    document.getElementById('nickError').style.display = 'none';
+    document.getElementById('nickOverlay').classList.remove('active');
+    document.getElementById('buonDivOverlay').classList.add('active');
+    window.pendingNick = nick;
+    window.pendingAvatar = selectedAvatar;
+  });
+
+  document.getElementById('nickInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('enterLobbyBtn').click();
+  });
+
+  document.getElementById('grazieBtn').addEventListener('click', function() {
+    document.getElementById('buonDivOverlay').classList.remove('active');
+    document.getElementById('lobbyBox').style.display = 'flex';
+    socket.emit('join lobby', { nick: window.pendingNick, avatar: window.pendingAvatar });
+  });
+
+  // Socket events
+  socket.on('users online', function(users) {
+    const list = document.getElementById('onlineList');
+    list.innerHTML = '';
+    users.forEach(u => {
+      const div = document.createElement('div');
+      div.className = 'online-user';
+      div.innerHTML = `<span class="online-dot"></span><span class="avatar">${u.avatar}</span><span class="name">${u.nick}</span>`;
+      list.appendChild(div);
+    });
+    document.getElementById('onlineCount').textContent = '👤 ' + users.length + ' online';
+  });
+
+  socket.on('chat message', function(data) {
+    const msgs = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = 'msg' + (data.system ? ' system' : '');
+    if (data.system) {
+      div.textContent = data.msg;
+    } else {
+      div.innerHTML = `
+        <div class="msg-head">
+          <span class="msg-avatar">${data.avatar}</span>
+          <span class="msg-nick">${data.nick}</span>
+          <span class="msg-time">${data.time}</span>
+        </div>
+        <div class="msg-text">${data.msg}</div>`;
+    }
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  });
+
+  function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+    socket.emit('chat message', msg);
+    input.value = '';
+  }
+
+  document.getElementById('sendBtn').addEventListener('click', sendMessage);
+  document.getElementById('chatInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') sendMessage();
+  });
+</script>
+
+</body>
+</html>
