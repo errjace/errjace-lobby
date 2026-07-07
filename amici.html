@@ -610,7 +610,7 @@
 
   /* Reactions */
   .msg-actions { display: none; gap: 0.2rem; margin-top: 0.2rem; }
-  .msg:hover .msg-actions { display: flex; }
+  .msg:hover .msg-actions, .msg .msg-actions.show { display: flex; }
   .msg-reaction-btn { background: none; border: none; font-size: 0.7rem; cursor: pointer; padding: 0.1rem 0.2rem; border-radius: 4px; animation: none; opacity: 0.4; transition: opacity 0.15s; }
   .msg-reaction-btn:hover { opacity: 1; background: rgba(139,92,246,0.1); }
   .msg-reactions { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.15rem; }
@@ -1242,9 +1242,15 @@
         </div>
         <div class="msg-reactions"></div>`;
       div.querySelectorAll('.msg-reaction-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
           socket.emit('message react', { msgId: data.id, emoji: this.dataset.emoji });
         });
+      });
+      div.addEventListener('click', function(e) {
+        if (e.target.closest('.msg-reaction-btn')) return;
+        const actions = this.querySelector('.msg-actions');
+        if (actions) actions.classList.toggle('show');
       });
     }
     msgs.appendChild(div);
