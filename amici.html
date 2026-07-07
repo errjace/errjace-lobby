@@ -13,13 +13,80 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { overflow-x: hidden; }
 
+  :root {
+    --bg: #0a0a12;
+    --bg2: #1a1a2e;
+    --surface: rgba(26,10,46,0.95);
+    --surface2: rgba(22,33,62,0.95);
+    --accent: #7c3aed;
+    --accent2: #3b82f6;
+    --accentSoft: #8b5cf6;
+    --accentText: #a78bfa;
+    --text: #fff;
+    --textDim: rgba(255,255,255,0.3);
+    --border: rgba(139,92,246,0.25);
+    --borderLight: rgba(139,92,246,0.15);
+    --orb1: #7c3aed;
+    --orb2: #3b82f6;
+    --orb3: #8b5cf6;
+    --glow: rgba(139,92,246,0.1);
+  }
+  body.theme-galaxy {
+    --bg: #050510;
+    --bg2: #0d0d2b;
+    --surface: rgba(10,5,40,0.95);
+    --surface2: rgba(15,10,50,0.95);
+    --accent: #6366f1;
+    --accent2: #06b6d4;
+    --accentSoft: #818cf8;
+    --accentText: #a5b4fc;
+    --border: rgba(99,102,241,0.25);
+    --borderLight: rgba(99,102,241,0.15);
+    --orb1: #6366f1;
+    --orb2: #06b6d4;
+    --orb3: #818cf8;
+    --glow: rgba(99,102,241,0.1);
+  }
+  body.theme-neon {
+    --bg: #0a0a0a;
+    --bg2: #1a0a1a;
+    --surface: rgba(20,5,20,0.95);
+    --surface2: rgba(10,10,25,0.95);
+    --accent: #ec4899;
+    --accent2: #06b6d4;
+    --accentSoft: #f472b6;
+    --accentText: #f9a8d4;
+    --border: rgba(236,72,153,0.25);
+    --borderLight: rgba(236,72,153,0.15);
+    --orb1: #ec4899;
+    --orb2: #06b6d4;
+    --orb3: #f472b6;
+    --glow: rgba(236,72,153,0.1);
+  }
+  body.theme-matrix {
+    --bg: #000805;
+    --bg2: #001a0e;
+    --surface: rgba(0,12,5,0.95);
+    --surface2: rgba(0,20,10,0.95);
+    --accent: #00c853;
+    --accent2: #00e676;
+    --accentSoft: #00e676;
+    --accentText: #69f0ae;
+    --border: rgba(0,200,83,0.25);
+    --borderLight: rgba(0,200,83,0.15);
+    --orb1: #00c853;
+    --orb2: #00e676;
+    --orb3: #00b248;
+    --glow: rgba(0,200,83,0.1);
+  }
+
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px) scale(0.95); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
   @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 20px rgba(139,92,246,0.1); }
-    50%      { box-shadow: 0 0 40px rgba(139,92,246,0.3), 0 0 60px rgba(59,130,246,0.15); }
+    0%, 100% { box-shadow: 0 0 20px var(--glow); }
+    50%      { box-shadow: 0 0 40px var(--glow), 0 0 60px rgba(59,130,246,0.15); }
   }
   @keyframes floatBG {
     0%, 100% { transform: translate(-50%, -50%) scale(1); }
@@ -41,8 +108,8 @@
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0a0a12;
-    color: #fff;
+    background: var(--bg);
+    color: var(--text);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -87,48 +154,48 @@
     filter: blur(60px);
     opacity: 0.15;
   }
-  .orb-1 { width: 300px; height: 300px; background: #7c3aed; top: -100px; left: -100px; animation: orbFloat 12s ease-in-out infinite; }
-  .orb-2 { width: 250px; height: 250px; background: #3b82f6; bottom: -80px; right: -80px; animation: orbFloat 10s ease-in-out infinite reverse; }
-  .orb-3 { width: 180px; height: 180px; background: #8b5cf6; top: 50%; left: 50%; animation: orbFloat 14s ease-in-out infinite 2s; }
+  .orb-1 { width: 300px; height: 300px; background: var(--orb1); top: -100px; left: -100px; animation: orbFloat 12s ease-in-out infinite; }
+  .orb-2 { width: 250px; height: 250px; background: var(--orb2); bottom: -80px; right: -80px; animation: orbFloat 10s ease-in-out infinite reverse; }
+  .orb-3 { width: 180px; height: 180px; background: var(--orb3); top: 50%; left: 50%; animation: orbFloat 14s ease-in-out infinite 2s; }
 
   .container, .popup {
-    background: linear-gradient(135deg, rgba(26,10,46,0.95) 0%, rgba(22,33,62,0.95) 100%);
-    border: 1px solid rgba(139, 92, 246, 0.25);
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+    border: 1px solid var(--border);
     padding: 2.5rem;
     border-radius: 16px;
     width: 100%;
     max-width: 400px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.1);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px var(--glow);
     position: relative;
     z-index: 1;
     animation: fadeIn 0.6s ease-out, pulseGlow 3s ease-in-out infinite;
   }
 
-  h1, h2 { font-size: 1.5rem; margin-bottom: 1.5rem; text-align: center; color: #fff; }
-  h1 span, h2 span { color: #8b5cf6; }
+  h1, h2 { font-size: 1.5rem; margin-bottom: 1.5rem; text-align: center; color: var(--text); }
+  h1 span, h2 span { color: var(--accentSoft); }
 
-  label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: #a78bfa; letter-spacing: 0.05em; }
+  label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--accentText); letter-spacing: 0.05em; }
 
   input {
     width: 100%;
     padding: 0.75rem 1rem;
-    border: 1px solid rgba(139, 92, 246, 0.3);
+    border: 1px solid var(--border);
     border-radius: 8px;
     background: rgba(15, 15, 30, 0.8);
-    color: #fff;
+    color: var(--text);
     font-size: 1rem;
     margin-bottom: 1.25rem;
     outline: none;
     transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
   }
-  input:focus { border-color: #8b5cf6; box-shadow: 0 0 12px rgba(139, 92, 246, 0.2); transform: scale(1.01); }
-  input::placeholder { color: rgba(255,255,255,0.2); }
+  input:focus { border-color: var(--accentSoft); box-shadow: 0 0 12px var(--glow); transform: scale(1.01); }
+  input::placeholder { color: var(--textDim); }
 
   button {
     padding: 0.75rem;
-    background: linear-gradient(135deg, #7c3aed, #3b82f6);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
     background-size: 200% auto;
-    color: #fff;
+    color: var(--text);
     border: none;
     border-radius: 8px;
     font-size: 1rem;
@@ -149,7 +216,7 @@
     opacity: 0;
     transition: opacity 0.3s;
   }
-  button:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 30px rgba(124, 58, 237, 0.5); }
+  button:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 30px rgba(124, 58, 237, 0.5); background-position: right center; }
   button:hover::after { opacity: 1; }
   button:active { transform: translateY(0) scale(0.98); }
 
@@ -170,11 +237,11 @@
   .overlay.active .popup { animation: fadeIn 0.5s ease-out 0.1s both; }
   .popup { text-align: center; }
   .popup h2 { font-size: 1.4rem; }
-  .popup p { color: #a78bfa; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  .popup p { color: var(--accentText); margin-bottom: 1.5rem; font-size: 0.9rem; }
   .popup input { text-align: center; }
   .nick-error { color: #ef4444; font-size: 0.85rem; margin-bottom: 0.75rem; display: none; }
 
-  .avatar-label { color: #a78bfa; font-size: 0.8rem; margin-bottom: 0.75rem; text-align: center; letter-spacing: 0.05em; }
+  .avatar-label { color: var(--accentText); font-size: 0.8rem; margin-bottom: 0.75rem; text-align: center; letter-spacing: 0.05em; }
   .avatar-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -373,17 +440,46 @@
     align-items: center;
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(139,92,246,0.15);
+    border-bottom: 1px solid var(--borderLight);
   }
   .lobby-header h2 { margin-bottom: 0; font-size: 1.2rem; }
+  .lobby-header .lh-right { display: flex; align-items: center; gap: 0.5rem; position: relative; }
   .online-count {
     font-size: 0.8rem;
-    color: #a78bfa;
+    color: var(--accentText);
     background: rgba(139,92,246,0.1);
     padding: 0.3rem 0.75rem;
     border-radius: 20px;
-    border: 1px solid rgba(139,92,246,0.15);
+    border: 1px solid var(--borderLight);
   }
+  .theme-btn {
+    width: 30px; height: 30px; padding: 0; border-radius: 50%;
+    font-size: 0.75rem; display: flex; align-items: center; justify-content: center;
+    background: rgba(139,92,246,0.15); border: 1px solid var(--borderLight);
+    cursor: pointer; transition: transform 0.2s, background 0.2s; color: var(--text);
+  }
+  .theme-btn:hover { transform: scale(1.15); background: rgba(139,92,246,0.3); }
+  .theme-btn::after { display: none; }
+  .theme-picker {
+    display: none; position: absolute; top: 100%; right: 0; margin-top: 0.5rem;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.75rem; grid-template-columns: 1fr 1fr; gap: 0.4rem;
+    min-width: 160px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+    z-index: 100;
+  }
+  .theme-picker.active { display: grid; }
+  .theme-picker .th-opt {
+    padding: 0.5rem; text-align: center; border-radius: 8px; cursor: pointer;
+    border: 2px solid transparent; font-size: 0.7rem; color: rgba(255,255,255,0.7);
+    transition: border-color 0.2s, transform 0.2s; letter-spacing: 0.05em;
+  }
+  .theme-picker .th-opt:hover { transform: scale(1.05); }
+  .theme-picker .th-opt.active { border-color: var(--accentSoft); color: var(--text); }
+  .theme-picker .th-opt .th-preview {
+    width: 100%; height: 24px; border-radius: 4px; margin-bottom: 0.25rem;
+    display: flex; gap: 2px; overflow: hidden;
+  }
+  .theme-picker .th-opt .th-preview span { flex: 1; }
   .lobby-body {
     display: flex;
     gap: 1rem;
@@ -396,7 +492,7 @@
     flex-shrink: 0;
     background: rgba(15,15,30,0.5);
     border-radius: 12px;
-    border: 1px solid rgba(139,92,246,0.1);
+    border: 1px solid var(--borderLight);
     padding: 0.75rem;
     overflow-y: auto;
   }
@@ -441,7 +537,7 @@
     padding: 0.5rem;
     background: rgba(0,0,0,0.2);
     border-radius: 12px;
-    border: 1px solid rgba(139,92,246,0.08);
+    border: 1px solid var(--borderLight);
     margin-bottom: 0.75rem;
     display: flex;
     flex-direction: column;
@@ -500,7 +596,7 @@
 
   /* Music Player */
   .music-bar {
-    border-top: 1px solid rgba(139,92,246,0.15);
+    border-top: 1px solid var(--borderLight);
     padding-top: 0.75rem;
     margin-top: 0.75rem;
   }
@@ -549,6 +645,15 @@
   .music-now .info { flex: 1; min-width: 0; }
   .music-now .info .title { font-size: 0.85rem; color: #fff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .music-now .info .artist { font-size: 0.7rem; color: #a78bfa; }
+
+  /* Visualizer */
+  .viz-wrap { display: flex; align-items: center; gap: 0.75rem; width: 100%; }
+  .viz { display: flex; align-items: flex-end; gap: 2px; height: 28px; flex: 1; }
+  .viz-bar {
+    width: 4px; border-radius: 3px 3px 0 0; flex: 1; height: 2px;
+    background: linear-gradient(to top, var(--accent), var(--accentText));
+    transition: height 0.06s ease;
+  }
   .music-controls { display: flex; gap: 0.3rem; align-items: center; }
   .music-controls button {
     width: 34px; height: 34px; padding: 0;
@@ -558,14 +663,30 @@
     align-items: center;
     justify-content: center;
     background: rgba(139,92,246,0.2);
-    border: 1px solid rgba(139,92,246,0.15);
+    border: 1px solid var(--borderLight);
     animation: none;
     transition: background 0.2s, transform 0.2s;
   }
   .music-controls button:hover { background: rgba(139,92,246,0.4); transform: scale(1.1); box-shadow: none; }
   .music-controls button::after { display: none; }
   .music-controls button.muted { background: rgba(239,68,68,0.3); border-color: rgba(239,68,68,0.3); }
-  .music-idle { color: rgba(255,255,255,0.2); font-size: 0.75rem; font-style: italic; }
+  .vol-wrap { position: relative; display: flex; align-items: center; }
+  .vol-slider {
+    display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    background: rgba(15,15,30,0.95); border: 1px solid var(--borderLight); border-radius: 8px;
+    padding: 0.5rem 0.6rem; margin-bottom: 0.4rem;
+    backdrop-filter: blur(10px); white-space: nowrap;
+  }
+  .vol-slider.active { display: flex; align-items: center; gap: 0.4rem; }
+  .vol-slider input[type=range] {
+    width: 80px; height: 4px; -webkit-appearance: none; appearance: none;
+    background: rgba(139,92,246,0.3); border-radius: 2px; outline: none; margin: 0; padding: 0;
+  }
+  .vol-slider input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+    background: #8b5cf6; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;
+  }
+  .vol-slider .vol-val { font-size: 0.65rem; color: rgba(255,255,255,0.4); min-width: 28px; text-align: center; }
 
   .yt-player-wrap {
     margin-bottom: 0.5rem;
@@ -617,7 +738,7 @@
   .msg-reaction { font-size: 0.65rem; background: rgba(139,92,246,0.08); border-radius: 4px; padding: 0.05rem 0.3rem; display: inline-flex; align-items: center; gap: 0.15rem; border: 1px solid rgba(139,92,246,0.08); }
   .msg-reaction .r-count { color: rgba(255,255,255,0.4); font-size: 0.6rem; }
 
-  .toggle-queue-btn { background: none; border: 1px solid rgba(139,92,246,0.15); color: #a78bfa; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 6px; cursor: pointer; animation: none; transition: background 0.15s; }
+  .toggle-queue-btn { background: none; border: 1px solid var(--borderLight); color: var(--accentText); font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 6px; cursor: pointer; animation: none; transition: background 0.15s; }
   .toggle-queue-btn:hover { background: rgba(139,92,246,0.1); }
 
   .conn-status {
@@ -628,6 +749,57 @@
   }
   .conn-status.connected { color: #22c55e; border-color: rgba(34,197,94,0.3); }
   .conn-status.disconnected { color: #ef4444; border-color: rgba(239,68,68,0.3); }
+
+  /* Dama Game */
+  .sfida-btn { background: none; border: none; font-size: 0.55rem; padding: 0.1rem 0.3rem; border-radius: 4px; cursor: pointer; color: var(--accentText); opacity: 0; transition: opacity 0.2s; animation: none; margin-left: auto; }
+  .online-user:hover .sfida-btn { opacity: 1; }
+  .sfida-btn:hover { background: rgba(139,92,246,0.2); }
+
+  .game-overlay {
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.75); align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .game-overlay.active { display: flex; }
+  .game-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.5rem; max-width: 420px; width: 90%; text-align: center;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.6);
+  }
+  .game-box h3 { font-size: 1rem; margin-bottom: 0.3rem; color: var(--accentText); letter-spacing: 0.05em; }
+  .game-box .game-info { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-bottom: 0.75rem; }
+  .game-board {
+    display: grid; grid-template-columns: repeat(8, 1fr); gap: 0; margin: 0 auto;
+    width: 100%; max-width: 300px; aspect-ratio: 1; border: 2px solid var(--borderLight);
+    border-radius: 4px; overflow: hidden; user-select: none;
+  }
+  .game-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+  .game-cell.light { background: #b58863; }
+  .game-cell.dark { background: #6b4423; }
+  .game-cell .g-piece {
+    width: 75%; height: 75%; border-radius: 50%;
+    transition: transform 0.15s, box-shadow 0.15s;
+    cursor: pointer; position: relative;
+  }
+  .game-cell .g-piece.p1 { background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b); box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+  .game-cell .g-piece.p2 { background: radial-gradient(circle at 35% 35%, #555, #222); box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+  .game-cell .g-piece.king::after {
+    content: '♛'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    font-size: 0.55rem; color: rgba(255,215,0,0.8);
+  }
+  .game-cell .g-piece:hover { transform: scale(1.1); }
+  .game-cell .g-piece.selected { box-shadow: 0 0 12px #fbbf24, 0 0 24px rgba(251,191,36,0.4); }
+  .game-cell.selected { box-shadow: inset 0 0 12px rgba(251,191,36,0.3); }
+  .game-cell.valid-move::after {
+    content: ''; position: absolute; width: 30%; height: 30%; border-radius: 50%;
+    background: rgba(34,197,94,0.5); pointer-events: none;
+  }
+  .g-turn { font-size: 0.65rem; color: rgba(255,255,255,0.3); margin-top: 0.5rem; }
+  .g-captured { font-size: 0.65rem; color: rgba(255,255,255,0.3); display: flex; gap: 0.3rem; justify-content: center; margin-bottom: 0.5rem; }
+  .game-btn { padding: 0.35rem 0.75rem; font-size: 0.7rem; border-radius: 6px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: #fff; cursor: pointer; animation: none; transition: transform 0.2s; }
+  .game-btn:hover { transform: scale(1.05); }
+  .game-btn::after { display: none; }
+  .game-challenge-actions { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
 
   @media (max-width: 768px) {
     body { overflow: auto; overflow-x: hidden; align-items: flex-start; padding: 0.25rem; }
@@ -665,6 +837,8 @@
     .music-now .info .title { font-size: 0.7rem; }
     .music-now .info .artist { font-size: 0.6rem; }
     .music-controls button { width: 28px; height: 28px; font-size: 0.75rem; }
+    .vol-slider input[type=range] { width: 60px; }
+    .vol-slider { padding: 0.35rem 0.4rem; }
     .progress-time { font-size: 0.55rem; min-width: 60px; }
     .queue-list { max-height: 100px; }
     .queue-item { padding: 0.25rem 0.4rem; }
@@ -758,7 +932,16 @@
 <div class="container" id="lobbyBox" style="display:none;">
   <div class="lobby-header">
     <h2><span>✦</span> Lobby</h2>
-    <div class="online-count" id="onlineCount">👤 0 online</div>
+    <div class="lh-right">
+      <div class="online-count" id="onlineCount">👤 0 online</div>
+      <button class="theme-btn" id="themeBtn" title="Tema">🎨</button>
+      <div class="theme-picker" id="themePicker">
+        <div class="th-opt active" data-theme="default"><div class="th-preview"><span style="background:#0a0a12"></span><span style="background:#1a1a2e"></span><span style="background:#7c3aed"></span></div>Dark</div>
+        <div class="th-opt" data-theme="galaxy"><div class="th-preview"><span style="background:#050510"></span><span style="background:#0d0d2b"></span><span style="background:#6366f1"></span></div>Galaxy</div>
+        <div class="th-opt" data-theme="neon"><div class="th-preview"><span style="background:#0a0a0a"></span><span style="background:#1a0a1a"></span><span style="background:#ec4899"></span></div>Neon</div>
+        <div class="th-opt" data-theme="matrix"><div class="th-preview"><span style="background:#000805"></span><span style="background:#001a0e"></span><span style="background:#00c853"></span></div>Matrix</div>
+      </div>
+    </div>
   </div>
   <div class="lobby-body">
     <div class="online-sidebar" id="onlineSidebar">
@@ -782,7 +965,8 @@
         <div class="yt-player-wrap" id="ytPlayerWrap" style="display:none;">
           <div id="ytPlayer"></div>
         </div>
-        <div class="music-now" id="musicNow">
+          <div class="viz-wrap" id="vizWrap" style="display:none;"><div class="viz" id="vizContainer"></div></div>
+          <div class="music-now" id="musicNow">
           <div class="info">
             <div class="title" id="musicTitle">Nessun video in riproduzione</div>
             <div class="artist" id="musicArtist">Cerca un video per iniziare</div>
@@ -796,7 +980,13 @@
           <div class="music-controls">
             <button id="musicPlayBtn" title="Play/Pause">▶</button>
             <button id="musicSkipBtn" title="Salta">⏭</button>
-            <button id="musicMuteBtn" title="Muta">🔊</button>
+            <div class="vol-wrap">
+              <button id="musicMuteBtn" title="Volume">🔊</button>
+              <div class="vol-slider" id="volSlider">
+                <span class="vol-val" id="volVal">100</span>
+                <input type="range" id="volRange" min="0" max="100" value="100">
+              </div>
+            </div>
             <button class="toggle-queue-btn" id="toggleQueueBtn" title="Playlist">🎵</button>
           </div>
         </div>
@@ -808,6 +998,30 @@
           <div class="queue-list" id="queueList"></div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dama Game Overlay -->
+<div class="game-overlay" id="gameOverlay">
+  <div class="game-box" id="gameBox">
+    <h3 id="gameTitle">♛ Dama</h3>
+    <div class="game-info" id="gameInfo">Sfida qualcuno per iniziare</div>
+    <div class="game-board" id="gameBoard"></div>
+    <div class="g-captured" id="gCaptured"></div>
+    <div class="g-turn" id="gTurn"></div>
+    <button class="game-btn" id="gameCloseBtn" style="margin-top:0.5rem;">Chiudi</button>
+  </div>
+</div>
+
+<!-- Challenge Popup -->
+<div class="overlay" id="challengeOverlay">
+  <div class="popup" style="max-width:320px;">
+    <h2>♛ Sfida a Dama!</h2>
+    <p id="challengeText">Qualcuno ti sfida!</p>
+    <div class="game-challenge-actions">
+      <button class="game-btn" id="challengeAccept">ACCETTA</button>
+      <button class="game-btn" id="challengeDecline" style="background:rgba(255,255,255,0.1);">RIFIUTA</button>
     </div>
   </div>
 </div>
@@ -853,7 +1067,7 @@
       },
       events: {
         onStateChange: onYtStateChange,
-        onReady: function() { ytReady = true; },
+        onReady: function() { ytReady = true; ytPlayer.setVolume(parseInt(document.getElementById('volRange').value)); },
       }
     });
   }
@@ -1086,13 +1300,50 @@
     document.getElementById('musicResults').classList.add('active');
   });
 
-  document.getElementById('musicMuteBtn').addEventListener('click', function() {
-    isMuted = !isMuted;
-    if (ytPlayer && ytPlayer.isMuted !== undefined) {
-      if (isMuted) ytPlayer.mute(); else ytPlayer.unMute();
+  document.getElementById('musicMuteBtn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    const slider = document.getElementById('volSlider');
+    slider.classList.toggle('active');
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.vol-wrap')) {
+      document.getElementById('volSlider').classList.remove('active');
     }
-    this.textContent = isMuted ? '🔇' : '🔊';
-    this.classList.toggle('muted', isMuted);
+  });
+
+  document.getElementById('volRange').addEventListener('input', function() {
+    const v = parseInt(this.value);
+    document.getElementById('volVal').textContent = v;
+    document.getElementById('musicMuteBtn').textContent = v === 0 ? '🔇' : v < 30 ? '🔈' : v < 70 ? '🔉' : '🔊';
+    if (v === 0) document.getElementById('musicMuteBtn').classList.add('muted');
+    else document.getElementById('musicMuteBtn').classList.remove('muted');
+    if (ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(v);
+  });
+
+  // ===== THEME =====
+  const savedTheme = localStorage.getItem('lobbyTheme') || 'default';
+  document.body.classList.add('theme-' + savedTheme);
+  document.querySelector('.th-opt[data-theme="'+savedTheme+'"]')?.classList.add('active');
+
+  document.getElementById('themeBtn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    document.getElementById('themePicker').classList.toggle('active');
+  });
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#themePicker') && !e.target.closest('#themeBtn')) {
+      document.getElementById('themePicker').classList.remove('active');
+    }
+  });
+  document.querySelectorAll('.th-opt').forEach(function(el) {
+    el.addEventListener('click', function() {
+      const theme = this.dataset.theme;
+      document.querySelectorAll('.th-opt').forEach(function(o) { o.classList.remove('active'); });
+      this.classList.add('active');
+      document.body.className = 'theme-' + theme;
+      localStorage.setItem('lobbyTheme', theme);
+      document.getElementById('themePicker').classList.remove('active');
+    });
   });
 
   document.getElementById('toggleQueueBtn').addEventListener('click', function() {
@@ -1100,7 +1351,220 @@
     panel.classList.toggle('active');
   });
 
-  // ===== AVATAR =====
+  // ===== VISUALIZER =====
+  const vizContainer = document.getElementById('vizContainer');
+  const VIZ_BARS = 28;
+  for (let i = 0; i < VIZ_BARS; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'viz-bar';
+    bar.style.transitionDelay = (i * 0.01) + 's';
+    vizContainer.appendChild(bar);
+  }
+  const vizBars = vizContainer.querySelectorAll('.viz-bar');
+  let vizHeights = new Array(VIZ_BARS).fill(2);
+  let vizTargets = new Array(VIZ_BARS).fill(2);
+  let vizRAF = null;
+
+  function vizAnimate() {
+    let active = false;
+    for (let i = 0; i < VIZ_BARS; i++) {
+      vizHeights[i] += (vizTargets[i] - vizHeights[i]) * 0.18;
+      if (Math.abs(vizTargets[i] - vizHeights[i]) > 0.3) active = true;
+      vizBars[i].style.height = Math.max(2, vizHeights[i]) + 'px';
+    }
+    if (isPlaying || active) vizRAF = requestAnimationFrame(vizAnimate);
+    else vizRAF = null;
+  }
+
+  function vizUpdate() {
+    document.getElementById('vizWrap').style.display = isPlaying ? 'flex' : 'none';
+    if (!isPlaying) {
+      vizTargets.fill(2);
+      if (!vizRAF) vizRAF = requestAnimationFrame(vizAnimate);
+      return;
+    }
+    for (let i = 0; i < VIZ_BARS; i++) {
+      const base = Math.random() * 24 + 4;
+      const mod = Math.sin(i * 0.8 + Date.now() * 0.003) * 6;
+      vizTargets[i] = Math.max(2, Math.min(28, base + mod));
+    }
+    if (!vizRAF) vizRAF = requestAnimationFrame(vizAnimate);
+  }
+
+  setInterval(vizUpdate, 130);
+
+  // ===== GAME: DAMA =====
+  let myGame = null;
+  let selectedCell = null;
+  let validMoves = [];
+  let challengeFrom = null;
+
+  document.querySelectorAll('.online-user').forEach(function(el) {
+    const btn = document.createElement('button');
+    btn.className = 'sfida-btn';
+    btn.textContent = '♟';
+    btn.title = 'Sfida a Dama';
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const sid = this.dataset.sid;
+      if (sid) socket.emit('game challenge', { to: sid });
+    });
+    el.appendChild(btn);
+  });
+
+  socket.on('users online', function(users) {
+    const list = document.getElementById('onlineList');
+    list.innerHTML = '';
+    users.forEach(function(u) {
+      const div = document.createElement('div');
+      div.className = 'online-user';
+      div.innerHTML = '<span class="online-dot"></span><span class="avatar">' + u.avatar + '</span>' + u.nick;
+      if (u.id !== socket.id) {
+        const btn = document.createElement('button');
+        btn.className = 'sfida-btn';
+        btn.textContent = '♟';
+        btn.title = 'Sfida a Dama';
+        btn.dataset.sid = u.id;
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (this.dataset.sid) socket.emit('game challenge', { to: this.dataset.sid });
+        });
+        div.appendChild(btn);
+      }
+      list.appendChild(div);
+    });
+  });
+
+  function renderBoard(board, turn) {
+    const container = document.getElementById('gameBoard');
+    container.innerHTML = '';
+    const isMyTurn = turn === socket.id;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'game-cell ' + ((r + c) % 2 === 0 ? 'light' : 'dark');
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+        const val = board[r][c];
+        if (val !== 0) {
+          const piece = document.createElement('div');
+          piece.className = 'g-piece p' + (val === 1 || val === 3 ? '1' : '2') + (val >= 3 ? ' king' : '');
+          if (val === 3) piece.textContent = '♛';
+          if (val === 4) piece.textContent = '♛';
+          cell.appendChild(piece);
+        }
+        if (selectedCell && selectedCell[0] === r && selectedCell[1] === c) {
+          cell.classList.add('selected');
+        }
+        const vm = validMoves.find(function(m) { return m[0] === r && m[1] === c; });
+        if (vm) cell.classList.add('valid-move');
+        cell.addEventListener('click', function() {
+          if (!myGame || myGame.turn !== socket.id) return;
+          const rr = parseInt(this.dataset.r);
+          const cc = parseInt(this.dataset.c);
+          if (selectedCell) {
+            const vm2 = validMoves.find(function(m) { return m[0] === rr && m[1] === cc; });
+            if (vm2) {
+              socket.emit('game move', { gameId: myGame.id, from: selectedCell, to: [rr, cc] });
+              selectedCell = null;
+              validMoves = [];
+              return;
+            }
+          }
+          const v = board[rr][cc];
+          const myPlayer = myGame.player1 === socket.id ? [1, 3] : [2, 4];
+          if (v !== 0 && myPlayer.includes(v)) {
+            selectedCell = [rr, cc];
+            validMoves = [];
+            for (let dr = -1; dr <= 1; dr += 2) {
+              for (let dc = -1; dc <= 1; dc += 2) {
+                const nr = rr + dr, nc = cc + dc;
+                if (nr < 0 || nr > 7 || nc < 0 || nc > 7) continue;
+                if (v === 3 || v === 4) {
+                  if (board[nr][nc] === 0) validMoves.push([nr, nc]);
+                } else if (v === 1 && dr === -1) {
+                  if (board[nr][nc] === 0) validMoves.push([nr, nc]);
+                } else if (v === 2 && dr === 1) {
+                  if (board[nr][nc] === 0) validMoves.push([nr, nc]);
+                }
+                // Captures
+                const nr2 = rr + dr * 2, nc2 = cc + dc * 2;
+                if (nr2 < 0 || nr2 > 7 || nc2 < 0 || nc2 > 7) continue;
+                const opponent = (v === 1 || v === 3) ? [2, 4] : [1, 3];
+                if (opponent.includes(board[nr][nc]) && board[nr2][nc2] === 0) {
+                  validMoves.push([nr2, nc2]);
+                }
+              }
+            }
+            renderBoard(board, turn);
+          } else {
+            selectedCell = null;
+            validMoves = [];
+            renderBoard(board, turn);
+          }
+        });
+        container.appendChild(cell);
+      }
+    }
+  }
+
+  socket.on('game challenge', function(data) {
+    challengeFrom = data.from;
+    document.getElementById('challengeText').textContent = data.nick + ' ti sfida a Dama!';
+    document.getElementById('challengeOverlay').classList.add('active');
+  });
+
+  document.getElementById('challengeAccept').addEventListener('click', function() {
+    if (challengeFrom) socket.emit('game accept', { from: challengeFrom });
+    document.getElementById('challengeOverlay').classList.remove('active');
+  });
+
+  document.getElementById('challengeDecline').addEventListener('click', function() {
+    if (challengeFrom) socket.emit('game decline', { from: challengeFrom });
+    document.getElementById('challengeOverlay').classList.remove('active');
+  });
+
+  socket.on('game start', function(game) {
+    myGame = game;
+    selectedCell = null;
+    validMoves = [];
+    document.getElementById('gameTitle').textContent = '♛ ' + game.nick1 + ' vs ' + game.nick2;
+    document.getElementById('gameInfo').textContent = game.turn === socket.id ? 'Tuo turno' : 'Turno avversario';
+    document.getElementById('gameOverlay').classList.add('active');
+    renderBoard(game.board, game.turn);
+    document.getElementById('gTurn').textContent = game.turn === socket.id ? '🎯 Il tuo turno!' : '⏳ Turno avversario...';
+  });
+
+  socket.on('game state', function(game) {
+    myGame = game;
+    selectedCell = null;
+    validMoves = [];
+    document.getElementById('gameInfo').textContent = game.turn === socket.id ? 'Tuo turno' : 'Turno avversario';
+    renderBoard(game.board, game.turn);
+    document.getElementById('gTurn').textContent = game.turn === socket.id ? '🎯 Il tuo turno!' : '⏳ Turno avversario...';
+    if (game.status === 'won') {
+      const won = game.winner === socket.id;
+      document.getElementById('gTurn').textContent = won ? '🎉 Hai vinto!' : '😞 Hai perso!';
+    }
+  });
+
+  socket.on('game end', function(data) {
+    myGame = null;
+    selectedCell = null;
+    validMoves = [];
+    document.getElementById('gTurn').textContent = data.reason || 'Partita terminata';
+    setTimeout(function() {
+      document.getElementById('gameOverlay').classList.remove('active');
+    }, 2000);
+  });
+
+  document.getElementById('gameCloseBtn').addEventListener('click', function() {
+    if (myGame) socket.emit('game leave', { gameId: myGame.id });
+    myGame = null;
+    selectedCell = null;
+    validMoves = [];
+    document.getElementById('gameOverlay').classList.remove('active');
+  });
   const avatars = [
     { emoji: '🦸', name: 'Iron Man', bg: 'linear-gradient(135deg,#dc2626,#991b1b)' },
     { emoji: '🕷', name: 'Spider-Man', bg: 'linear-gradient(135deg,#2563eb,#1e40af)' },
