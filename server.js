@@ -195,7 +195,7 @@ function advanceTurn(g) { g.currentPlayerIndex = (g.currentPlayerIndex + g.direc
 // CASINO & QUIZ
 const casinoBals = {};
 const CASINO_START = 10000;
-const QUIZ_PRIZE = 300;
+const QUIZ_PRIZE = 10000;
 const QUIZ_INTERVAL = 180000;
 const QUIZ_TIME = 30000;
 let quizTimer = null;
@@ -248,7 +248,7 @@ function calcSlot(r, bet) {
   const ch = (a.e==='🍒'?1:0)+(b.e==='🍒'?1:0)+(c.e==='🍒'?1:0);
   return ch >= 2 ? bet * 2 : 0;
 }
-function getBal(id) { if (!casinoBals[id]) casinoBals[id] = CASINO_START; return casinoBals[id]; }
+function getBal(id) { if (casinoBals[id] === undefined) casinoBals[id] = CASINO_START; return casinoBals[id]; }
 function resetQuiz() { quizActive = false; currentQuiz = null; quizAnswered = new Set(); }
 function sendQuiz() {
   if (Object.keys(users).length < 1) return;
@@ -261,6 +261,7 @@ function startQuiz() { if (quizTimer) clearInterval(quizTimer); quizTimer = setI
 
 // POKEMON System
 const pokemonData = {};
+const clawCounters = {};
 const EVO_THRESH = [0,30,80,150,250,400,600,900,1300,2000];
 const POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
 const CLAW_COST = 5000;
@@ -664,15 +665,23 @@ io.on('connection', (socket) => {
   socket.on('pokeclaw:play', () => {
     const u = users[socket.id]; if (!u) return;
     const bal = getBal(socket.id);
-    if (bal < CLAW_COST) { socket.emit('pokeclaw:result', { error: 'Saldo insufficiente!' }); return; }
+    if (bal < CLAW_COST) { socket.emit('pokeclaw:result', { error: 'Ops! soldi terminati xD' }); return; }
     casinoBals[socket.id] = bal - CLAW_COST;
+    if (!clawCounters[socket.id]) clawCounters[socket.id] = 0;
+    clawCounters[socket.id]++;
     const com=CLAW_POOL.filter(p=>p.t===0), ra=CLAW_POOL.filter(p=>p.t===1), leg=CLAW_POOL.filter(p=>p.t===2);
-    var sel=[];
+    var sel=[], forceLeg=clawCounters[socket.id]>=3;
     for(var i=0;i<4;i++){var c=[...com];sel.push(c[Math.floor(Math.random()*c.length)]||{n:'Magikarp',i:129,t:0});}
     sel.push(ra[Math.floor(Math.random()*ra.length)]||{n:'Pikachu',i:25,t:1});
-    var r2=Math.random();
-    sel.push(r2<0.7?(com[Math.floor(Math.random()*com.length)]||{n:'Pidgey',i:16,t:0}):r2<0.95?(ra[Math.floor(Math.random()*ra.length)]||{n:'Eevee',i:133,t:1}):(leg[Math.floor(Math.random()*leg.length)]||{n:'Mewtwo',i:150,t:2}));
+    if(forceLeg){
+      sel.push(leg[Math.floor(Math.random()*leg.length)]||{n:'Mewtwo',i:150,t:2});
+      clawCounters[socket.id]=0;
+    }else{
+      var r2=Math.random();
+      sel.push(r2<0.7?(com[Math.floor(Math.random()*com.length)]||{n:'Pidgey',i:16,t:0}):r2<0.95?(ra[Math.floor(Math.random()*ra.length)]||{n:'Eevee',i:133,t:1}):(leg[Math.floor(Math.random()*leg.length)]||{n:'Mewtwo',i:150,t:2}));
+    }
     var hit=sel[Math.floor(Math.random()*sel.length)];
+    if(hit.t===2&&!forceLeg) clawCounters[socket.id]=0; // reset if lucky
     socket.emit('pokeclaw:result',{pokemon:sel.map(p=>({name:p.n,id:p.i})),caught:{name:hit.n,id:hit.i,legendary:hit.t===2},balance:casinoBals[socket.id]});
     addPokeXP(socket.id, 10, 'pokéclaw');
     if(hit.t===2){
