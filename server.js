@@ -263,6 +263,19 @@ function startQuiz() { if (quizTimer) clearInterval(quizTimer); quizTimer = setI
 const pokemonData = {};
 const EVO_THRESH = [0,30,80,150,250,400,600,900,1300,2000];
 const POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
+const CLAW_COST = 5000;
+const CLAW_POOL = [
+  {n:'Pidgey',i:16,t:0},{n:'Rattata',i:19,t:0},{n:'Weedle',i:13,t:0},{n:'Caterpie',i:10,t:0},
+  {n:'Zubat',i:41,t:0},{n:'Geodude',i:74,t:0},{n:'Magikarp',i:129,t:0},{n:'Oddish',i:43,t:0},
+  {n:'Spearow',i:21,t:0},{n:'Ekans',i:23,t:0},{n:'Sandshrew',i:27,t:0},{n:'Nidoran♀',i:29,t:0},
+  {n:'Poliwag',i:60,t:0},{n:'Bellsprout',i:69,t:0},{n:'Tentacool',i:72,t:0},{n:'Doduo',i:84,t:0},
+  {n:'Pikachu',i:25,t:1},{n:'Eevee',i:133,t:1},{n:'Charmander',i:4,t:1},{n:'Squirtle',i:7,t:1},
+  {n:'Bulbasaur',i:1,t:1},{n:'Dratini',i:147,t:1},{n:'Larvitar',i:246,t:1},{n:'Riolu',i:447,t:1},
+  {n:'Gastly',i:92,t:1},{n:'Scyther',i:123,t:1},{n:'Lapras',i:131,t:1},{n:'Snorlax',i:143,t:1},
+  {n:'Mewtwo',i:150,t:2},{n:'Rayquaza',i:384,t:2},{n:'Dialga',i:483,t:2},{n:'Palkia',i:484,t:2},
+  {n:'Giratina',i:487,t:2},{n:'Arceus',i:493,t:2},{n:'Zekrom',i:644,t:2},{n:'Reshiram',i:643,t:2},
+  {n:'Kyogre',i:382,t:2},{n:'Groudon',i:383,t:2},{n:'Lugia',i:249,t:2},{n:'Ho-Oh',i:250,t:2},
+];
 const STARTERS = {
   charmander:{name:'Charmander',evos:['Charmander','Charmeleon','Charizard'],imgs:[4,5,6]},
   mimikyu:{name:'Mimikyu',evos:['Mimikyu','Mimikyu','Mimikyu💀'],imgs:[778,778,778]},
@@ -644,6 +657,27 @@ io.on('connection', (socket) => {
       const u = users[socket.id];
       socket.emit('casino:balance', casinoBals[socket.id]);
       io.emit('quiz:correct', { nick: u ? u.nick : 'Qualcuno', prize: QUIZ_PRIZE });
+    }
+  });
+
+  // POKECLAW events
+  socket.on('pokeclaw:play', () => {
+    const u = users[socket.id]; if (!u) return;
+    const bal = getBal(socket.id);
+    if (bal < CLAW_COST) { socket.emit('pokeclaw:result', { error: 'Saldo insufficiente!' }); return; }
+    casinoBals[socket.id] = bal - CLAW_COST;
+    const com=CLAW_POOL.filter(p=>p.t===0), ra=CLAW_POOL.filter(p=>p.t===1), leg=CLAW_POOL.filter(p=>p.t===2);
+    var sel=[];
+    for(var i=0;i<4;i++){var c=[...com];sel.push(c[Math.floor(Math.random()*c.length)]||{n:'Magikarp',i:129,t:0});}
+    sel.push(ra[Math.floor(Math.random()*ra.length)]||{n:'Pikachu',i:25,t:1});
+    var r2=Math.random();
+    sel.push(r2<0.7?(com[Math.floor(Math.random()*com.length)]||{n:'Pidgey',i:16,t:0}):r2<0.95?(ra[Math.floor(Math.random()*ra.length)]||{n:'Eevee',i:133,t:1}):(leg[Math.floor(Math.random()*leg.length)]||{n:'Mewtwo',i:150,t:2}));
+    var hit=sel[Math.floor(Math.random()*sel.length)];
+    socket.emit('pokeclaw:result',{pokemon:sel.map(p=>({name:p.n,id:p.i})),caught:{name:hit.n,id:hit.i,legendary:hit.t===2},balance:casinoBals[socket.id]});
+    addPokeXP(socket.id, 10, 'pokéclaw');
+    if(hit.t===2){
+      io.emit('chat message',{id:++msgCounter,nick:'🌟 LEGGENDARIO!',avatar:'<img src="'+POKE_IMG+hit.i+'.png" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle">',msg:`✨✨ ${u.nick.toUpperCase()} HA TROVATO ${hit.n.toUpperCase()}! ✨✨`,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),system:true,reactions:{}});
+      io.emit('pokeclaw:legendary',{nick:u.nick,pokemon:hit.n,img:POKE_IMG+hit.i+'.png'});
     }
   });
 

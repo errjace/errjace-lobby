@@ -1083,6 +1083,11 @@
   .poke-leader .xp-num { color:var(--accent,#7c3aed);font-weight:700;text-align:right; }
   .no-poke { text-align:center;padding:1.5rem;color:var(--text2,#888);font-size:0.85rem; }
   .no-poke .big { font-size:2.5rem;display:block;margin-bottom:0.5rem; }
+  .claw-ball { transition:all 0.1s; }
+  .claw-ball.caught { animation:clawGrab 0.6s ease forwards; }
+  @keyframes clawGrab { 0%{transform:scale(1);opacity:1} 30%{transform:scale(1.3) translateY(-20px);opacity:1} 60%{transform:scale(0.8) translateY(-40px);opacity:0.8} 100%{transform:scale(0) translateY(-60px);opacity:0} }
+  @keyframes ggPulse { 0%{transform:scale(1)} 100%{transform:scale(1.15)} }
+  .claw-ball .reveal { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);border-radius:50%;font-size:1.5rem; }
 }
 </style>
 </head>
@@ -1296,7 +1301,38 @@
     <button class="spin-btn" id="spinBtn">🎰 GIRA!</button>
     <div class="casino-result" id="casinoResult"></div>
     <button class="casino-close" id="casinoClose">✕ Chiudi</button>
+    <button class="spin-btn" id="clawOpenBtn" style="margin-top:0.5rem;font-size:0.75rem;background:linear-gradient(135deg,#e11d48 50%,#fff 50%) !important;border:2px solid #333 !important;">🔴 PESCA POKÉMON (€5K)</button>
   </div>
+</div>
+
+<!-- POKECLAW Overlay -->
+<div class="casino-overlay" id="clawOverlay">
+  <div class="casino-box" style="max-width:380px;">
+    <h3>🔴 PESCA POKÉMON</h3>
+    <div class="casino-bal">Saldo: €<span id="clawBalance">0</span></div>
+    <div style="position:relative;background:linear-gradient(180deg,#2a1a4e,#1a1a2e);border:3px solid #555;border-radius:12px;padding:1rem 0.75rem;margin:0.75rem 0;min-height:160px;overflow:hidden" id="clawMachine">
+      <div style="position:absolute;top:0;left:0;right:0;height:20px;background:#666;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#ccc;letter-spacing:2px;">⚙ POKÉMON CLAW ⚙</div>
+      <div id="clawBalls" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:24px;padding:4px;">
+        <div class="claw-ball" data-idx="0" style="width:50px;height:50px;background:radial-gradient(circle at 35% 35%,#e11d48,#8b0000);border-radius:50%;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:white;cursor:default;transition:0.3s;position:relative;"><div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#333;"></div><div style="position:absolute;top:5px;width:16px;height:6px;background:#333;border-radius:3px;"></div></div>
+        <div class="claw-ball" data-idx="1" style="width:50px;height:50px;background:radial-gradient(circle at 35% 35%,#e11d48,#8b0000);border-radius:50%;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:white;cursor:default;transition:0.3s;position:relative;"><div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#333;"></div><div style="position:absolute;top:5px;width:16px;height:6px;background:#333;border-radius:3px;"></div></div>
+        <div class="claw-ball" data-idx="2" style="width:50px;height:50px;background:radial-gradient(circle at 35% 35%,#e11d48,#8b0000);border-radius:50%;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:white;cursor:default;transition:0.3s;position:relative;"><div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#333;"></div><div style="position:absolute;top:5px;width:16px;height:6px;background:#333;border-radius:3px;"></div></div>
+        <div class="claw-ball" data-idx="3" style="width:50px;height:50px;background:radial-gradient(circle at 35% 35%,#e11d48,#8b0000);border-radius:50%;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:white;cursor:default;transition:0.3s;position:relative;"><div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#333;"></div><div style="position:absolute;top:5px;width:16px;height:6px;background:#333;border-radius:3px;"></div></div>
+        <div class="claw-ball" data-idx="4" style="width:50px;height:50px;background:radial-gradient(circle at 35% 35%,#e11d48,#8b0000);border-radius:50%;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:white;cursor:default;transition:0.3s;position:relative;"><div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#333;"></div><div style="position:absolute;top:5px;width:16px;height:6px;background:#333;border-radius:3px;"></div></div>
+        <div class="claw-ball" data-idx="5" style="width:50px;height:50px;background:radial-gradient(circle at 35% 35%,#e11d48,#8b0000);border-radius:50%;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:white;cursor:default;transition:0.3s;position:relative;"><div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#333;"></div><div style="position:absolute;top:5px;width:16px;height:6px;background:#333;border-radius:3px;"></div></div>
+      </div>
+      <div id="clawResult" style="display:none;text-align:center;padding:0.5rem;">
+        <div id="clawCaugthPoke" style="font-size:1.1rem;font-weight:700;color:var(--accent,#7c3aed);"></div>
+        <div id="clawCaugthName" style="font-size:0.8rem;color:var(--text2,#888);"></div>
+      </div>
+    </div>
+    <button class="spin-btn" id="clawPlayBtn">🔴 PESCA! (€5K)</button>
+    <div class="casino-result" id="clawError" style="color:#ef4444;font-size:0.75rem;"></div>
+    <button class="casino-close" id="clawClose">✕ Chiudi</button>
+  </div>
+</div>
+
+<div id="clawGG" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999;display:none;justify-content:center;align-items:center;">
+  <div style="font-size:4rem;font-family:'Black Ops One',monospace;color:gold;text-shadow:0 0 30px rgba(255,215,0,0.8),0 0 60px rgba(255,215,0,0.4);animation:ggPulse 0.5s ease infinite alternate;">GG</div>
 </div>
 
 <!-- QUIZ Overlay -->
@@ -2867,6 +2903,94 @@
     document.getElementById('qHint').textContent = 'La prossima domanda tra 3 minuti!';
     document.querySelectorAll('#qOptions .q-opt').forEach(function(b) { b.disabled = true; });
     setTimeout(function() { document.getElementById('quizOverlay').classList.remove('active'); }, 3000);
+  });
+
+  // POKECLAW
+  var clawBalls = document.querySelectorAll('.claw-ball');
+  var clawPlaying = false;
+
+  document.getElementById('clawOpenBtn').addEventListener('click', function() {
+    document.getElementById('clawBalance').textContent = casinoBalance.toLocaleString();
+    document.getElementById('clawOverlay').classList.add('active');
+    resetClaw();
+  });
+  document.getElementById('clawClose').addEventListener('click', function() {
+    document.getElementById('clawOverlay').classList.remove('active');
+  });
+  document.getElementById('clawOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  function resetClaw() {
+    clawPlaying = false;
+    document.getElementById('clawError').textContent = '';
+    document.getElementById('clawResult').style.display = 'none';
+    document.getElementById('clawPlayBtn').disabled = false;
+    document.getElementById('clawPlayBtn').textContent = '🔴 PESCA! (€5K)';
+    document.getElementById('clawGG').style.display = 'none';
+    clawBalls.forEach(function(b) {
+      b.className = 'claw-ball';
+      b.style.background = 'radial-gradient(circle at 35% 35%,#e11d48,#8b0000)';
+      b.innerHTML = '<div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#333;"></div><div style="position:absolute;top:5px;width:16px;height:6px;background:#333;border-radius:3px;"></div>';
+    });
+  }
+
+  socket.on('pokeclaw:result', function(data) {
+    if (data.error) {
+      document.getElementById('clawError').textContent = data.error;
+      clawPlaying = false;
+      document.getElementById('clawPlayBtn').disabled = false;
+      return;
+    }
+    casinoBalance = data.balance;
+    document.getElementById('casinoBalance').textContent = data.balance.toLocaleString();
+    document.getElementById('clawBalance').textContent = data.balance.toLocaleString();
+
+    // Show sprites in balls
+    clawBalls.forEach(function(b, i) {
+      var p = data.pokemon[i];
+      if (p) {
+        var img = document.createElement('img');
+        img.src = POKE_IMG + p.id + '.png';
+        img.style.cssText = 'width:36px;height:36px;image-rendering:pixelated;position:relative;z-index:1;';
+        b.innerHTML = '<div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#333;"></div>';
+        b.appendChild(img);
+        b.style.background = 'rgba(255,255,255,0.1)';
+      }
+    });
+
+    // Animate the catch
+    var caughtIdx = data.pokemon.findIndex(function(p) { return p.name === data.caught.name && p.id === data.caught.id; });
+    var target = clawBalls[caughtIdx >= 0 ? caughtIdx : 0];
+
+    document.getElementById('clawPlayBtn').disabled = true;
+    document.getElementById('clawPlayBtn').textContent = '🔄 Pesca in corso...';
+
+    setTimeout(function() {
+      target.classList.add('caught');
+      setTimeout(function() {
+        document.getElementById('clawResult').style.display = 'block';
+        document.getElementById('clawCaugthPoke').innerHTML = '<img src="' + POKE_IMG + data.caught.id + '.png" style="width:48px;height:48px;image-rendering:pixelated;vertical-align:middle"> ' + data.caught.name;
+        document.getElementById('clawCaugthName').textContent = data.caught.legendary ? '🌟 LEGGENDARIO! 🌟' : 'Pokémon catturato!';
+        if (data.caught.legendary) {
+          document.getElementById('clawGG').style.display = 'flex';
+          playSound('slotjackpot');
+          setTimeout(function() { document.getElementById('clawGG').style.display = 'none'; }, 2500);
+        } else {
+          playSound('slotwin');
+        }
+        clawPlaying = false;
+        document.getElementById('clawPlayBtn').disabled = false;
+        document.getElementById('clawPlayBtn').textContent = '🔴 RIPESCA! (€5K)';
+      }, 800);
+    }, 300);
+  });
+
+  document.getElementById('clawPlayBtn').addEventListener('click', function() {
+    if (clawPlaying) return;
+    clawPlaying = true;
+    resetClaw();
+    socket.emit('pokeclaw:play');
   });
 
   // POKEMON Socket handlers
