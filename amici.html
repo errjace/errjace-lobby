@@ -1059,6 +1059,32 @@
     .quiz-box .q-question { font-size: 0.85rem; }
     .quiz-box .q-opt { font-size: 0.75rem; padding: 0.45rem 0.75rem; }
   }
+  /* POKEMON CSS */
+  .poke-btn { font-size:0.9rem; }
+  .poke-overlay { position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;visibility:hidden;opacity:0;transition:0.3s; }
+  .poke-overlay.active { visibility:visible;opacity:1; }
+  .poke-popup { background:var(--bg2,#1a1a2e);padding:1.5rem;border-radius:16px;max-width:480px;width:90%;max-height:90vh;overflow-y:auto;border:1px solid var(--accent,#7c3aed); }
+  .poke-popup h2 { text-align:center;margin-bottom:1rem;font-family:'Black Ops One',monospace;letter-spacing:2px;color:var(--accent,#7c3aed); }
+  .poke-grid { display:grid;grid-template-columns:1fr 1fr;gap:0.75rem; }
+  .poke-card { background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.75rem;text-align:center;cursor:pointer;transition:0.2s; }
+  .poke-card:hover { border-color:var(--accent,#7c3aed);transform:translateY(-4px);background:rgba(124,58,237,0.1); }
+  .poke-card .emoji { font-size:2.5rem;display:block;margin-bottom:0.25rem; }
+  .poke-card .name { font-weight:700;font-size:0.9rem;margin-bottom:0.15rem; }
+  .poke-card .evo { font-size:0.7rem;color:var(--text2,#888); }
+  .poke-sidebar { display:flex;align-items:center;gap:4px;padding:2px 6px;margin-top:2px;background:rgba(255,255,255,0.05);border-radius:6px;cursor:pointer; }
+  .poke-sidebar .pe { font-size:1rem; }
+  .poke-sidebar .plv { font-size:0.65rem;color:var(--text2,#888); }
+  .poke-sidebar .pxp { flex:1;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden; }
+  .poke-sidebar .pxp-fill { height:100%;background:var(--accent,#7c3aed);border-radius:2px;transition:width 0.5s; }
+  .poke-leader { width:100%;border-collapse:collapse;font-size:0.85rem; }
+  .poke-leader th,.poke-leader td { padding:0.4rem 0.5rem;text-align:left;border-bottom:1px solid rgba(255,255,255,0.05); }
+  .poke-leader th { color:var(--accent,#7c3aed);font-family:'Black Ops One',monospace;font-size:0.7rem;letter-spacing:1px; }
+  .poke-leader .rank { color:var(--text2,#888);width:24px;text-align:center; }
+  .poke-leader .rank-1 { color:gold; } .poke-leader .rank-2 { color:silver; } .poke-leader .rank-3 { color:#cd7f32; }
+  .poke-leader .xp-num { color:var(--accent,#7c3aed);font-weight:700;text-align:right; }
+  .no-poke { text-align:center;padding:1.5rem;color:var(--text2,#888);font-size:0.85rem; }
+  .no-poke .big { font-size:2.5rem;display:block;margin-bottom:0.5rem; }
+}
 </style>
 </head>
 <body>
@@ -1135,6 +1161,7 @@
       <button class="dama-btn" id="damaBtn" title="Sfida a Dama">♟</button>
       <button class="uno-btn" id="unoBtn" title="UNO">🃏</button>
       <button class="dama-btn" id="casinoBtn" title="Casinò" style="font-size:0.8rem;">💰</button>
+      <button class="dama-btn poke-btn" id="pokeBtn" title="Pokémon" style="font-size:0.9rem;">⚡</button>
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <div class="voice-indicators" id="voiceIndicators"></div>
       <div class="theme-picker" id="themePicker">
@@ -1282,6 +1309,41 @@
     <div class="q-timer" id="qTimer">⏱ 30s</div>
     <div class="q-result" id="qResult"></div>
     <div class="q-hint" id="qHint"></div>
+  </div>
+</div>
+
+<!-- POKEMON Picker -->
+<div class="poke-overlay" id="pokePicker">
+  <div class="poke-popup">
+    <h2>Scegli il tuo Pokémon</h2>
+    <div class="poke-grid">
+      <div class="poke-card" data-starter="charmander"><span class="emoji">🧡</span><div class="name">Charmander</div><div class="evo">Charmander→Charmeleon→Charizard</div></div>
+      <div class="poke-card" data-starter="mimikyu"><span class="emoji">👻</span><div class="name">Mimikyu</div><div class="evo">Mimikyu→Mimikyu→Mimikyu💀</div></div>
+      <div class="poke-card" data-starter="riolu"><span class="emoji">🐾</span><div class="name">Riolu</div><div class="evo">Riolu→Lucario→Mega Lucario</div></div>
+      <div class="poke-card" data-starter="swinub"><span class="emoji">🐽</span><div class="name">Swinub</div><div class="evo">Swinub→Piloswine→Mamoswine</div></div>
+    </div>
+    <div style="text-align:center;margin-top:1rem;"><button id="pokePickerClose" style="background:rgba(255,255,255,0.1);border:none;padding:0.4rem 1.2rem;border-radius:8px;color:var(--text2,#888);cursor:pointer;font-family:'Black Ops One',monospace;font-size:0.75rem;">SALTA</button></div>
+  </div>
+</div>
+
+<!-- POKEMON Leaderboard -->
+<div class="poke-overlay" id="pokeLeaderOverlay">
+  <div class="poke-popup">
+    <h2>⚡ Classifica Pokémon</h2>
+    <table class="poke-leader" id="pokeLeaderTable"><thead><tr><th>#</th><th>Utente</th><th>Pokémon</th><th style="text-align:right">XP</th><th>Liv.</th></tr></thead><tbody id="pokeLeaderBody"></tbody></table>
+    <div style="text-align:center;margin-top:1rem;"><button id="pokeLeaderClose" style="background:var(--accent,#7c3aed);border:none;padding:0.5rem 1.5rem;border-radius:8px;color:white;cursor:pointer;font-family:'Black Ops One',monospace;">CHIUDI</button></div>
+  </div>
+</div>
+
+<!-- POKEMON Trade Offer -->
+<div class="poke-overlay" id="pokeTradeOverlay">
+  <div class="poke-popup" style="text-align:center;">
+    <h2>🔄 Scambio Pokémon</h2>
+    <p id="pokeTradeText"></p>
+    <div style="display:flex;gap:0.75rem;justify-content:center;margin-top:1rem;">
+      <button id="pokeTradeAccept" style="background:#22c55e;border:none;padding:0.5rem 1.5rem;border-radius:8px;color:white;cursor:pointer;font-family:'Black Ops One',monospace;">ACCETTA</button>
+      <button id="pokeTradeDecline" style="background:#ef4444;border:none;padding:0.5rem 1.5rem;border-radius:8px;color:white;cursor:pointer;font-family:'Black Ops One',monospace;">RIFIUTA</button>
+    </div>
   </div>
 </div>
 
@@ -2211,12 +2273,16 @@
   document.getElementById('grazieBtn').addEventListener('click', function() {
     document.getElementById('buonDivOverlay').classList.remove('active');
     document.getElementById('lobbyBox').style.display = 'flex';
+    window.myNick = window.pendingNick;
     if (!socketConnected) {
       document.getElementById('connStatus').textContent = '● Connessione...';
       document.getElementById('connStatus').className = 'conn-status disconnected';
     }
     socket.emit('join lobby', { nick: window.pendingNick, avatar: window.pendingAvatar });
   });
+
+  // XP → level helper
+  function getLv(xp) { var thr=[0,30,80,150,250,400,600,900,1300,2000]; for(var i=thr.length-1;i>=0;i--) if(xp>=thr[i]) return i+1; return 1; }
 
   // Socket events
   socket.on('users online', function(users) {
@@ -2225,7 +2291,18 @@
     users.forEach(u => {
       const div = document.createElement('div');
       div.className = 'online-user';
-      div.innerHTML = `<span class="online-dot"></span><span class="avatar">${u.avatar}</span><span class="name">${u.nick}</span>`;
+      div.setAttribute('data-sid', u.id);
+      let pokeHtml = '';
+      if (u.pokemon) {
+        const xp = u.pokemon.xp || 0;
+        const lv = getLv(xp);
+        const thr = [0,30,80,150,250,400,600,900,1300,2000];
+        const prev = thr[lv-1] || 0, next = thr[lv] || (prev + 2000);
+        const pct = Math.min(100, (xp - prev) / (next - prev) * 100);
+        const isMe = window.myNick && u.nick === window.myNick;
+        pokeHtml = `<div class="poke-sidebar" data-sid="${u.id}" data-self="${isMe?'1':'0'}"><span class="pe">${u.pokemon.currentForm.slice(-1)}</span><span class="plv">Lv${lv}</span><div class="pxp"><div class="pxp-fill" style="width:${pct}%"></div></div></div>`;
+      }
+      div.innerHTML = `<span class="online-dot"></span><span class="avatar">${u.avatar}</span><span class="name">${u.nick}</span>${pokeHtml}`;
       list.appendChild(div);
     });
     document.getElementById('onlineCount').textContent = '👤 ' + users.length + ' online';
@@ -2779,6 +2856,78 @@
     document.getElementById('qHint').textContent = 'La prossima domanda tra 3 minuti!';
     document.querySelectorAll('#qOptions .q-opt').forEach(function(b) { b.disabled = true; });
     setTimeout(function() { document.getElementById('quizOverlay').classList.remove('active'); }, 3000);
+  });
+
+  // POKEMON Socket handlers
+  var myPoke = null;
+  socket.on('pokemon:status', function(data) {
+    if (!data.hasPokemon) setTimeout(function() { document.getElementById('pokePicker').classList.add('active'); }, 500);
+  });
+  socket.on('pokemon:picked', function(data) {
+    if (data.error) return;
+    myPoke = { starter: data.starter, form: data.form, level: data.level, xp: data.xp };
+    document.getElementById('pokePicker').classList.remove('active');
+  });
+
+  socket.on('pokemon:leaderboard', function(list) {
+    var tbody = document.getElementById('pokeLeaderBody');
+    tbody.innerHTML = '';
+    list.forEach(function(p, i) {
+      var tr = document.createElement('tr');
+      var rnk = i + 1;
+      tr.innerHTML = '<td class="rank rank-' + rnk + '">#' + rnk + '</td><td>' + p.nick + '</td><td>' + p.form + '</td><td class="xp-num">' + p.xp + '</td><td>Lv' + p.level + '</td>';
+      tbody.appendChild(tr);
+    });
+    document.getElementById('pokeLeaderOverlay').classList.add('active');
+  });
+
+  var tradeFrom = null;
+  socket.on('pokemon:tradeOffer', function(data) {
+    tradeFrom = data.from;
+    document.getElementById('pokeTradeText').textContent = data.nick + ' vuole scambiare il suo ' + data.mine + ' con il tuo ' + data.theirs + '!';
+    document.getElementById('pokeTradeOverlay').classList.add('active');
+  });
+
+  socket.on('pokemon:traded', function(data) {
+    if (myPoke) myPoke.form = data.newForm;
+    document.getElementById('pokeTradeOverlay').classList.remove('active');
+  });
+
+  // Starter picker
+  document.querySelectorAll('.poke-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      socket.emit('pokemon:pick', { starter: this.dataset.starter });
+    });
+  });
+
+  // Poke button → picker (if no starter) or leaderboard
+  document.getElementById('pokeBtn').addEventListener('click', function() {
+    if (!myPoke) { document.getElementById('pokePicker').classList.add('active'); return; }
+    socket.emit('pokemon:leaderboard');
+  });
+
+  // Delegated trade on poke-sidebar click
+  document.getElementById('onlineList').addEventListener('click', function(e) {
+    var ps = e.target.closest('.poke-sidebar');
+    if (!ps) return;
+    var sid = ps.dataset.sid;
+    if (ps.dataset.self === '1') { document.getElementById('pokeLeaderOverlay').classList.add('active'); return; }
+    if (sid) socket.emit('pokemon:tradeRequest', { to: sid });
+  });
+
+  // Close buttons
+  document.getElementById('pokePickerClose').addEventListener('click', function() {
+    document.getElementById('pokePicker').classList.remove('active');
+  });
+  document.getElementById('pokeLeaderClose').addEventListener('click', function() {
+    document.getElementById('pokeLeaderOverlay').classList.remove('active');
+  });
+  document.getElementById('pokeTradeAccept').addEventListener('click', function() {
+    if (tradeFrom) { socket.emit('pokemon:tradeAccept', { from: tradeFrom }); tradeFrom = null; }
+  });
+  document.getElementById('pokeTradeDecline').addEventListener('click', function() {
+    if (tradeFrom) { socket.emit('pokemon:tradeDecline', { from: tradeFrom }); tradeFrom = null; }
+    document.getElementById('pokeTradeOverlay').classList.remove('active');
   });
 
   // Fix mobile keyboard: scroll chat when typing

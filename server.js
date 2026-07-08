@@ -259,6 +259,32 @@ function sendQuiz() {
 }
 function startQuiz() { if (quizTimer) clearInterval(quizTimer); quizTimer = setInterval(sendQuiz, QUIZ_INTERVAL); }
 
+// POKEMON System
+const pokemonData = {};
+const EVO_THRESH = [0,30,80,150,250,400,600,900,1300,2000];
+const STARTERS = {
+  charmander:{name:'Charmander',emoji:'🧡',evos:['Charmander🧡','Charmeleon🔥','Charizard🔥']},
+  mimikyu:{name:'Mimikyu',emoji:'👻',evos:['Mimikyu👻','Mimikyu👻','Mimikyu💀']},
+  riolu:{name:'Riolu',emoji:'🐾',evos:['Riolu🐾','Lucario⚡','Lucario⭐']},
+  swinub:{name:'Swinub',emoji:'🐽',evos:['Swinub🐽','Piloswine❄️','Mamoswine💠']},
+};
+function getPokemonLv(xp) { for(let i=EVO_THRESH.length-1;i>=0;i--) if(xp>=EVO_THRESH[i]) return i+1; return 1; }
+function getPokeStage(lv) { return lv>=6?2:lv>=3?1:0; }
+function addPokeXP(id, amt, reason) {
+  const d=pokemonData[id]; if(!d)return;
+  const ol=getPokemonLv(d.xp), os=getPokeStage(ol);
+  d.xp+=amt;
+  const nl=getPokemonLv(d.xp), ns=getPokeStage(nl);
+  if(users[id]) io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
+  if(ns>os) {
+    const s=STARTERS[d.starter], oldE=s.evos[os], newE=s.evos[ns];
+    d.currentForm=newE;
+    io.emit('chat message',{id:++msgCounter,nick:'Pokémon',avatar:newE.slice(-1),msg:`✨ ${users[id]?.nick||'Qualcuno'} ha fatto evolvere ${oldE} → ${newE}! Liv.${nl}`,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),system:true,reactions:{}});
+    io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
+  }
+}
+setInterval(()=>{Object.keys(pokemonData).forEach(id=>{if(users[id])addPokeXP(id,1,'online');});},60000);
+
 io.on('connection', (socket) => {
   const ip = socket.handshake.address;
   console.log(`[${new Date().toLocaleTimeString()}] Connesso: ${socket.id} — IP: ${ip}`);
@@ -266,7 +292,13 @@ io.on('connection', (socket) => {
   socket.on('join lobby', ({ nick, avatar }) => {
     users[socket.id] = { id: socket.id, nick, avatar, ip };
     console.log(`[${new Date().toLocaleTimeString()}] ${nick} è entrato — IP: ${ip}`);
-    io.emit('users online', Object.values(users));
+    // Transfer pokemon from old socket if reconnecting
+    if (!pokemonData[socket.id]) {
+      var oldId = Object.keys(pokemonData).find(id => id !== socket.id && pokemonData[id].nick === nick);
+      if (oldId) { pokemonData[socket.id] = pokemonData[oldId]; delete pokemonData[oldId]; }
+    }
+    socket.emit('pokemon:status', { hasPokemon: !!pokemonData[socket.id] });
+    io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
     io.emit('queue update', queue);
     io.emit('chat message', {
       id: ++msgCounter,
@@ -282,6 +314,7 @@ io.on('connection', (socket) => {
   socket.on('chat message', (msg) => {
     const u = users[socket.id];
     if (!u) return;
+    addPokeXP(socket.id, 2, 'chat');
     io.emit('chat message', {
       id: ++msgCounter,
       nick: u.nick,
@@ -419,6 +452,7 @@ io.on('connection', (socket) => {
     if (enemyPieces.length === 0) {
       game.status = 'won';
       game.winner = socket.id;
+      addPokeXP(socket.id, 20, 'vittoria dama');
       const clients = [game.player1, game.player2];
       clients.forEach(id => io.to(id).emit('game state', game));
       clients.forEach(id => io.to(id).emit('game end', { reason: 'Vittoria!', winner: socket.id }));
@@ -430,12 +464,14 @@ io.on('connection', (socket) => {
     if (!hasMoves) {
       game.status = 'won';
       game.winner = socket.id;
+      addPokeXP(socket.id, 20, 'vittoria dama');
       const clients = [game.player1, game.player2];
       clients.forEach(id => io.to(id).emit('game state', game));
       clients.forEach(id => io.to(id).emit('game end', { reason: 'Vittoria!', winner: socket.id }));
       delete games[gameId];
       return;
     }
+    addPokeXP(socket.id, 3, 'mossa dama');
     [game.player1, game.player2].forEach(id => io.to(id).emit('game state', game));
   });
 
@@ -512,8 +548,10 @@ io.on('connection', (socket) => {
     else if (card.v === 'draw2') { draw = 2; skip = true; game.lastAction = `${u.nick} +2!`; }
     else if (card.v === 'wild4') { draw = 4; skip = true; game.lastAction = `${u.nick} +4!`; }
     else game.lastAction = `${u.nick} gioca ${card.v}`;
+    addPokeXP(socket.id, 3, 'carta uno');
     if (player.cards.length === 0) {
       game.status = 'finished'; game.winner = socket.id;
+      addPokeXP(socket.id, 50, 'vittoria uno');
       game.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(game, p.id)));
       io.to(gameId).emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`🎉 ${u.nick} ha vinto a UNO!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
       delete unoGames[gameId]; return;
@@ -586,8 +624,10 @@ io.on('connection', (socket) => {
     const payout = calcSlot(reels, bet);
     casinoBals[socket.id] += payout;
     socket.emit('casino:result', { reels: reels.map(r=>r.e), payout, balance: casinoBals[socket.id], bet });
+    addPokeXP(socket.id, 1, 'slot');
     if (payout > 0) {
       const isJackpot = payout >= bet * 50;
+      addPokeXP(socket.id, isJackpot ? 25 : 5, isJackpot ? 'jackpot' : 'vincita slot');
       io.emit('chat message', { id:++msgCounter, nick:'Casinò', avatar:'💰', msg:`🎰 ${isJackpot?'JACKPOT! ':''}${u.nick} ha vinto €${payout} alla slot!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
     }
   });
@@ -599,10 +639,53 @@ io.on('connection', (socket) => {
     if (answer === currentQuiz.a) {
       quizAnswered.add(socket.id);
       casinoBals[socket.id] = getBal(socket.id) + QUIZ_PRIZE;
+      addPokeXP(socket.id, 30, 'quiz');
       const u = users[socket.id];
       socket.emit('casino:balance', casinoBals[socket.id]);
       io.emit('quiz:correct', { nick: u ? u.nick : 'Qualcuno', prize: QUIZ_PRIZE });
     }
+  });
+
+  // POKEMON events
+  socket.on('pokemon:pick', ({ starter }) => {
+    const u = users[socket.id];
+    if (!STARTERS[starter] || pokemonData[socket.id]) { socket.emit('pokemon:picked',{error:'Già scelto o non valido'}); return; }
+    const d = { starter, currentForm: STARTERS[starter].evos[0], xp: 0, nick: u?u.nick:'' };
+    pokemonData[socket.id] = d;
+    socket.emit('pokemon:picked', { starter, form: d.currentForm, level: 1, xp: 0 });
+    io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
+  });
+
+  socket.on('pokemon:leaderboard', () => {
+    const list = Object.entries(pokemonData).filter(([id]) => users[id]).map(([id, d]) => ({
+      nick: users[id].nick, avatar: users[id].avatar, starter: d.starter, form: d.currentForm, xp: d.xp, level: getPokemonLv(d.xp)
+    })).sort((a,b) => b.xp - a.xp).slice(0, 20);
+    socket.emit('pokemon:leaderboard', list);
+  });
+
+  socket.on('pokemon:tradeRequest', ({ to }) => {
+    if (!users[to] || !pokemonData[socket.id] || !pokemonData[to]) return;
+    const from = users[socket.id];
+    io.to(to).emit('pokemon:tradeOffer', { from: socket.id, nick: from.nick, mine: pokemonData[socket.id].currentForm, theirs: pokemonData[to].currentForm });
+  });
+
+  socket.on('pokemon:tradeAccept', ({ from }) => {
+    if (!pokemonData[from] || !pokemonData[socket.id]) return;
+    const tmp = pokemonData[from];
+    pokemonData[from] = { ...pokemonData[socket.id], currentForm: pokemonData[socket.id].currentForm };
+    pokemonData[socket.id] = { ...tmp, currentForm: tmp.currentForm };
+    const u1 = users[from], u2 = users[socket.id];
+    if (u1 && u2) {
+      io.emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`🔄 Scambio Pokémon: ${u1.nick} e ${u2.nick} si sono scambiati i Pokémon!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+      io.to(from).emit('pokemon:traded', { newForm: pokemonData[from].currentForm });
+      socket.emit('pokemon:traded', { newForm: pokemonData[socket.id].currentForm });
+      io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
+    }
+  });
+
+  socket.on('pokemon:tradeDecline', ({ from }) => {
+    const u = users[socket.id];
+    if (u && users[from]) io.to(from).emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`${u.nick} ha rifiutato lo scambio Pokémon.`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
   });
 
   // Start quiz timer + get initial balance
@@ -656,7 +739,7 @@ io.on('connection', (socket) => {
         reactions: {},
       });
       delete users[socket.id];
-      io.emit('users online', Object.values(users));
+      io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
     }
     if (u) console.log(`[${new Date().toLocaleTimeString()}] ${u.nick} è uscito — IP: ${u.ip}`);
     else console.log(`[${new Date().toLocaleTimeString()}] Disconnesso: ${socket.id}`);
