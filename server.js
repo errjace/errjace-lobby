@@ -192,6 +192,19 @@ function getUnoState(game, pid) {
 }
 function advanceTurn(g) { g.currentPlayerIndex = (g.currentPlayerIndex + g.direction + g.players.length) % g.players.length; }
 
+// MAPPA 2D
+const mapPlayers = {};
+const MAP_W = 24;
+const MAP_H = 18;
+const MAP_CHARS = [
+  { id: 'hero', name: 'Eroe', color: '#7c3aed' },
+  { id: 'mage', name: 'Mago', color: '#3b82f6' },
+  { id: 'ninja', name: 'Ninja', color: '#ef4444' },
+  { id: 'robot', name: 'Robot', color: '#22c55e' },
+  { id: 'ghost', name: 'Fantasma', color: '#a78bfa' },
+  { id: 'king', name: 'Re', color: '#ffd700' },
+];
+
 // CASINO & QUIZ
 const casinoBals = {};
 const casinoEarnings = {}; // net earnings per socket
@@ -775,8 +788,51 @@ io.on('connection', (socket) => {
     io.to(to).emit('voice signal', { from: socket.id, signal });
   });
 
+  socket.on('map:join', ({ char }) => {
+    const u = users[socket.id];
+    if (!u) return;
+    var x, y, attempts = 0;
+    do {
+      x = Math.floor(Math.random() * MAP_W);
+      y = Math.floor(Math.random() * MAP_H);
+      attempts++;
+    } while (Object.values(mapPlayers).some(p => p.x === x && p.y === y) && attempts < 100);
+    mapPlayers[socket.id] = { x, y, char: char || 'hero', nick: u.nick, avatar: u.avatar };
+    socket.emit('map:init', { w: MAP_W, h: MAP_H, players: mapPlayers, myId: socket.id, chars: MAP_CHARS });
+    socket.broadcast.emit('map:playerJoin', { id: socket.id, ...mapPlayers[socket.id] });
+  });
+
+  socket.on('map:move', ({ x, y }) => {
+    if (!mapPlayers[socket.id]) return;
+    if (x < 0 || x >= MAP_W || y < 0 || y >= MAP_H) return;
+    if (Math.abs(x - mapPlayers[socket.id].x) + Math.abs(y - mapPlayers[socket.id].y) > 1) return;
+    mapPlayers[socket.id].x = x;
+    mapPlayers[socket.id].y = y;
+    socket.broadcast.emit('map:move', { id: socket.id, x, y });
+    // Random Pokémon encounter (8% chance per move)
+    if (Math.random() < 0.08) {
+      const pool = [
+        { id: 25, name: 'Pikachu' }, { id: 1, name: 'Bulbasaur' },
+        { id: 4, name: 'Charmander' }, { id: 7, name: 'Squirtle' },
+        { id: 133, name: 'Eevee' }, { id: 39, name: 'Jigglypuff' },
+        { id: 54, name: 'Psyduck' }, { id: 92, name: 'Gastly' },
+        { id: 147, name: 'Dratini' }, { id: 74, name: 'Geodude' },
+      ];
+      const pk = pool[Math.floor(Math.random() * pool.length)];
+      io.to(socket.id).emit('map:wildPoke', pk);
+    }
+  });
+
+  socket.on('map:leave', () => {
+    if (mapPlayers[socket.id]) {
+      delete mapPlayers[socket.id];
+      io.emit('map:playerLeave', { id: socket.id });
+    }
+  });
+
   socket.on('disconnect', () => {
     const u = users[socket.id];
+    if (mapPlayers[socket.id]) { delete mapPlayers[socket.id]; io.emit('map:playerLeave', { id: socket.id }); }
     if (u) {
       // Clean up any active games
       for (const gid in games) {

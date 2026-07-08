@@ -1098,6 +1098,18 @@
     .quiz-box .q-question { font-size: 0.85rem; }
     .quiz-box .q-opt { font-size: 0.75rem; padding: 0.45rem 0.75rem; }
   }
+  /* MAPPA 2D */
+  .map-tile { width:100%;height:100%;background:#2a5a2a;border:1px solid #1a3a1a55;position:relative; }
+  .map-tile.water { background:#1a3a5a; }
+  .map-tile.path { background:#4a6a3a; }
+  .map-tile.tree { background:#1a4a1a; }
+  .map-tile.wall { background:#3a2a1a; }
+  .map-tile.grass { background:#3a7a2a; }
+  .map-sprite { position:absolute;inset:2px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;transition:all 0.15s;z-index:2; }
+  .map-sprite.me { box-shadow:0 0 6px rgba(255,255,255,0.5);z-index:3; }
+  #mapOverlay .game-btn:hover { transform:translateY(-2px); }
+  #owCinemaBtn:hover, #owMapBtn:hover { transform:translateY(-4px); }
+
   /* POKEMON CSS */
   .poke-btn { font-size:0.9rem; }
   .poke-overlay { position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;visibility:hidden;opacity:0;transition:0.3s; }
@@ -1227,6 +1239,7 @@
       <button class="uno-btn" id="unoBtn" title="UNO">🃏</button>
       <button class="dama-btn" id="casinoBtn" title="Casinò" style="font-size:0.8rem;">💰</button>
       <button class="dama-btn poke-btn" id="pokeBtn" title="Pokémon" style="font-size:0.9rem;">⚡</button>
+      <button class="dama-btn" id="portalBtn" title="Overworld" style="font-size:0.9rem;position:relative;">🌀</button>
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <div class="voice-indicators" id="voiceIndicators"></div>
       <div class="theme-picker" id="themePicker">
@@ -1340,6 +1353,67 @@
     <h3>🃏 UNO <span id="unoTitle"></span></h3>
     <div class="uno-last-action" id="unoLastAction"></div>
     <div id="unoContent"></div>
+  </div>
+</div>
+
+<!-- OVERWORLD Destination Picker -->
+<div class="overlay" id="owPicker" style="z-index:1200;">
+  <div class="popup" style="max-width:420px;padding:1.5rem;text-align:center;">
+    <h2 style="font-size:1.1rem;">🌀 Scegli la tua destinazione</h2>
+    <div style="display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap;justify-content:center;">
+      <div id="owCinemaBtn" style="flex:1;min-width:120px;padding:1rem;background:linear-gradient(135deg,#1a0a2e,#2a1a4e);border:2px solid #ffd700;border-radius:12px;cursor:pointer;transition:0.2s;">
+        <div style="font-size:2rem;">🎬</div>
+        <div style="font-weight:700;margin-top:4px;">Cinema</div>
+        <div style="font-size:0.65rem;color:var(--text2,#888);">YouTube fullscreen + chat</div>
+      </div>
+      <div id="owMapBtn" style="flex:1;min-width:120px;padding:1rem;background:linear-gradient(135deg,#0a1a0e,#0a2a1a);border:2px solid #22c55e;border-radius:12px;cursor:pointer;transition:0.2s;">
+        <div style="font-size:2rem;">🌳</div>
+        <div style="font-weight:700;margin-top:4px;">Mappa 2D</div>
+        <div style="font-size:0.65rem;color:var(--text2,#888);">Esplora con gli amici</div>
+      </div>
+    </div>
+    <button class="game-btn" id="owClose" style="margin-top:1rem;font-size:0.7rem;padding:0.35rem 0.75rem;background:rgba(255,255,255,0.1);">ANNULLA</button>
+  </div>
+</div>
+
+<!-- CINEMA Overlay -->
+<div class="casino-overlay" id="cinemaOverlay" style="z-index:1100;">
+  <div class="casino-box" style="max-width:800px;width:95vw;height:90vh;max-height:600px;display:flex;flex-direction:column;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+      <h3 style="font-size:0.9rem;">🎬 CINEMA</h3>
+      <button id="cinemaClose" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:6px;cursor:pointer;">✕ Esci</button>
+    </div>
+    <div style="flex:1;background:#000;border-radius:8px;overflow:hidden;position:relative;">
+      <div id="cinemaPlayer" style="width:100%;height:100%;"></div>
+    </div>
+    <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+      <input type="text" id="cinemaSearch" placeholder="Cerca un video..." autocomplete="off" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:0.4rem 0.6rem;color:#fff;font-size:0.8rem;">
+      <button id="cinemaSearchBtn" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:0.4rem 0.8rem;border-radius:6px;cursor:pointer;font-size:0.8rem;">Cerca</button>
+    </div>
+    <div id="cinemaResults" style="max-height:100px;overflow-y:auto;margin-top:0.3rem;font-size:0.75rem;"></div>
+  </div>
+</div>
+
+<!-- MAPPA 2D Overlay -->
+<div class="casino-overlay" id="mapOverlay" style="z-index:1100;">
+  <div class="casino-box" style="max-width:800px;width:95vw;height:90vh;max-height:600px;display:flex;flex-direction:column;padding:0.75rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;padding:0 0.5rem;">
+      <h3 style="font-size:0.9rem;">🌳 OVERWORLD</h3>
+      <button id="mapClose" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:6px;cursor:pointer;">✕ Esci</button>
+    </div>
+    <div id="mapCharSelect" style="display:none;flex-direction:column;align-items:center;gap:1rem;padding:2rem;">
+      <h3 style="font-size:1rem;">Scegli il tuo personaggio</h3>
+      <div id="mapCharGrid" style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;"></div>
+      <button id="mapCharConfirm" class="game-btn" style="font-size:0.8rem;display:none;">CONFERMA</button>
+    </div>
+    <div id="mapCanvasWrap" style="display:none;flex:1;position:relative;overflow:hidden;background:#1a3a1a;border-radius:8px;border:2px solid #22c55e44;">
+      <div id="mapCanvas" style="display:grid;width:100%;height:100%;"></div>
+      <div id="mapPokemon" style="position:absolute;bottom:0.5rem;left:0.5rem;background:rgba(0,0,0,0.7);border-radius:8px;padding:0.3rem 0.6rem;display:none;align-items:center;gap:0.5rem;font-size:0.75rem;z-index:5;">
+        <span id="mapPokeName"></span>
+        <button id="mapPokeCatch" style="background:#22c55e;border:none;color:#fff;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.65rem;">CATTURA</button>
+      </div>
+      <div style="position:absolute;bottom:0.5rem;right:0.5rem;font-size:0.6rem;color:rgba(255,255,255,0.3);z-index:2;">↑↓←→ per muoverti</div>
+    </div>
   </div>
 </div>
 
@@ -2497,6 +2571,217 @@
   }
 
   document.getElementById('sendBtn').addEventListener('click', sendMessage);
+
+  // ===== OVERWORLD PORTAL =====
+  document.getElementById('portalBtn').addEventListener('click', function() {
+    document.getElementById('owPicker').classList.add('active');
+  });
+  document.getElementById('owClose').addEventListener('click', function() {
+    document.getElementById('owPicker').classList.remove('active');
+  });
+  document.getElementById('owPicker').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  // ===== CINEMA =====
+  var cinemaPlayer = null;
+  document.getElementById('owCinemaBtn').addEventListener('click', function() {
+    document.getElementById('owPicker').classList.remove('active');
+    document.getElementById('cinemaOverlay').classList.add('active');
+    if (!cinemaPlayer) {
+      cinemaPlayer = new YT.Player('cinemaPlayer', {
+        height: '100%', width: '100%',
+        videoId: 'dQw4w9WgXcQ',
+        playerVars: { autoplay: 1, controls: 1, rel: 0 }
+      });
+    }
+  });
+  document.getElementById('cinemaClose').addEventListener('click', function() {
+    document.getElementById('cinemaOverlay').classList.remove('active');
+  });
+  document.getElementById('cinemaOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+  document.getElementById('cinemaSearchBtn').addEventListener('click', function() {
+    var q = document.getElementById('cinemaSearch').value.trim();
+    if (!q) return;
+    fetch('/api/search?q='+encodeURIComponent(q)).then(r=>r.json()).then(d => {
+      var el = document.getElementById('cinemaResults');
+      el.innerHTML = d.results.map(v => '<div style="padding:4px 6px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);" onclick="loadCinema(\''+v.videoId+'\')">'+v.title+'</div>').join('');
+    });
+  });
+  window.loadCinema = function(vid) {
+    if (cinemaPlayer) cinemaPlayer.loadVideoById(vid);
+    document.getElementById('cinemaResults').innerHTML = '';
+  };
+
+  // ===== MAPPA 2D =====
+  var mapData = { me: null, players: {}, char: null };
+  var mapMoving = false;
+  document.getElementById('owMapBtn').addEventListener('click', function() {
+    document.getElementById('owPicker').classList.remove('active');
+    document.getElementById('mapOverlay').classList.add('active');
+    showMapCharSelect();
+  });
+  document.getElementById('mapClose').addEventListener('click', function() {
+    socket.emit('map:leave');
+    document.getElementById('mapOverlay').classList.remove('active');
+  });
+  document.getElementById('mapOverlay').addEventListener('click', function(e) {
+    if (e.target === this) { socket.emit('map:leave'); this.classList.remove('active'); }
+  });
+
+  function showMapCharSelect() {
+    document.getElementById('mapCharSelect').style.display = 'flex';
+    document.getElementById('mapCanvasWrap').style.display = 'none';
+    var grid = document.getElementById('mapCharGrid');
+    grid.innerHTML = '';
+    var chars = ['hero','mage','ninja','robot','ghost','king'];
+    var colors = ['#7c3aed','#3b82f6','#ef4444','#22c55e','#a78bfa','#ffd700'];
+    var names = ['Eroe','Mago','Ninja','Robot','Fantasma','Re'];
+    var icons = ['⚔️','🔮','🥷','🤖','👻','👑'];
+    chars.forEach(function(c, i) {
+      var div = document.createElement('div');
+      div.style.cssText = 'width:60px;height:60px;background:'+colors[i]+'22;border:2px solid '+colors[i]+';border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;transition:0.2s;';
+      div.textContent = icons[i];
+      div.dataset.char = c;
+      div.title = names[i];
+      div.onclick = function() {
+        document.querySelectorAll('#mapCharGrid > div').forEach(function(d) { d.style.borderColor = colors[chars.indexOf(d.dataset.char)]; d.style.transform = ''; });
+        this.style.borderColor = '#fff';
+        this.style.transform = 'scale(1.1)';
+        mapData.char = this.dataset.char;
+        document.getElementById('mapCharConfirm').style.display = 'inline-block';
+      };
+      grid.appendChild(div);
+    });
+    document.getElementById('mapCharConfirm').onclick = function() {
+      if (!mapData.char) return;
+      socket.emit('map:join', { char: mapData.char });
+    };
+  }
+
+  socket.on('map:init', function(data) {
+    document.getElementById('mapCharSelect').style.display = 'none';
+    document.getElementById('mapCharConfirm').style.display = 'none';
+    document.getElementById('mapCanvasWrap').style.display = 'block';
+    mapData.me = data.myId;
+    mapData.players = data.players;
+    // Find our initial position from server
+    var myP = data.players[data.myId];
+    if (myP) { mapData._mx = myP.x; mapData._my = myP.y; }
+    renderMap(data.w, data.h, data.myId);
+  });
+
+  socket.on('map:playerJoin', function(p) {
+    mapData.players[p.id] = { x: p.x, y: p.y, char: p.char, nick: p.nick };
+    renderMap();
+  });
+
+  socket.on('map:move', function(p) {
+    if (mapData.players[p.id]) {
+      mapData.players[p.id].x = p.x;
+      mapData.players[p.id].y = p.y;
+      renderMap();
+    }
+  });
+
+  socket.on('map:playerLeave', function(p) {
+    delete mapData.players[p.id];
+    renderMap();
+  });
+
+  socket.on('map:wildPoke', function(pk) {
+    document.getElementById('mapPokeName').innerHTML = '<img src="'+POKE_IMG+pk.id+'.png" style="width:24px;height:24px;image-rendering:pixelated;vertical-align:middle"> '+pk.name;
+    document.getElementById('mapPokemon').style.display = 'flex';
+    document.getElementById('mapPokeCatch').onclick = function() {
+      document.getElementById('mapPokemon').style.display = 'none';
+      socket.emit('chat message', '⚡ Ho incontrato '+pk.name+' selvatico sulla mappa!');
+    };
+    setTimeout(function() { document.getElementById('mapPokemon').style.display = 'none'; }, 10000);
+  });
+
+  var mapTiles = null;
+  function generateMapTiles(w, h) {
+    if (mapTiles) return mapTiles;
+    mapTiles = [];
+    for (var y = 0; y < h; y++) {
+      mapTiles[y] = [];
+      for (var x = 0; x < w; x++) {
+        var r = Math.random();
+        if (r < 0.05) mapTiles[y][x] = 'water';
+        else if (r < 0.1) mapTiles[y][x] = 'wall';
+        else if (r < 0.25) mapTiles[y][x] = 'tree';
+        else if (r < 0.45) mapTiles[y][x] = 'grass';
+        else if (r < 0.6) mapTiles[y][x] = 'path';
+        else mapTiles[y][x] = 'grass';
+      }
+    }
+    return mapTiles;
+  }
+
+  var charIcons = { hero:'⚔️', mage:'🔮', ninja:'🥷', robot:'🤖', ghost:'👻', king:'👑' };
+  var charColors = { hero:'#7c3aed', mage:'#3b82f6', ninja:'#ef4444', robot:'#22c55e', ghost:'#a78bfa', king:'#ffd700' };
+
+  function renderMap(w, h, myId) {
+    if (!w && mapData._w) { w = mapData._w; h = mapData._h; } else { mapData._w = w; mapData._h = h; }
+    var canvas = document.getElementById('mapCanvas');
+    var tiles = generateMapTiles(w, h);
+    canvas.style.gridTemplateColumns = 'repeat('+w+',1fr)';
+    canvas.style.gridTemplateRows = 'repeat('+h+',1fr)';
+    canvas.innerHTML = '';
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        var tile = document.createElement('div');
+        tile.className = 'map-tile ' + (tiles[y][x] || 'grass');
+        // Check if any player is on this tile
+        var allP = {};
+        if (mapData.me) allP[mapData.me] = { x: mapData._mx, y: mapData._my };
+        Object.keys(mapData.players).forEach(function(id) {
+          var p = mapData.players[id];
+          if (p.x === x && p.y === y) {
+            var s = document.createElement('div');
+            s.className = 'map-sprite' + (id === mapData.me ? ' me' : '');
+            s.style.background = (charColors[p.char] || '#7c3aed') + '44';
+            s.style.border = '2px solid ' + (charColors[p.char] || '#7c3aed');
+            s.textContent = charIcons[p.char] || '?';
+            s.title = p.nick;
+            tile.appendChild(s);
+          }
+        });
+        canvas.appendChild(tile);
+      }
+    }
+  }
+
+  // Keyboard movement for map
+  document.addEventListener('keydown', function(e) {
+    if (document.getElementById('mapOverlay').classList.contains('active') && document.getElementById('mapCanvasWrap').style.display !== 'none') {
+      if (mapMoving) return;
+      var dx = 0, dy = 0;
+      if (e.key === 'ArrowUp' || e.key === 'w') dy = -1;
+      else if (e.key === 'ArrowDown' || e.key === 's') dy = 1;
+      else if (e.key === 'ArrowLeft' || e.key === 'a') dx = -1;
+      else if (e.key === 'ArrowRight' || e.key === 'd') dx = 1;
+      else return;
+      e.preventDefault();
+      mapMoving = true;
+      setTimeout(function() { mapMoving = false; }, 150);
+      var mx = mapData._mx || 0, my = mapData._my || 0;
+      var nx = mx + dx, ny = my + dy;
+      if (nx < 0 || nx >= mapData._w || ny < 0 || ny >= mapData._h) return;
+      if (mapTiles && mapTiles[ny] && (mapTiles[ny][nx] === 'water' || mapTiles[ny][nx] === 'wall')) return;
+      // Check if another player is there
+      for (var id in mapData.players) {
+        var p = mapData.players[id];
+        if (p.x === nx && p.y === ny) return;
+      }
+      mapData._mx = nx; mapData._my = ny;
+      socket.emit('map:move', { x: nx, y: ny });
+      renderMap();
+    }
+  });
+
   document.getElementById('pokeSendBtn').addEventListener('click', function(e) {
     if (!myPoke) return;
     var picker = document.getElementById('pokeChatPicker');
