@@ -447,7 +447,7 @@ function battleDamage(attacker, defender, move) {
   const defEff = defBoost>=0?((defBoost+2)/2):(2/(Math.abs(defBoost)+2));
   const effAtk = atkStat * atkEff;
   const effDef = defStat * defEff;
-  const level = 50;
+  const level = 25;
   const base = ((2*level/5+2)*move.p*effAtk/effDef)/50+2;
   const stab = attacker.types.includes(move.t)?1.5:1;
   const effectiveness = getEffectiveness(move.t, defender.types);
@@ -1045,7 +1045,7 @@ io.on('connection', (socket) => {
       return team;
     };
     const b = {
-      id, turnPlayer: 0,
+      id, turnPlayer: Math.random() < 0.5 ? 0 : 1,
       players: [
         { id: from, nick: users[from].nick, team: mkTeam(from), currentPoke: 0 },
         { id: socket.id, nick: users[socket.id].nick, team: mkTeam(socket.id), currentPoke: 0 }
