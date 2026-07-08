@@ -469,6 +469,20 @@
   .portal-click-hint { position:absolute;bottom:2rem;font-size:0.6rem;color:rgba(255,255,255,0.15);letter-spacing:2px;animation:textPulse 2s ease-in-out infinite; }
   @media(max-width:600px){ .portal-ring {width:160px;height:160px;} .portal-ring .ring:nth-child(4){inset:30px} .portal-ring .core{inset:38px} .portal-text{font-size:0.9rem;} }
 
+  /* LOBBY PORTALE (nella chat) */
+  .lobby-portal { display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;cursor:pointer;transition:0.3s;user-select:none; }
+  .lobby-portal:hover .lp-core { transform:scale(1.2); }
+  .lobby-portal .lp-ring { border-radius:50%;border:2px solid transparent;position:absolute; }
+  .lobby-portal { position:relative;width:100%;min-height:200px; }
+  .lobby-portal .lp-r1 { width:140px;height:140px;border-top-color:var(--accent,#7c3aed);border-right-color:var(--accent2,#3b82f6);animation:lpSpin 3s linear infinite;position:absolute;left:50%;top:50%;margin-left:-70px;margin-top:-70px; }
+  .lobby-portal .lp-r2 { width:110px;height:110px;border-bottom-color:#a78bfa;border-left-color:#8b5cf6;animation:lpSpin 4s linear infinite reverse;position:absolute;left:50%;top:50%;margin-left:-55px;margin-top:-55px; }
+  .lobby-portal .lp-r3 { width:80px;height:80px;border-top-color:#e11d48;border-right-color:#ffd700;animation:lpSpin 2.5s linear infinite;position:absolute;left:50%;top:50%;margin-left:-40px;margin-top:-40px; }
+  .lobby-portal .lp-r4 { width:50px;height:50px;border-bottom-color:#6366f1;border-left-color:#06b6d4;animation:lpSpin 3.5s linear infinite reverse;position:absolute;left:50%;top:50%;margin-left:-25px;margin-top:-25px; }
+  .lobby-portal .lp-core { width:30px;height:30px;border-radius:50%;background:radial-gradient(circle,#a78bfa44,#7c3aed22,transparent);position:absolute;left:50%;top:50%;margin-left:-15px;margin-top:-15px;animation:lpPulse 2s ease-in-out infinite; }
+  .lobby-portal .lp-text { position:relative;margin-top:100px;font-family:'Black Ops One',monospace;font-size:0.75rem;color:var(--accentText,#a78bfa);text-shadow:0 0 15px rgba(124,58,237,0.4);animation:textPulse 2s ease-in-out infinite;letter-spacing:2px;text-align:center;z-index:2; }
+  @keyframes lpSpin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+  @keyframes lpPulse { 0%,100%{transform:scale(0.8);opacity:0.5} 50%{transform:scale(1.3);opacity:1} }
+
   /* LOBBY - Chat */
   #lobbyBox {
     max-width: 800px !important;
@@ -1232,7 +1246,6 @@
       <button class="uno-btn" id="unoBtn" title="UNO">🃏</button>
       <button class="dama-btn" id="casinoBtn" title="Casinò" style="font-size:0.8rem;">💰</button>
       <button class="dama-btn poke-btn" id="pokeBtn" title="Pokémon" style="font-size:0.9rem;">⚡</button>
-      <button class="dama-btn" id="portalBtn" title="Overworld" style="font-size:0.9rem;position:relative;">🌀</button>
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <div class="voice-indicators" id="voiceIndicators"></div>
       <div class="theme-picker" id="themePicker">
@@ -1253,6 +1266,14 @@
     </div>
     <div class="chat-area">
       <div class="chat-messages" id="chatMessages"></div>
+      <div class="lobby-portal" id="lobbyPortal" title="Overworld">
+        <div class="lp-ring lp-r1"></div>
+        <div class="lp-ring lp-r2"></div>
+        <div class="lp-ring lp-r3"></div>
+        <div class="lp-ring lp-r4"></div>
+        <div class="lp-core"></div>
+        <div class="lp-text">🌀 CLICCA PER L'OVERWORLD</div>
+      </div>
       <div class="chat-input-row" style="position:relative;">
         <input type="text" id="chatInput" placeholder="Scrivi un messaggio..." autocomplete="off">
         <button id="pokeSendBtn" title="Mostra Pokémon" style="font-size:1rem;padding:0.35rem 0.5rem;background:linear-gradient(135deg,#e11d48 50%,#fff 50%);border:2px solid #333;border-radius:50%;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;position:relative;"></button>
@@ -2562,7 +2583,7 @@
   document.getElementById('sendBtn').addEventListener('click', sendMessage);
 
   // ===== OVERWORLD PORTAL =====
-  document.getElementById('portalBtn').addEventListener('click', function() {
+  document.getElementById('lobbyPortal').addEventListener('click', function() {
     document.getElementById('owPicker').classList.add('active');
   });
   document.getElementById('owClose').addEventListener('click', function() {
