@@ -1059,6 +1059,27 @@
   .casino-overlay.active { display: flex; }
   .casino-box { background: linear-gradient(135deg, rgba(15,5,30,0.98), rgba(30,10,50,0.98)); border: 2px solid #ffd700; border-radius: 14px; padding: 1rem; max-width: 380px; width: 92%; box-shadow: 0 8px 48px rgba(255,215,0,0.1); text-align: center; position: relative; }
   .casino-box h3 { font-size: 1.2rem; color: #ffd700; letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+  /* BATTLE POKEMON */
+  .battle-challenge-btn { cursor:pointer;padding:1px 4px;font-size:0.75rem;opacity:0.5;transition:0.2s;display:inline-flex;align-items:center; }
+  .battle-challenge-btn:hover { opacity:1;transform:scale(1.2); }
+  .bp-name { font-family:'Black Ops One',monospace; }
+  .bp-hp-fill.low { background:linear-gradient(90deg,#ef4444,#f87171)!important; }
+  .bp-hp-fill.mid { background:linear-gradient(90deg,#eab308,#facc15)!important; }
+  .move-btn { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:0.4rem 0.5rem;color:#fff;cursor:pointer;transition:0.15s;text-align:left;font-size:0.65rem;display:flex;flex-direction:column;gap:2px; }
+  .move-btn:hover { background:rgba(124,58,237,0.2);border-color:#7c3aed; }
+  .move-btn:disabled { opacity:0.3;cursor:default; }
+  .move-btn .mb-type { font-size:0.5rem;padding:1px 4px;border-radius:3px;display:inline-block;width:fit-content; }
+  .move-btn .mb-pp { font-size:0.5rem;color:rgba(255,255,255,0.3); }
+  .switch-option { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.4rem 0.6rem;cursor:pointer;transition:0.15s;color:#fff;font-size:0.65rem;display:flex;align-items:center;gap:6px; }
+  .switch-option:hover { background:rgba(124,58,237,0.2);border-color:#7c3aed; }
+  .switch-option .so-hp { height:4px;background:rgba(255,255,255,0.1);border-radius:2px;flex:1;overflow:hidden; }
+  .switch-option .so-hp .so-fill { height:100%;border-radius:2px;background:#22c55e; }
+  .type-badge { display:inline-block;padding:1px 5px;border-radius:3px;font-size:0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px; }
+  .battle-log .log-se { color:#22c55e;font-weight:600; }
+  .battle-log .log-ne { color:#ef4444; }
+  .battle-log .log-pe { color:#a78bfa; }
+  .battle-log .log-ko { color:#fbbf24;font-weight:600; }
+  @media(max-width:600px){ .bp-sprite { width:60px!important;height:60px!important; } .bp-sprite img { max-width:52px!important;max-height:52px!important; } }
   .casino-bal { font-size: 0.85rem; color: #ffd700; margin-bottom: 0.5rem; background: rgba(255,215,0,0.05); padding: 0.3rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.1); }
   .slot-machine { background: linear-gradient(135deg, #1a0a2e, #2d1b4e); border: 2px solid #ffd700; border-radius: 12px; padding: 1rem; margin: 0.5rem auto; max-width: 280px; }
   .slot-reels { display: flex; gap: 6px; justify-content: center; }
@@ -1470,6 +1491,77 @@
 
 <div id="clawGG" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999;display:none;justify-content:center;align-items:center;">
   <div style="font-size:4rem;font-family:'Black Ops One',monospace;color:gold;text-shadow:0 0 30px rgba(255,215,0,0.8),0 0 60px rgba(255,215,0,0.4);animation:ggPulse 0.5s ease infinite alternate;">GG</div>
+</div>
+
+<!-- Challenge notification -->
+<div class="challenge-popup" id="challengePopup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4000;background:linear-gradient(135deg,#1a0a2e,#0d0a1a);border:2px solid #7c3aed;border-radius:16px;padding:1.5rem;min-width:260px;text-align:center;box-shadow:0 0 60px rgba(124,58,237,0.3);">
+  <div style="font-size:2rem;margin-bottom:0.5rem;">⚔️</div>
+  <div style="font-family:'Black Ops One',monospace;font-size:1rem;color:#c4b5fd;margin-bottom:0.75rem;"><span id="challengerName"></span> ti sfida a<b> Battaglia Pokémon!</b></div>
+  <div style="display:flex;gap:0.75rem;justify-content:center;">
+    <button id="battleAcceptBtn" style="background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;padding:0.5rem 1.5rem;border-radius:8px;cursor:pointer;font-family:'Black Ops One',monospace;font-size:0.8rem;">✅ ACCETTA</button>
+    <button id="battleDeclineBtn" style="background:linear-gradient(135deg,#ef4444,#dc2626);border:none;color:#fff;padding:0.5rem 1.5rem;border-radius:8px;cursor:pointer;font-family:'Black Ops One',monospace;font-size:0.8rem;">❌ RIFIUTA</button>
+  </div>
+</div>
+<!-- BATTLE OVERLAY (Showdown-style) -->
+<div class="overlay" id="battleOverlay" style="z-index:3000;background:rgba(5,5,10,0.92);backdrop-filter:blur(6px);">
+  <div class="battle-container" style="width:100%;max-width:750px;height:90vh;display:flex;flex-direction:column;margin:auto;padding:0.5rem;">
+    <!-- Top bar -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0.25rem 0.5rem;border-bottom:1px solid rgba(124,58,237,0.2);">
+      <span style="font-family:'Black Ops One',monospace;font-size:0.8rem;color:#a78bfa;letter-spacing:2px;">⚔️ BATTAGLIA POKÉMON</span>
+      <span id="battleTurnIndicator" style="font-size:0.65rem;color:rgba(255,255,255,0.4);"></span>
+    </div>
+    <!-- Main battle area -->
+    <div style="flex:1;display:flex;flex-direction:column;gap:4px;padding:0.5rem 0;overflow:hidden;">
+      <!-- Opponent side -->
+      <div class="bside opponent-side" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem;background:rgba(255,255,255,0.02);border-radius:10px;border:1px solid rgba(124,58,237,0.1);flex-shrink:0;">
+        <div class="bp-sprite" id="opponentSprite" style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;font-size:3rem;"><img src="" style="max-width:72px;max-height:72px;image-rendering:pixelated;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="bp-name" id="opponentName" style="font-weight:700;font-size:0.8rem;color:#fff;">?</span>
+            <span class="bp-types" id="opponentTypes" style="font-size:0.55rem;display:flex;gap:3px;"></span>
+          </div>
+          <div class="bp-hp-bar" style="position:relative;height:14px;background:rgba(255,255,255,0.08);border-radius:7px;overflow:hidden;margin-top:4px;">
+            <div class="bp-hp-fill" id="opponentHpFill" style="position:absolute;left:0;top:0;height:100%;border-radius:7px;background:linear-gradient(90deg,#22c55e,#4ade80);transition:width 0.4s ease;width:100%;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:rgba(255,255,255,0.5);margin-top:2px;">
+            <span id="opponentHpText">HP: 100/100</span>
+            <span class="bp-status" id="opponentStatus" style="color:#fbbf24;"></span>
+          </div>
+        </div>
+      </div>
+      <!-- Battle log -->
+      <div class="battle-log" id="battleLog" style="flex:1;overflow-y:auto;background:rgba(0,0,0,0.3);border-radius:8px;padding:0.4rem;margin:4px 0;font-size:0.65rem;min-height:60px;border:1px solid rgba(124,58,237,0.08);">
+        <div style="color:rgba(255,255,255,0.2);text-align:center;">⚔️ La battaglia ha inizio!</div>
+      </div>
+      <!-- Player side -->
+      <div class="bside player-side" style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem;background:rgba(124,58,237,0.05);border-radius:10px;border:1px solid rgba(124,58,237,0.15);flex-shrink:0;">
+        <div class="bp-sprite" id="playerSprite" style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;font-size:3rem;"><img src="" style="max-width:72px;max-height:72px;image-rendering:pixelated;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="bp-name" id="playerName" style="font-weight:700;font-size:0.8rem;color:#fff;">?</span>
+            <span class="bp-types" id="playerTypes" style="font-size:0.55rem;display:flex;gap:3px;"></span>
+          </div>
+          <div class="bp-hp-bar" style="position:relative;height:14px;background:rgba(255,255,255,0.08);border-radius:7px;overflow:hidden;margin-top:4px;">
+            <div class="bp-hp-fill" id="playerHpFill" style="position:absolute;left:0;top:0;height:100%;border-radius:7px;background:linear-gradient(90deg,#22c55e,#4ade80);transition:width 0.4s ease;width:100%;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:rgba(255,255,255,0.5);margin-top:2px;">
+            <span id="playerHpText">HP: 100/100</span>
+            <span class="bp-status" id="playerStatus" style="color:#fbbf24;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Move buttons -->
+    <div id="battleActions" style="flex-shrink:0;padding:0.5rem 0;">
+      <div class="move-grid" id="moveGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;"></div>
+      <div style="display:flex;gap:6px;margin-top:4px;">
+        <button id="switchBtn" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;">🔄 Cambia Pokémon</button>
+        <button id="forfeitBtn" style="flex:1;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;">🏳️ Arrenditi</button>
+      </div>
+    </div>
+    <!-- Switch panel -->
+    <div id="switchPanel" style="display:none;flex-shrink:0;padding:0.5rem;background:rgba(0,0,0,0.4);border-radius:8px;gap:6px;flex-wrap:wrap;justify-content:center;"></div>
+  </div>
 </div>
 
 <!-- QUIZ Overlay -->
@@ -1987,7 +2079,9 @@
         if (u.pokemon.clawPoke) clawHtml = '<img src="'+u.pokemon.clawPoke.img+'" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-left:2px;opacity:0.8;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+u.pokemon.clawPoke.name+'">';
         pokeHtml = '<div class="poke-sidebar" data-sid="'+u.id+'" data-self="'+(isMe?'1':'0')+'"><img src="'+POKE_IMG+pokeId+'.png" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;display:inline">'+clawHtml+'<span class="plv">Lv'+lv+'</span><div class="pxp"><div class="pxp-fill" style="width:'+pct+'%"></div></div></div>';
       }
-      div.innerHTML = '<span class="online-dot"></span><span class="avatar">'+u.avatar+'</span><span class="name">'+u.nick+'</span>'+pokeHtml;
+      var self = window.myNick && u.nick === window.myNick;
+      var battleBtn = self ? '' : '<span class="battle-challenge-btn" data-to="'+u.id+'" title="Sfida a battaglia Pokémon">⚔️</span>';
+      div.innerHTML = '<span class="online-dot"></span><span class="avatar">'+u.avatar+'</span><span class="name">'+u.nick+'</span>'+battleBtn+pokeHtml;
       list.appendChild(div);
     });
     document.getElementById('onlineCount').textContent = '👤 ' + onlineUsers.length + ' online';
@@ -1995,6 +2089,191 @@
   socket.on('users online', function(users) {
     onlineUsers = users;
     renderOnlineList();
+  });
+
+  function showChatMsg(nick, avatar, msg, type) {
+    socket.emit('chat message', '[' + nick + '] ' + msg);
+  }
+
+  // ===== BATTLE POKEMON =====
+  var battleData = null;
+  var myBattleIdx = -1;
+  // Click handler for challenge buttons
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.battle-challenge-btn');
+    if (!btn) return;
+    var to = btn.dataset.to;
+    if (!to || to === socket.id) return;
+    socket.emit('battle:challenge', { to: to });
+  });
+  // Challenge notification
+  socket.on('battle:challenge', function(data) {
+    document.getElementById('challengerName').textContent = data.nick;
+    document.getElementById('challengePopup').style.display = 'block';
+    document.getElementById('battleAcceptBtn').onclick = function() {
+      document.getElementById('challengePopup').style.display = 'none';
+      socket.emit('battle:accept', { from: data.from });
+    };
+    document.getElementById('battleDeclineBtn').onclick = function() {
+      document.getElementById('challengePopup').style.display = 'none';
+      socket.emit('battle:decline', { from: data.from });
+    };
+  });
+  socket.on('battle:cancel', function() {
+    document.getElementById('challengePopup').style.display = 'none';
+  });
+  socket.on('battle:decline', function(data) {
+    showChatMsg('Sistema', '💬', data.nick + ' ha rifiutato la sfida Pokémon.', 'system');
+  });
+  // Battle start
+  socket.on('battle:start', function(data) {
+    battleData = data;
+    myBattleIdx = data.myIdx;
+    document.getElementById('battleOverlay').classList.add('active');
+    renderBattle();
+  });
+  // Battle state update
+  socket.on('battle:state', function(data) {
+    if (!battleData) return;
+    // Update teams
+    data.players.forEach(function(p, pIdx) {
+      if (!battleData.players[pIdx]) return;
+      p.team.forEach(function(pk, i) {
+        if (battleData.players[pIdx].team[i]) {
+          battleData.players[pIdx].team[i].currentHp = pk.currentHp;
+          battleData.players[pIdx].team[i].maxHp = pk.maxHp;
+          battleData.players[pIdx].team[i].status = pk.status;
+          battleData.players[pIdx].team[i].fainted = pk.fainted;
+        }
+      });
+      battleData.players[pIdx].currentPoke = p.currentPoke;
+    });
+    battleData.turnPlayer = data.turnPlayer;
+    battleData.log = data.log;
+    battleData.state = data.state;
+    battleData.winner = data.winner;
+    renderBattle();
+    if (data.state === 'ended') {
+      var won = data.winner === socket.id;
+      setTimeout(function() {
+        document.getElementById('battleOverlay').classList.remove('active');
+        showChatMsg('Pokémon', '⚔️', won ? '🎉 Hai vinto la battaglia Pokémon! (+30 XP)' : '😞 Hai perso la battaglia Pokémon. (+10 XP)', 'system');
+        battleData = null;
+      }, 3000);
+    }
+  });
+  function renderBattle() {
+    if (!battleData) return;
+    var me = battleData.players[myBattleIdx];
+    var opp = battleData.players[1 - myBattleIdx];
+    var myPoke = me.team[me.currentPoke];
+    var oppPoke = opp.team[opp.currentPoke];
+    var isMyTurn = battleData.turnPlayer === myBattleIdx;
+    // Opponent
+    if (oppPoke && !oppPoke.fainted) {
+      document.getElementById('opponentSprite').querySelector('img').src = oppPoke.img;
+      document.getElementById('opponentName').textContent = oppPoke.species;
+      document.getElementById('opponentHpText').textContent = 'HP: '+oppPoke.currentHp+'/'+oppPoke.maxHp;
+      var oppPct = Math.max(0, oppPoke.currentHp / oppPoke.maxHp * 100);
+      var oppFill = document.getElementById('opponentHpFill');
+      oppFill.style.width = oppPct + '%';
+      oppFill.className = 'bp-hp-fill' + (oppPct < 25 ? ' low' : oppPct < 50 ? ' mid' : '');
+      var oppTypes = '';
+      if (oppPoke.types) oppTypes = oppPoke.types.map(function(t) { return '<span class="type-badge" style="background:'+getTypeColor(t)+'">'+t+'</span>'; }).join('');
+      document.getElementById('opponentTypes').innerHTML = oppTypes;
+      document.getElementById('opponentStatus').textContent = oppPoke.status || '';
+    } else {
+      document.getElementById('opponentSprite').querySelector('img').src = '';
+      document.getElementById('opponentName').textContent = oppPoke ? oppPoke.species + ' (ESAUSTO)' : '?';
+      document.getElementById('opponentHpFill').style.width = '0%';
+      document.getElementById('opponentHpText').textContent = 'ESAUSTO';
+    }
+    // Player
+    if (myPoke && !myPoke.fainted) {
+      document.getElementById('playerSprite').querySelector('img').src = myPoke.img;
+      document.getElementById('playerName').textContent = myPoke.species;
+      document.getElementById('playerHpText').textContent = 'HP: '+myPoke.currentHp+'/'+myPoke.maxHp;
+      var myPct = Math.max(0, myPoke.currentHp / myPoke.maxHp * 100);
+      var myFill = document.getElementById('playerHpFill');
+      myFill.style.width = myPct + '%';
+      myFill.className = 'bp-hp-fill' + (myPct < 25 ? ' low' : myPct < 50 ? ' mid' : '');
+      var myTypes = '';
+      if (myPoke.types) myTypes = myPoke.types.map(function(t) { return '<span class="type-badge" style="background:'+getTypeColor(t)+'">'+t+'</span>'; }).join('');
+      document.getElementById('playerTypes').innerHTML = myTypes;
+      document.getElementById('playerStatus').textContent = myPoke.status || '';
+    } else {
+      document.getElementById('playerSprite').querySelector('img').src = '';
+      document.getElementById('playerName').textContent = myPoke ? myPoke.species + ' (ESAUSTO)' : '?';
+      document.getElementById('playerHpFill').style.width = '0%';
+      document.getElementById('playerHpText').textContent = 'ESAUSTO';
+    }
+    // Turn indicator
+    document.getElementById('battleTurnIndicator').textContent = isMyTurn ? '🎯 È il tuo turno!' : '⏳ Turno avversario...';
+    // Battle log (last 5 entries)
+    var logEl = document.getElementById('battleLog');
+    if (battleData.log && battleData.log.length > 0) {
+      logEl.innerHTML = battleData.log.slice(-8).map(function(m) {
+        var cls = m.includes('SUPEREFFICACE') ? 'log-se' : m.includes('Nessun effetto') ? 'log-ne' : m.includes('Poco efficace') ? 'log-pe' : m.includes('esausto') ? 'log-ko' : '';
+        return '<div class="'+cls+'" style="padding:1px 0;">'+m+'</div>';
+      }).join('');
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    // Moves
+    var moveGrid = document.getElementById('moveGrid');
+    moveGrid.innerHTML = '';
+    if (myPoke && myPoke.moves && !myPoke.fainted && battleData.state === 'playing') {
+      myPoke.moves.forEach(function(move, idx) {
+        var btn = document.createElement('button');
+        btn.className = 'move-btn';
+        btn.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;"><span><b>'+move.n+'</b></span><span class="mb-pp">PP '+move.pp+'/'+move.maxPp+'</span></div><span class="mb-type" style="background:'+getTypeColor(move.t)+'">'+move.t+'</span>';
+        btn.disabled = !isMyTurn || move.pp <= 0;
+        btn.onclick = function() { socket.emit('battle:move', { battleId: battleData.battleId, index: idx }); };
+        moveGrid.appendChild(btn);
+      });
+    } else {
+      moveGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,0.2);font-size:0.65rem;padding:1rem;">'+(myPoke && myPoke.fainted ? 'Pokémon esausto!' : '')+'</div>';
+    }
+    // Switch button
+    document.getElementById('switchBtn').style.display = (battleData.state === 'playing' && !myPoke.fainted && isMyTurn) ? 'block' : 'none';
+    // Forfeit
+    document.getElementById('forfeitBtn').style.display = (battleData.state === 'playing') ? 'block' : 'none';
+  }
+  function getTypeColor(t) {
+    var c = { normal:'#a8a878',fire:'#f08030',water:'#6890f0',electric:'#f8d030',grass:'#78c850',ice:'#98d8d8',fighting:'#c03028',poison:'#a040a0',ground:'#e0c068',flying:'#a890f0',psychic:'#f85888',bug:'#a8b820',rock:'#b8a038',ghost:'#705898',dragon:'#7038f8',dark:'#705848',steel:'#b8b8d0',fairy:'#ee99ac' };
+    return c[t] || '#999';
+  }
+  // Switch panel
+  document.getElementById('switchBtn').addEventListener('click', function() {
+    if (!battleData || battleData.state !== 'playing') return;
+    var me = battleData.players[myBattleIdx];
+    var panel = document.getElementById('switchPanel');
+    if (panel.style.display === 'flex') { panel.style.display = 'none'; return; }
+    panel.innerHTML = '';
+    panel.style.display = 'flex';
+    me.team.forEach(function(pk, idx) {
+      if (idx === me.currentPoke || pk.fainted) return;
+      var opt = document.createElement('div');
+      opt.className = 'switch-option';
+      var pct = Math.max(0, pk.currentHp / pk.maxHp * 100);
+      opt.innerHTML = '<img src="'+pk.img+'" style="width:24px;height:24px;image-rendering:pixelated;"> <span>'+pk.species+'</span> <div class="so-hp"><div class="so-fill" style="width:'+pct+'%"></div></div> <span style="font-size:0.55rem;color:rgba(255,255,255,0.4);">'+pk.currentHp+'/'+pk.maxHp+'</span>';
+      opt.onclick = function() { socket.emit('battle:switch', { battleId: battleData.battleId, index: idx }); panel.style.display = 'none'; };
+      panel.appendChild(opt);
+    });
+    if (panel.children.length === 0) panel.innerHTML = '<div style="font-size:0.65rem;color:rgba(255,255,255,0.3);">Nessun Pokémon disponibile</div>';
+  });
+  // Forfeit
+  document.getElementById('forfeitBtn').addEventListener('click', function() {
+    if (!battleData) return;
+    socket.emit('battle:forfeit', { battleId: battleData.battleId });
+    document.getElementById('battleOverlay').classList.remove('active');
+    battleData = null;
+  });
+  // Close battle overlay on backdrop click
+  document.getElementById('battleOverlay').addEventListener('click', function(e) {
+    if (e.target === this && (!battleData || battleData.state === 'ended')) {
+      this.classList.remove('active');
+      battleData = null;
+    }
   });
 
   function renderBoard(board, turn) {

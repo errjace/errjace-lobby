@@ -351,6 +351,152 @@ function addPokeXP(id, amt, reason) {
 }
 setInterval(()=>{Object.keys(pokemonData).forEach(id=>{if(users[id])addPokeXP(id,1,'online');});},60000);
 
+// ===== BATTAGLIA POKEMON (Showdown-style) =====
+const TYPES = ['normal','fire','water','electric','grass','ice','fighting','poison','ground','flying','psychic','bug','rock','ghost','dragon','dark','steel','fairy'];
+const TYPE_CHART = {
+  normal:{rock:.5,ghost:0,steel:.5}, fire:{fire:.5,water:.5,grass:2,ice:2,bug:2,rock:.5,dragon:.5,steel:2},
+  water:{fire:2,water:.5,grass:.5,ground:2,rock:2,dragon:.5}, electric:{water:2,electric:.5,grass:.5,ground:0,flying:2,dragon:.5},
+  grass:{fire:.5,water:2,electric:2,grass:.5,poison:.5,ground:2,flying:.5,bug:.5,rock:2,dragon:.5,steel:.5},
+  ice:{fire:.5,water:.5,grass:2,ice:.5,ground:2,flying:2,dragon:2,steel:.5},
+  fighting:{normal:2,ice:2,poison:.5,flying:.5,psychic:.5,bug:.5,rock:2,ghost:0,dark:2,steel:2,fairy:.5},
+  poison:{grass:2,poison:.5,ground:.5,bug:2,rock:.5,ghost:.5,steel:0,fairy:2},
+  ground:{fire:2,electric:2,grass:.5,poison:2,flying:0,bug:.5,rock:2,dragon:.5,steel:2},
+  flying:{electric:.5,grass:2,fighting:2,bug:2,rock:.5,steel:.5},
+  psychic:{fighting:2,poison:2,psychic:.5,bug:.5,rock:.5,ghost:0,dark:0,steel:.5},
+  bug:{fire:.5,grass:2,fighting:.5,poison:.5,flying:.5,psychic:2,rock:.5,ghost:.5,dark:2,steel:.5,fairy:.5},
+  rock:{fire:2,ice:2,fighting:.5,ground:.5,flying:2,bug:2,poison:2,steel:.5},
+  ghost:{normal:0,psychic:2,ghost:2,dark:.5}, dragon:{dragon:2,steel:.5,fairy:0},
+  dark:{fighting:.5,psychic:2,bug:.5,ghost:2,dark:.5,fairy:.5},
+  steel:{fire:.5,water:.5,electric:.5,ice:2,rock:2,steel:.5,fairy:2},
+  fairy:{fire:.5,fighting:2,poison:.5,dragon:2,dark:2,steel:.5}
+};
+function getEffectiveness(atkType, defTypes) {
+  let mult = 1;
+  defTypes.forEach(t => { if(TYPE_CHART[atkType] && TYPE_CHART[atkType][t] !== undefined) mult *= TYPE_CHART[atkType][t]; });
+  return mult;
+}
+// Pokemon type assignments (by dex ID)
+const POKE_TYPES = {
+  4:['fire'],5:['fire'],6:['fire','flying'],778:['ghost','fairy'],447:['fighting'],448:['fighting','steel'],
+  220:['ice','ground'],221:['ice','ground'],473:['ice','ground'],
+  16:['normal','flying'],19:['normal'],13:['bug','poison'],10:['bug'],41:['poison','flying'],74:['rock','ground'],
+  129:['water'],43:['grass','poison'],21:['normal','flying'],23:['poison'],27:['ground'],29:['poison'],
+  60:['water'],69:['grass','poison'],72:['water','poison'],84:['normal','flying'],
+  25:['electric'],133:['normal'],1:['grass','poison'],7:['water'],147:['dragon'],246:['rock','ground'],
+  92:['ghost','poison'],123:['bug','flying'],131:['water','ice'],143:['normal'],
+  150:['psychic'],384:['dragon','flying'],483:['steel','dragon'],484:['water','dragon'],
+  487:['ghost','dragon'],493:['normal'],644:['dragon','electric'],643:['dragon','fire'],
+  382:['water'],383:['ground'],249:['psychic','flying'],250:['fire','flying']
+};
+const MOVE_POOL = {
+  normal:[{n:'Ultraballata',p:40,acc:100,cat:'physical'},{n:'Taglio',p:50,acc:95,cat:'physical'},{n:'Rapata',p:80,acc:100,cat:'physical'},{n:'Colpo',p:70,acc:100,cat:'physical'}],
+  fire:[{n:'Braciere',p:40,acc:100,cat:'special'},{n:'Lanciafiamme',p:90,acc:100,cat:'special'},{n:'Fuocobomba',p:110,acc:85,cat:'special'},{n:'Lanciafiamme',p:90,acc:100,cat:'special'}],
+  water:[{n:'Pistolacqua',p:40,acc:100,cat:'special'},{n:'Idropompa',p:110,acc:80,cat:'special'},{n:'Cascata',p:80,acc:100,cat:'physical'},{n:'Surf',p:90,acc:100,cat:'special'}],
+  electric:[{n:'Tuonoshock',p:40,acc:100,cat:'special'},{n:'Fulmine',p:90,acc:100,cat:'special'},{n:'Tuono',p:110,acc:70,cat:'special'},{n:'Scintilla',p:65,acc:100,cat:'physical'}],
+  grass:[{n:'Foglielama',p:55,acc:95,cat:'physical'},{n:'Energipalla',p:90,acc:100,cat:'special'},{n:'Solarraggio',p:120,acc:100,cat:'special'},{n:'Semebomba',p:80,acc:100,cat:'physical'}],
+  ice:[{n:'Geloraggio',p:90,acc:100,cat:'special'},{n:'Bora',p:110,acc:70,cat:'special'},{n:'Gelocolpo',p:75,acc:100,cat:'physical'},{n:'Ventogelato',p:55,acc:95,cat:'special'}],
+  fighting:[{n:'Botta',p:40,acc:100,cat:'physical'},{n:'Calcio',p:60,acc:100,cat:'physical'},{n:'Tuonopugno',p:75,acc:100,cat:'physical'},{n:'Psicoshock',p:80,acc:100,cat:'physical'}],
+  poison:[{n:'Lattoveleno',p:65,acc:100,cat:'physical'},{n:'Fangobomba',p:90,acc:100,cat:'special'},{n:'Velenpuntura',p:15,acc:100,cat:'physical'},{n:'Acidobomba',p:40,acc:100,cat:'special'}],
+  ground:[{n:'Fossa',p:80,acc:100,cat:'physical'},{n:'Terremoto',p:100,acc:100,cat:'physical'},{n:'Rimbalzo',p:85,acc:95,cat:'physical'},{n:'Battiterra',p:60,acc:100,cat:'special'}],
+  flying:[{n:'Aeroassalto',p:60,acc:100,cat:'physical'},{n:'Raffica',p:40,acc:100,cat:'special'},{n:'Divinazione',p:80,acc:100,cat:'physical'},{n:'Baldeali',p:120,acc:90,cat:'physical'}],
+  psychic:[{n:'Confusione',p:50,acc:100,cat:'special'},{n:'Psichico',p:90,acc:100,cat:'special'},{n:'Psichicoshock',p:80,acc:100,cat:'special'},{n:'Fotocopiatura',p:70,acc:100,cat:'physical'}],
+  bug:[{n:'Pugnalantena',p:60,acc:100,cat:'physical'},{n:'Morso',p:60,acc:100,cat:'physical'},{n:'Coleomorso',p:90,acc:100,cat:'physical'},{n:'Signalspecchio',p:75,acc:100,cat:'special'}],
+  rock:[{n:'Frantumi',p:40,acc:100,cat:'physical'},{n:'Cadutamassi',p:75,acc:90,cat:'physical'},{n:'Rocciotomba',p:60,acc:95,cat:'physical'},{n:'Cascata',p:80,acc:100,cat:'special'}],
+  ghost:[{n:'Ombrafitta',p:40,acc:100,cat:'physical'},{n:'Sferombra',p:80,acc:100,cat:'special'},{n:'Pugnodombra',p:60,acc:100,cat:'physical'},{n:'Lamaombra',p:70,acc:100,cat:'special'}],
+  dragon:[{n:'Dragobreat',p:60,acc:100,cat:'special'},{n:'Dragopulsar',p:85,acc:100,cat:'special'},{n:'Dragartigli',p:80,acc:100,cat:'physical'},{n:'Comete',p:120,acc:90,cat:'special'}],
+  dark:[{n:'Sgranocchio',p:80,acc:100,cat:'physical'},{n:'Sfuriate',p:15,acc:85,cat:'physical'},{n:'Neropulsar',p:80,acc:100,cat:'special'},{n:'Furtivombra',p:70,acc:100,cat:'physical'}],
+  steel:[{n:'Laminacciaio',p:50,acc:100,cat:'physical'},{n:'Stellicida',p:100,acc:100,cat:'special'},{n:'Codacciaio',p:100,acc:75,cat:'physical'},{n:'Metaltestata',p:80,acc:100,cat:'physical'}],
+  fairy:[{n:'Magichicco',p:70,acc:100,cat:'special'},{n:'Dolcebacio',p:50,acc:100,cat:'physical'},{n:'Bagliorfata',p:80,acc:100,cat:'special'},{n:'Sferafata',p:90,acc:100,cat:'physical'}],
+};
+function getMovesForTypes(types) {
+  let moves = [];
+  types.forEach(t => {
+    if(MOVE_POOL[t]) { MOVE_POOL[t].forEach(m => moves.push({...m})); }
+  });
+  // Shuffle and pick 4
+  for(let i=moves.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[moves[i],moves[j]]=[moves[j],moves[i]];}
+  if(moves.length>4) moves=moves.slice(0,4);
+  while(moves.length<4) moves.push({n:'Azione',p:50,acc:100,cat:'physical'});
+  moves.forEach(m => { m.pp = 10; m.maxPp = 10; });
+  return moves;
+}
+function getBST(stage,isLegendary) {
+  if(isLegendary) return 600;
+  return stage>=2?500:stage>=1?380:280;
+}
+function generatePokeStats(species, img, types, stage, isLegend) {
+  const bst = getBST(stage, isLegend);
+  const hp = Math.round(bst*0.25+15+Math.random()*20);
+  const atk = Math.round(bst*0.18+10+Math.random()*15);
+  const def = Math.round(bst*0.18+10+Math.random()*15);
+  const spa = Math.round(bst*0.18+10+Math.random()*15);
+  const spd = Math.round(bst*0.18+10+Math.random()*15);
+  const spe = Math.round(bst*0.12+10+Math.random()*15);
+  const moves = getMovesForTypes(types);
+  return { species, img, types, stats:{hp,atk,def,spa,spd,spe}, maxHp:hp, currentHp:hp, status:null, moves, boosts:{atk:0,def:0,spa:0,spd:0,spe:0}, fainted:false };
+}
+const battles = {};
+let battleIdCounter = 0;
+function battleDamage(attacker, defender, move) {
+  const isSpecial = move.cat === 'special';
+  const atkStat = isSpecial ? attacker.stats.spa : attacker.stats.atk;
+  const defStat = isSpecial ? defender.stats.spd : defender.stats.def;
+  const atkBoost = attacker.boosts[isSpecial?'spa':'atk'];
+  const defBoost = defender.boosts[isSpecial?'spd':'def'];
+  const atkEff = atkBoost>=0?((atkBoost+2)/2):(2/(Math.abs(atkBoost)+2));
+  const defEff = defBoost>=0?((defBoost+2)/2):(2/(Math.abs(defBoost)+2));
+  const effAtk = atkStat * atkEff;
+  const effDef = defStat * defEff;
+  const level = 50;
+  const base = ((2*level/5+2)*move.p*effAtk/effDef)/50+2;
+  const stab = attacker.types.includes(move.t)?1.5:1;
+  const effectiveness = getEffectiveness(move.t, defender.types);
+  const random = 0.85 + Math.random()*0.15;
+  const damage = Math.round(base * stab * effectiveness * random);
+  return Math.max(1, damage);
+}
+function battleTurn(battleId, playerIdx, action) {
+  const b = battles[battleId]; if(!b) return;
+  if(b.state !== 'playing' || b.turnPlayer !== playerIdx) return;
+  const p = b.players[playerIdx], o = b.players[1-playerIdx];
+  const pPoke = p.team[p.currentPoke], oPoke = o.team[o.currentPoke];
+  if(action.type === 'move') {
+    if(!pPoke||pPoke.fainted) return;
+    const move = pPoke.moves[action.index];
+    if(!move||move.pp<=0) return;
+    move.pp--;
+    const dmg = battleDamage(pPoke, oPoke, move);
+    oPoke.currentHp = Math.max(0, oPoke.currentHp - dmg);
+    const eff = getEffectiveness(move.t, oPoke.types);
+    let msg = `${p.nick} usa ${move.n}!`;
+    if(eff>1) msg += ' [SUPEREFFICACE!]';
+    else if(eff<1&&eff>0) msg += ' [Poco efficace...]';
+    else if(eff===0) msg += ' [Nessun effetto!]';
+    msg += ` (${dmg} danni)`;
+    const killed = oPoke.currentHp <= 0;
+    if(killed) { oPoke.fainted = true; msg += ` | ${oPoke.species} è esausto!`; }
+    b.log.push(msg);
+    p.lastMove = action.type;
+    if(killed) {
+      // Check if opponent has remaining Pokemon
+      const hasAlive = o.team.some(pk=>!pk.fainted);
+      if(!hasAlive) { b.state = 'ended'; b.winner = p.id; return; }
+    }
+    b.turnPlayer = 1 - playerIdx;
+    b.lastAction = action;
+  } else if(action.type === 'switch') {
+    const idx = action.index;
+    if(idx === p.currentPoke || idx<0 || idx>=p.team.length) return;
+    const target = p.team[idx];
+    if(!target||target.fainted) return;
+    const oldName = pPoke ? pPoke.species : 'nessuno';
+    p.currentPoke = idx;
+    b.log.push(`${p.nick} richiama ${oldName} e manda ${target.species}!`);
+    b.turnPlayer = 1 - playerIdx;
+    p.lastMove = action.type;
+  }
+}
+
 io.on('connection', (socket) => {
   const ip = socket.handshake.address;
   console.log(`[${new Date().toLocaleTimeString()}] Connesso: ${socket.id} — IP: ${ip}`);
@@ -870,8 +1016,135 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ===== BATTLE EVENTS =====
+  socket.on('battle:challenge', ({ to }) => {
+    const u = users[socket.id], tu = users[to];
+    if (!u || !tu || !pokemonData[socket.id] || !pokemonData[to]) return;
+    io.to(to).emit('battle:challenge', { from: socket.id, nick: u.nick, avatar: u.avatar });
+  });
+  socket.on('battle:cancel', ({ to }) => { io.to(to).emit('battle:cancel'); });
+  socket.on('battle:accept', ({ from }) => {
+    if (!users[from] || !users[socket.id] || !pokemonData[from] || !pokemonData[socket.id]) return;
+    const id = 'b' + (++battleIdCounter);
+    const mkTeam = (sid) => {
+      const pd = pokemonData[sid];
+      const lv = getPokemonLv(pd.xp);
+      const stage = getPokeStage(lv);
+      const s = STARTERS[pd.starter];
+      const starter = generatePokeStats(pd.currentForm, POKE_IMG + s.imgs[stage] + '.png', POKE_TYPES[s.imgs[stage]]||['normal'], stage, false);
+      starter.xpLv = lv;
+      const team = [starter];
+      if (pd.clawPoke) {
+        const cp = pd.clawPoke;
+        const ccPoke = CLAW_POOL.find(c => c.n === cp.name);
+        const cTypes = POKE_TYPES[cp.id] || ['normal'];
+        const claw = generatePokeStats(cp.name, POKE_IMG + cp.id + '.png', cTypes, cp.legendary?3:1, !!cp.legendary);
+        claw.xpLv = '-';
+        team.push(claw);
+      }
+      return team;
+    };
+    const b = {
+      id, turnPlayer: 0,
+      players: [
+        { id: from, nick: users[from].nick, team: mkTeam(from), currentPoke: 0 },
+        { id: socket.id, nick: users[socket.id].nick, team: mkTeam(socket.id), currentPoke: 0 }
+      ],
+      state: 'playing', log: [], winner: null
+    };
+    battles[id] = b;
+    [from, socket.id].forEach(sid => {
+      const p = b.players.find(p => p.id === sid);
+      io.to(sid).emit('battle:start', {
+        battleId: id, myIdx: b.players.findIndex(p => p.id === sid),
+        players: b.players.map(p => ({ id: p.id, nick: p.nick, team: p.team.map(pk => ({ species:pk.species, img:pk.img, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves })), currentPoke: p.currentPoke })),
+        turnPlayer: b.turnPlayer, log: []
+      });
+    });
+  });
+  socket.on('battle:decline', ({ from }) => {
+    const u = users[socket.id];
+    if (u && users[from]) io.to(from).emit('battle:decline', { nick: u.nick });
+  });
+  socket.on('battle:move', ({ battleId, index }) => {
+    const b = battles[battleId]; if(!b || b.state !== 'playing') return;
+    const pIdx = b.players.findIndex(p => p.id === socket.id);
+    if(pIdx === -1 || b.turnPlayer !== pIdx) return;
+    battleTurn(battleId, pIdx, { type:'move', index });
+    // Send updated state to both
+    b.players.forEach((p, i) => {
+      io.to(p.id).emit('battle:state', {
+        players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
+          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
+        })),
+        turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner
+      });
+    });
+    if(b.state === 'ended') {
+      const winner = b.winner;
+      const loser = b.players.find(p => p.id !== winner);
+      const loserData = pokemonData[loser.id];
+      const winnerData = pokemonData[winner];
+      if (winnerData) addPokeXP(winner, 30, 'battle win');
+      if (loserData) addPokeXP(loser.id, 10, 'battle loss');
+      io.emit('chat message', {
+        id: ++msgCounter, nick: 'Pokémon', avatar: '⚔️',
+        msg: `🏆 ${b.players.find(p => p.id === winner).nick} ha vinto la battaglia Pokémon contro ${b.players.find(p => p.id !== winner).nick}!`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), system: true, reactions: {}
+      });
+      setTimeout(() => { delete battles[battleId]; }, 5000);
+    }
+  });
+  socket.on('battle:switch', ({ battleId, index }) => {
+    const b = battles[battleId]; if(!b || b.state !== 'playing') return;
+    const pIdx = b.players.findIndex(p => p.id === socket.id);
+    if(pIdx === -1 || b.turnPlayer !== pIdx) return;
+    battleTurn(battleId, pIdx, { type:'switch', index });
+    b.players.forEach((p, i) => {
+      io.to(p.id).emit('battle:state', {
+        players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
+          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
+        })),
+        turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner
+      });
+    });
+  });
+
+  socket.on('battle:forfeit', ({ battleId }) => {
+    const b = battles[battleId]; if(!b || b.state !== 'playing') return;
+    b.state = 'ended'; b.winner = b.players.find(p => p.id !== socket.id).id;
+    b.players.forEach((p, i) => {
+      io.to(p.id).emit('battle:state', {
+        players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
+          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
+        })),
+        turnPlayer: b.turnPlayer, log: b.log.concat([users[socket.id]?.nick + ' si è arreso!']), state: b.state, winner: b.winner
+      });
+    });
+    const loserData = pokemonData[socket.id];
+    const winner = b.winner;
+    const winnerData = pokemonData[winner];
+    if (winnerData) addPokeXP(winner, 15, 'battle forfeit win');
+    if (loserData) addPokeXP(socket.id, 5, 'battle forfeit loss');
+    io.emit('chat message', {
+      id: ++msgCounter, nick: 'Pokémon', avatar: '⚔️',
+      msg: `🏆 ${b.players.find(p => p.id === winner).nick} ha vinto la battaglia Pokémon contro ${b.players.find(p => p.id !== winner).nick}!`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), system: true, reactions: {}
+    });
+    setTimeout(() => { delete battles[battleId]; }, 5000);
+  });
+
   socket.on('disconnect', () => {
     const u = users[socket.id];
+    // Clean up battle challenges
+    Object.keys(battles).forEach(bid => {
+      const b = battles[bid];
+      if (b.players[0].id === socket.id || b.players[1].id === socket.id) {
+        const other = b.players[0].id === socket.id ? b.players[1] : b.players[0];
+        delete battles[bid];
+        io.to(other.id).emit('battle:end', { reason: 'Avversario disconnesso', winner: other.id });
+      }
+    });
     if (mapPlayers[socket.id]) { delete mapPlayers[socket.id]; io.emit('map:playerLeave', { id: socket.id }); }
     if (u) {
       // Clean up any active games
