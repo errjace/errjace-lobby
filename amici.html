@@ -745,8 +745,25 @@
     overflow: hidden;
     background: #000;
     aspect-ratio: 16/9;
-    max-height: 250px;
+    max-height: 130px;
+    position: relative;
+    transition: max-height 0.3s ease;
   }
+  .yt-player-wrap.collapsed { max-height: 0 !important; margin-bottom: 0 !important; }
+  .ytp-minimize {
+    position:absolute;top:4px;right:4px;z-index:10;
+    width:24px;height:24px;border-radius:50%;
+    background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.15);
+    color:#fff;font-size:0.7rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background 0.2s;
+  }
+  .ytp-minimize:hover { background:rgba(255,255,255,0.2); }
+  .ytp-restore {
+    display:none;font-size:0.6rem;color:rgba(255,255,255,0.3);cursor:pointer;
+    padding:2px 6px;margin-bottom:2px;
+  }
+  .ytp-restore:hover { color:var(--accentText); }
   .yt-player-wrap iframe { width: 100%; height: 100%; }
 
   .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
@@ -1010,7 +1027,7 @@
     .music-result .info .title { font-size: 0.7rem; }
     .music-result .info .artist { font-size: 0.6rem; }
     .music-result .play-btn { font-size: 0.9rem; }
-    .yt-player-wrap { max-height: 140px; }
+    .yt-player-wrap { max-height: 100px; }
     .music-now { gap: 0.35rem; padding: 0.35rem 0.5rem; }
     .music-now .info .title { font-size: 0.7rem; }
     .music-now .info .artist { font-size: 0.6rem; }
@@ -1303,8 +1320,10 @@
         </div>
         <div class="music-results" id="musicResults"></div>
         <div class="yt-player-wrap" id="ytPlayerWrap" style="display:none;">
+          <button class="ytp-minimize" id="ytpMinimize" title="Minimizza">−</button>
           <div id="ytPlayer"></div>
         </div>
+        <div class="ytp-restore" id="ytpRestore" style="display:none;">▶ Mostra video</div>
           <div class="viz-wrap" id="vizWrap" style="display:none;"><div class="viz" id="vizContainer"></div></div>
           <div class="music-now" id="musicNow">
           <div class="info">
@@ -1931,6 +1950,18 @@
 
   document.getElementById('musicSearch').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') document.getElementById('musicSearchBtn').click();
+  });
+
+  // Toggle minimizza video
+  document.getElementById('ytpMinimize').addEventListener('click', function() {
+    var wrap = document.getElementById('ytPlayerWrap');
+    wrap.classList.add('collapsed');
+    document.getElementById('ytpRestore').style.display = 'block';
+  });
+  document.getElementById('ytpRestore').addEventListener('click', function() {
+    var wrap = document.getElementById('ytPlayerWrap');
+    wrap.classList.remove('collapsed');
+    this.style.display = 'none';
   });
 
   document.getElementById('musicPlayBtn').addEventListener('click', function() {
