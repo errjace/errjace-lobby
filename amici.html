@@ -1145,13 +1145,10 @@
     setTimeout(function() { document.getElementById('ltHeart').classList.remove('liked'); }, 500);
   });
 
-  // Show toast after 10 seconds, then every 3 minutes
+  // Show toast after 10 seconds, only once per session
   setTimeout(function() {
-    if (!likeToastShown) showLikeToast();
+    if (socketConnected && !likeToastShown) showLikeToast();
   }, 10000);
-  setInterval(function() {
-    if (socketConnected) showLikeToast();
-  }, 180000);
 
   // ===== YOUTUBE PLAYER =====
   let ytPlayer = null;
