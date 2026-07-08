@@ -6,6 +6,9 @@
     </linearGradient>
   </defs>
   <rect width="192" height="192" rx="48" fill="url(#bg)"/>
-  <rect x="32" y="38" width="128" height="116" rx="22" fill="#fff"/>
-  <text x="96" y="118" font-family="Arial,Helvetica Neue,sans-serif" font-size="64" font-weight="700" fill="#2d0a4d" text-anchor="middle">E</text>
+  <g transform="translate(96,84)">
+    <rect x="-52" y="-44" width="104" height="88" rx="24" fill="none" stroke="#fff" stroke-width="5"/>
+    <polygon points="-36,44 -26,58 -16,44" fill="url(#bg)" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>
+  </g>
+  <text x="96" y="103" font-family="Arial,Helvetica Neue,sans-serif" font-size="48" font-weight="700" fill="#fff" text-anchor="middle">E</text>
 </svg>
