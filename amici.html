@@ -1399,8 +1399,10 @@
       <div id="mapCharGrid" style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;"></div>
       <button id="mapCharConfirm" class="game-btn" style="font-size:0.8rem;display:none;">CONFERMA</button>
     </div>
-    <div id="mapCanvasWrap" style="display:none;flex:1;position:relative;overflow:hidden;background:#c8e0c0;border-radius:8px;border:2px solid #22c55e44;">
-      <canvas id="mapCanvas"></canvas>
+    <div id="mapCanvasWrap" style="display:none;flex:1;position:relative;overflow:hidden;background:#c8e0c0;border-radius:8px;border:2px solid #22c55e44;cursor:crosshair;">
+      <div style="position:absolute;inset:0;perspective:800px;transform-origin:center 40%;">
+        <canvas id="mapCanvas" style="width:100%;height:100%;transform:rotateX(8deg);transform-origin:center 40%;image-rendering:pixelated;"></canvas>
+      </div>
       <canvas id="mapOverlayCanvas" style="position:absolute;inset:0;pointer-events:none;z-index:5;"></canvas>
       <div id="mapPokemon" style="position:absolute;bottom:0.5rem;left:0.5rem;background:rgba(0,0,0,0.8);border:2px solid #ffd700;border-radius:10px;padding:0.3rem 0.7rem;display:none;align-items:center;gap:0.5rem;font-size:0.75rem;z-index:10;">
         <span id="mapPokeName"></span>
@@ -2612,7 +2614,7 @@
   // ===== MAPPA 2D CANVAS (Stile Pokémon DS) =====
   var mapData = { me: null, players: {}, char: null, wildPokes: [], _mx:0, _my:0, _tx:0, _ty:0 };
   var mapMoving = false, mapTiles = null, nearPokes = [];
-  var TILE = 32; // pixel size per tile
+  var TILE = 48; // pixel size per tile
   var CAM_W = 0, CAM_H = 0; // computed
   var canvas, ctx, oCanvas, oCtx, mapAnimId = null;
 
@@ -2690,84 +2692,123 @@
     };
   }
 
-  // === CANVAS TILE DRAWING ===
-  function drawGrass(ctx, x, y, s, seed) {
-    ctx.fillStyle = ['#4a8a3a','#3a7a2a','#5a9a4a','#4a8a3a','#3a7a2a'][seed % 5];
+  // === CANVAS TILE DRAWING (pseudo-3D) ===
+  function drawTileBase(ctx, x, y, s, color, darkColor) {
+    // Top face
+    ctx.fillStyle = color;
     ctx.fillRect(x, y, s, s);
-    // Texture dots
-    for (var i = 0; i < 4; i++) {
-      ctx.fillStyle = ['#5a9a4a','#6aaa5a','#3a7a2a'][(seed+i) % 3];
-      ctx.fillRect(x + ((seed*3+i*7) % (s-4)), y + ((seed*5+i*11) % (s-4)), 2, 2);
+    // Subtle 3D front face
+    ctx.fillStyle = darkColor || color;
+    ctx.fillRect(x, y+s-4, s, 4);
+    ctx.fillRect(x+s-4, y, 4, s-4);
+    // Shadow on right/bottom edges
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.fillRect(x+s-1, y, 1, s);
+    ctx.fillRect(x, y+s-1, s, 1);
+  }
+  function drawGrass(ctx, x, y, s, seed) {
+    var colors = ['#5a9a4a','#4a8a3a','#6aaa5a','#4a8a3a','#5a9a4a'];
+    var darks = ['#3a7a2a','#2a6a1a','#4a8a3a','#3a7a2a','#3a7a2a'];
+    drawTileBase(ctx, x, y, s, colors[seed % 5], darks[seed % 5]);
+    // Texture blades
+    ctx.fillStyle = ['#6aaa5a','#7aba6a','#4a8a3a'][(seed+1) % 3];
+    for (var i = 0; i < 5; i++) {
+      var bx = x + ((seed*3+i*17) % (s-6)) + 2;
+      var by = y + ((seed*7+i*11) % (s-6)) + 2;
+      ctx.fillRect(bx, by, 2, 3);
     }
   }
   function drawPath(ctx, x, y, s, seed) {
+    drawTileBase(ctx, x, y, s, '#9a8a6a', '#7a6a4a');
     ctx.fillStyle = '#8a7a5a';
-    ctx.fillRect(x, y, s, s);
-    ctx.fillStyle = '#9a8a6a';
-    ctx.fillRect(x+2, y+2, s-4, s-4);
+    ctx.fillRect(x+3, y+3, s-6, s-6);
     ctx.fillStyle = '#7a6a4a';
-    ctx.fillRect(x+4, y+4, 2, 2);
+    ctx.fillRect(x+5, y+5, s-10, 2);
   }
   function drawTree(ctx, x, y, s, seed) {
-    // Trunk
+    // Base ground
+    drawTileBase(ctx, x, y, s, '#3a7a2a', '#2a5a1a');
+    // Shadow under tree
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.beginPath();
+    ctx.ellipse(x+s/2, y+s-2, s*0.38, 6, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Trunk extending upward (beyond tile)
     ctx.fillStyle = '#5a3a1a';
-    ctx.fillRect(x + s*0.4, y + s*0.5, s*0.2, s*0.5);
-    // Canopy
-    ctx.fillStyle = ['#1a6a1a','#2a7a2a','#1a5a1a'][seed % 3];
+    ctx.fillRect(x + s*0.4, y + s*0.35, s*0.2, s*0.65);
+    // Canopy - 3 overlapping circles for depth
+    var canopyColors = ['#1a6a1a','#2a7a2a','#1a8a2a'];
+    ctx.shadowColor = 'rgba(0,0,0,0.15)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetY = 3;
+    ctx.fillStyle = canopyColors[seed % 3];
     ctx.beginPath();
-    ctx.arc(x + s/2, y + s*0.35, s*0.42, 0, Math.PI*2);
+    ctx.arc(x + s/2, y + s*0.3, s*0.4, 0, Math.PI*2);
     ctx.fill();
-    ctx.fillStyle = ['#2a8a2a','#3a9a3a','#2a7a2a'][(seed+1) % 3];
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 2;
+    ctx.fillStyle = canopyColors[(seed+1) % 3];
     ctx.beginPath();
-    ctx.arc(x + s*0.35, y + s*0.3, s*0.28, 0, Math.PI*2);
+    ctx.arc(x + s*0.32, y + s*0.25, s*0.28, 0, Math.PI*2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(x + s*0.65, y + s*0.3, s*0.28, 0, Math.PI*2);
+    ctx.arc(x + s*0.68, y + s*0.25, s*0.28, 0, Math.PI*2);
     ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
   }
   function drawWater(ctx, x, y, s, seed, time) {
-    ctx.fillStyle = '#1a4a7a';
-    ctx.fillRect(x, y, s, s);
-    // Wave lines
-    ctx.strokeStyle = '#2a6a9a';
-    ctx.lineWidth = 1;
-    for (var i = 0; i < 3; i++) {
-      var wy = y + s*0.3 + i*s*0.2 + Math.sin(time*0.002 + i + seed)*2;
+    drawTileBase(ctx, x, y, s, '#1a4a7a', '#0a2a5a');
+    // Animated waves
+    ctx.strokeStyle = 'rgba(60,120,180,0.5)';
+    ctx.lineWidth = 2;
+    for (var i = 0; i < 4; i++) {
+      var wy = y + s*0.25 + i*s*0.2 + Math.sin(time*0.002 + i*1.5 + seed)*3;
       ctx.beginPath();
-      ctx.moveTo(x+4, wy);
-      ctx.quadraticCurveTo(x+s*0.4, wy + Math.sin(time*0.003 + i*2)*3, x+s-4, wy);
+      ctx.moveTo(x+6, wy);
+      ctx.quadraticCurveTo(x+s*0.4, wy + Math.sin(time*0.003 + i*2)*4, x+s-6, wy);
       ctx.stroke();
     }
+    // Shine
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fillRect(x+s*0.6, y+s*0.1, s*0.3, s*0.15);
   }
   function drawWall(ctx, x, y, s, seed) {
+    // 3D rock face
     ctx.fillStyle = '#5a4a3a';
     ctx.fillRect(x, y, s, s);
     ctx.fillStyle = '#6a5a4a';
     ctx.fillRect(x+2, y+2, s-4, s-4);
-    // Rock cracks
-    ctx.strokeStyle = '#4a3a2a';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(x+s*0.3, y+s*0.2); ctx.lineTo(x+s*0.5, y+s*0.4); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x+s*0.7, y+s*0.6); ctx.lineTo(x+s*0.5, y+s*0.8); ctx.stroke();
+    // 3D front face
+    ctx.fillStyle = '#3a2a1a';
+    ctx.fillRect(x, y+s-5, s, 5);
+    ctx.fillRect(x+s-5, y, 5, s-5);
+    // Texture
+    ctx.fillStyle = '#4a3a2a';
+    ctx.fillRect(x+6, y+6, 4, 4);
+    ctx.fillRect(x+s-12, y+s-12, 5, 5);
+    ctx.fillRect(x+s/2-2, y+8, 4, 6);
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.fillRect(x+s-2, y, 2, s);
+    ctx.fillRect(x, y+s-2, s, 2);
   }
   function drawFlower(ctx, x, y, s, seed) {
-    drawGrass(ctx, x, y, s, seed);
+    drawTileBase(ctx, x, y, s, '#4a8a3a', '#3a6a2a');
     ctx.fillStyle = ['#ff6b9d','#ffd700','#ff6b6b','#c084fc'][seed % 4];
-    ctx.beginPath();
-    ctx.arc(x + s*0.3, y + s*0.4, 3, 0, Math.PI*2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(x + s*0.25, y + s*0.35, 4, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = ['#ffd700','#ff6b9d','#c084fc','#ff6b6b'][seed % 4];
-    ctx.beginPath();
-    ctx.arc(x + s*0.7, y + s*0.6, 3, 0, Math.PI*2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(x + s*0.72, y + s*0.58, 3, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = ['#ff6b9d','#ffd700','#ff6b6b','#c084fc'][(seed+2) % 4];
+    ctx.beginPath(); ctx.arc(x + s*0.5, y + s*0.7, 3, 0, Math.PI*2); ctx.fill();
   }
   function drawSand(ctx, x, y, s, seed) {
-    ctx.fillStyle = '#c8b87a';
-    ctx.fillRect(x, y, s, s);
-    ctx.fillStyle = '#b8a86a';
-    ctx.fillRect(x+5, y+8, 3, 3);
-    ctx.fillRect(x+18, y+15, 2, 2);
-    ctx.fillRect(x+12, y+5, 2, 2);
+    drawTileBase(ctx, x, y, s, '#d4c48a', '#b4a46a');
+    ctx.fillStyle = '#c4b47a';
+    ctx.fillRect(x+8, y+10, 4, 3);
+    ctx.fillRect(x+24, y+20, 3, 3);
+    ctx.fillRect(x+30, y+8, 3, 2);
+    ctx.fillRect(x+14, y+28, 4, 3);
   }
 
   var TILE_DRAW = {
@@ -2799,52 +2840,82 @@
     return tiles;
   }
 
-  // === CHARACTER DRAWING ===
+  // === CHARACTER DRAWING (improved) ===
   function drawChar(ctx, cx, cy, charId, isMe, direction, nick) {
     var ch = CHARS[charId] || CHARS.hero;
     var s = TILE;
     // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.beginPath();
-    ctx.ellipse(cx+s/2, cy+s-2, s*0.3, 4, 0, 0, Math.PI*2);
+    ctx.ellipse(cx+s/2, cy+s-3, s*0.35, 5, 0, 0, Math.PI*2);
     ctx.fill();
-    // Body
-    ctx.fillStyle = ch.body;
-    ctx.fillRect(cx+8, cy+14, 16, 12);
-    // Head
-    ctx.fillStyle = '#f0c8a0';
-    ctx.fillRect(cx+10, cy+4, 12, 12);
-    // Hat
-    ctx.fillStyle = ch.hat;
-    ctx.fillRect(cx+8, cy+1, 16, 6);
-    ctx.fillRect(cx+5, cy+5, 22, 3);
-    // Eyes
-    ctx.fillStyle = '#333';
-    ctx.fillRect(cx+11, cy+9, 3, 2);
-    ctx.fillRect(cx+18, cy+9, 3, 2);
-    // Mouth
-    ctx.fillStyle = '#c88';
-    ctx.fillRect(cx+13, cy+14, 6, 1);
-    // Hair
-    ctx.fillStyle = ch.hair;
-    ctx.fillRect(cx+10, cy+2, 12, 3);
     // Legs
     ctx.fillStyle = '#333';
-    ctx.fillRect(cx+9, cy+26, 5, 4);
-    ctx.fillRect(cx+18, cy+26, 5, 4);
-    // Hat icon
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'center';
+    ctx.fillRect(cx+10, cy+28, 6, 6);
+    ctx.fillRect(cx+26, cy+28, 6, 6);
+    // Shoes
+    ctx.fillStyle = '#222';
+    ctx.fillRect(cx+8, cy+32, 8, 4);
+    ctx.fillRect(cx+26, cy+32, 8, 4);
+    // Body
     ctx.fillStyle = ch.body;
-    ctx.fillText(ch.ico, cx+s/2, cy-4);
+    ctx.shadowColor = 'rgba(0,0,0,0.1)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 2;
+    ctx.fillRect(cx+8, cy+14, 26, 16);
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    // Arms
+    ctx.fillStyle = '#f0c8a0';
+    ctx.fillRect(cx+4, cy+16, 6, 10);
+    ctx.fillRect(cx+32, cy+16, 6, 10);
+    // Head
+    ctx.fillStyle = '#f0c8a0';
+    ctx.fillRect(cx+10, cy+2, 22, 16);
+    // Hair
+    ctx.fillStyle = ch.hair;
+    ctx.fillRect(cx+10, cy, 22, 6);
+    ctx.fillRect(cx+6, cy+4, 8, 4);
+    ctx.fillRect(cx+28, cy+4, 8, 4);
+    // Eyes
+    ctx.fillStyle = '#333';
+    ctx.fillRect(cx+13, cy+9, 4, 3);
+    ctx.fillRect(cx+25, cy+9, 4, 3);
+    // Eye shine
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(cx+14, cy+9, 2, 1);
+    ctx.fillRect(cx+26, cy+9, 2, 1);
+    // Mouth
+    ctx.fillStyle = '#c88';
+    ctx.fillRect(cx+16, cy+15, 10, 2);
+    // Hat
+    ctx.fillStyle = ch.hat;
+    ctx.fillRect(cx+6, cy-2, 30, 6);
+    ctx.fillRect(cx+10, cy-6, 22, 6);
+    // Hat icon
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 3;
+    ctx.fillText(ch.ico, cx+s/2, cy-8);
+    ctx.shadowBlur = 0;
+    // Outline glow for self
+    if (isMe) {
+      ctx.shadowColor = '#ffd700';
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = 'rgba(255,215,0,0.3)';
+      ctx.strokeRect(cx+4, cy, 34, 36);
+      ctx.shadowBlur = 0;
+    }
     // Nickname
     if (nick) {
-      ctx.font = '9px sans-serif';
+      ctx.font = '10px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = isMe ? '#ffd700' : '#fff';
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowColor = 'rgba(0,0,0,0.9)';
       ctx.shadowBlur = 4;
-      ctx.fillText(nick, cx+s/2, cy-8);
+      ctx.fillText(nick, cx+s/2, cy-14);
       ctx.shadowBlur = 0;
     }
   }
@@ -2879,28 +2950,43 @@
       }
     }
 
-    // Draw wild Pokémon
+    // Draw wild Pokémon (bigger, animated)
     mapData.wildPokes.forEach(function(pk) {
       if (pk.x < startX-1 || pk.x > endX || pk.y < startY-1 || pk.y > endY) return;
       var px = pk.x * TILE, py = pk.y * TILE;
-      // Floating animation
-      var floatY = Math.sin(time*0.003 + pk.id) * 3;
-      // Glow
-      ctx.fillStyle = 'rgba(255,215,0,0.2)';
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
       ctx.beginPath();
-      ctx.arc(px+TILE/2, py+TILE/2+floatY, 14, 0, Math.PI*2);
+      ctx.ellipse(px+TILE/2, py+TILE-4, 14, 5, 0, 0, Math.PI*2);
       ctx.fill();
-      // Sprite
+      // Floating + bouncing
+      var floatY = Math.sin(time*0.003 + pk.id) * 4;
+      // Glow ring
+      ctx.fillStyle = 'rgba(255,215,0,0.1)';
+      ctx.beginPath();
+      ctx.arc(px+TILE/2, py+TILE/2+floatY, 20, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,215,0,0.06)';
+      ctx.beginPath();
+      ctx.arc(px+TILE/2, py+TILE/2+floatY, 26, 0, Math.PI*2);
+      ctx.fill();
+      // Sprite (bigger)
+      var spriteSize = TILE - 4;
       var img = new Image();
       img.src = POKE_IMG+pk.id+'.png';
-      ctx.drawImage(img, px+4, py+4+floatY, TILE-8, TILE-8);
-      // Name
-      ctx.font = '8px sans-serif';
+      ctx.shadowColor = 'rgba(0,0,0,0.3)';
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 3;
+      ctx.drawImage(img, px+2, py+2+floatY, spriteSize, spriteSize);
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      // Name tag
+      ctx.font = 'bold 10px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#fff';
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
-      ctx.shadowBlur = 3;
-      ctx.fillText(pk.name, px+TILE/2, py-2);
+      ctx.shadowColor = 'rgba(0,0,0,0.9)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(pk.name, px+TILE/2, py+floatY);
       ctx.shadowBlur = 0;
     });
 
@@ -2928,6 +3014,7 @@
   }
 
   // === PROXIMITY CHECK ===
+  var lastNearPokeId = -1;
   function checkPokeProximity(oc, time) {
     var mx = mapData._tx, my = mapData._ty;
     if (mx === undefined) return;
@@ -2937,7 +3024,6 @@
     var el = document.getElementById('mapPokemon');
     if (nearPokes.length > 0) {
       var p = nearPokes[0];
-      // Show on canvas: indicator above Pokémon
       if (oc) {
         var px = p.x * TILE, py = p.y * TILE;
         var camX = mapData._tx*TILE - canvas.width/2 + TILE/2;
@@ -2945,18 +3031,29 @@
         camX = Math.max(0, Math.min(mapData._w*TILE - canvas.width, camX));
         camY = Math.max(0, Math.min(mapData._h*TILE - canvas.height, camY));
         var screenX = px - camX + TILE/2;
-        var screenY = py - camY - 8 + Math.sin(time*0.004)*2;
-        // Arrow indicator
+        var screenY = py - camY - 10 + Math.sin(time*0.004)*3;
         oc.fillStyle = '#ffd700';
-        oc.font = '16px sans-serif';
+        oc.font = '18px sans-serif';
         oc.textAlign = 'center';
+        oc.shadowColor = 'rgba(0,0,0,0.5)';
+        oc.shadowBlur = 6;
         oc.fillText('▼', screenX, screenY);
+        oc.shadowBlur = 0;
       }
-      el.style.display = 'flex';
-      el.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:28px;height:28px;image-rendering:pixelated"> <span style="font-weight:600;">'+p.name+'</span> <button id="btnCatch" style="background:#22c55e;border:none;color:#fff;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:0.65rem;">CATTURA</button>';
-      var btn = document.getElementById('btnCatch');
-      if (btn) btn.onclick = function(e) { e.stopPropagation(); socket.emit('map:catchPoke', { x: p.x, y: p.y }); };
+      // Only update DOM when the nearby Pokémon changes
+      if (lastNearPokeId !== p.id || lastNearPokeId === -1) {
+        lastNearPokeId = p.id;
+        el.style.display = 'flex';
+        el.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:36px;height:36px;image-rendering:pixelated"> <span style="font-weight:600;font-size:0.85rem;">'+p.name+'</span> <button id="btnCatch" style="background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;padding:4px 14px;border-radius:6px;cursor:pointer;font-size:0.7rem;font-weight:700;letter-spacing:1px;">CATTURA</button>';
+        document.getElementById('btnCatch').onclick = function(e) {
+          e.stopPropagation();
+          this.textContent = '...';
+          this.disabled = true;
+          socket.emit('map:catchPoke', { x: p.x, y: p.y });
+        };
+      }
     } else {
+      lastNearPokeId = -1;
       if (!el.innerHTML.includes('Catturato!')) el.style.display = 'none';
     }
   }
