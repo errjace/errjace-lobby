@@ -844,7 +844,6 @@ io.on('connection', (socket) => {
     const pk = mapWildPokes[idx];
     mapWildPokes.splice(idx, 1);
     socket.emit('map:caught', { id: pk.id, name: pk.name });
-    io.emit('chat message', { id:++msgCounter, nick:'Mappa', avatar:'🌳', msg:`⚡ ${users[socket.id]?.nick||'Qualcuno'} ha catturato ${pk.name}!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
     // Respawn after 30s
     setTimeout(() => {
       const pool = [
