@@ -1072,7 +1072,6 @@
   .poke-card .name { font-weight:700;font-size:0.9rem;margin-bottom:0.15rem; }
   .poke-card .evo { font-size:0.7rem;color:var(--text2,#888); }
   .poke-sidebar { display:flex;align-items:center;gap:4px;padding:2px 6px;margin-top:2px;background:rgba(255,255,255,0.05);border-radius:6px;cursor:pointer; }
-  .poke-sidebar .pe { font-size:1rem; }
   .poke-sidebar .plv { font-size:0.65rem;color:var(--text2,#888); }
   .poke-sidebar .pxp { flex:1;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden; }
   .poke-sidebar .pxp-fill { height:100%;background:var(--accent,#7c3aed);border-radius:2px;transition:width 0.5s; }
@@ -1317,10 +1316,10 @@
   <div class="poke-popup">
     <h2>Scegli il tuo Pokémon</h2>
     <div class="poke-grid">
-      <div class="poke-card" data-starter="charmander"><span class="emoji">🧡</span><div class="name">Charmander</div><div class="evo">Charmander→Charmeleon→Charizard</div></div>
-      <div class="poke-card" data-starter="mimikyu"><span class="emoji">👻</span><div class="name">Mimikyu</div><div class="evo">Mimikyu→Mimikyu→Mimikyu💀</div></div>
-      <div class="poke-card" data-starter="riolu"><span class="emoji">🐾</span><div class="name">Riolu</div><div class="evo">Riolu→Lucario→Mega Lucario</div></div>
-      <div class="poke-card" data-starter="swinub"><span class="emoji">🐽</span><div class="name">Swinub</div><div class="evo">Swinub→Piloswine→Mamoswine</div></div>
+      <div class="poke-card" data-starter="charmander"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto 0.25rem"><div class="name">Charmander</div><div class="evo">Charmeleon → Charizard</div></div>
+      <div class="poke-card" data-starter="mimikyu"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/778.png" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto 0.25rem"><div class="name">Mimikyu</div><div class="evo">Mimikyu → Mimikyu💀</div></div>
+      <div class="poke-card" data-starter="riolu"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/447.png" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto 0.25rem"><div class="name">Riolu</div><div class="evo">Lucario → Lucario⭐</div></div>
+      <div class="poke-card" data-starter="swinub"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/220.png" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto 0.25rem"><div class="name">Swinub</div><div class="evo">Piloswine → Mamoswine</div></div>
     </div>
     <div style="text-align:center;margin-top:1rem;"><button id="pokePickerClose" style="background:rgba(255,255,255,0.1);border:none;padding:0.4rem 1.2rem;border-radius:8px;color:var(--text2,#888);cursor:pointer;font-family:'Black Ops One',monospace;font-size:0.75rem;">SALTA</button></div>
   </div>
@@ -2283,6 +2282,8 @@
 
   // XP → level helper
   function getLv(xp) { var thr=[0,30,80,150,250,400,600,900,1300,2000]; for(var i=thr.length-1;i>=0;i--) if(xp>=thr[i]) return i+1; return 1; }
+  var POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
+  var POKE_IDS = { Charmander:4, Charmeleon:5, Charizard:6, Mimikyu:778, Riolu:447, Lucario:448, Swinub:220, Piloswine:221, Mamoswine:473 };
 
   // Socket events
   socket.on('users online', function(users) {
@@ -2300,7 +2301,9 @@
         const prev = thr[lv-1] || 0, next = thr[lv] || (prev + 2000);
         const pct = Math.min(100, (xp - prev) / (next - prev) * 100);
         const isMe = window.myNick && u.nick === window.myNick;
-        pokeHtml = `<div class="poke-sidebar" data-sid="${u.id}" data-self="${isMe?'1':'0'}"><span class="pe">${u.pokemon.currentForm.slice(-1)}</span><span class="plv">Lv${lv}</span><div class="pxp"><div class="pxp-fill" style="width:${pct}%"></div></div></div>`;
+        var pokeName = u.pokemon.currentForm.replace(/[^\w\s]/g,'').trim();
+        var pokeId = POKE_IDS[pokeName] || 4;
+        pokeHtml = `<div class="poke-sidebar" data-sid="${u.id}" data-self="${isMe?'1':'0'}"><img src="${POKE_IMG+pokeId}.png" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;display:inline"><span class="plv">Lv${lv}</span><div class="pxp"><div class="pxp-fill" style="width:${pct}%"></div></div></div>`;
       }
       div.innerHTML = `<span class="online-dot"></span><span class="avatar">${u.avatar}</span><span class="name">${u.nick}</span>${pokeHtml}`;
       list.appendChild(div);
@@ -2865,7 +2868,7 @@
   });
   socket.on('pokemon:picked', function(data) {
     if (data.error) return;
-    myPoke = { starter: data.starter, form: data.form, level: data.level, xp: data.xp };
+    myPoke = { starter: data.starter, form: data.form, img: data.img, level: data.level, xp: data.xp };
     document.getElementById('pokePicker').classList.remove('active');
   });
 
@@ -2875,7 +2878,7 @@
     list.forEach(function(p, i) {
       var tr = document.createElement('tr');
       var rnk = i + 1;
-      tr.innerHTML = '<td class="rank rank-' + rnk + '">#' + rnk + '</td><td>' + p.nick + '</td><td>' + p.form + '</td><td class="xp-num">' + p.xp + '</td><td>Lv' + p.level + '</td>';
+      tr.innerHTML = '<td class="rank rank-' + rnk + '">#' + rnk + '</td><td>' + p.nick + '</td><td><img src="' + (p.img||'') + '" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle"> ' + p.form + '</td><td class="xp-num">' + p.xp + '</td><td>Lv' + p.level + '</td>';
       tbody.appendChild(tr);
     });
     document.getElementById('pokeLeaderOverlay').classList.add('active');
@@ -2884,12 +2887,13 @@
   var tradeFrom = null;
   socket.on('pokemon:tradeOffer', function(data) {
     tradeFrom = data.from;
-    document.getElementById('pokeTradeText').textContent = data.nick + ' vuole scambiare il suo ' + data.mine + ' con il tuo ' + data.theirs + '!';
+    var imgHtml = function(url,label) { return '<img src="'+(url||'')+'" style="width:32px;height:32px;image-rendering:pixelated;vertical-align:middle"> ' + label; };
+    document.getElementById('pokeTradeText').innerHTML = data.nick + ' vuole scambiare<br><br>' + imgHtml(data.mineImg, data.mine) + '<br>↓<br>' + imgHtml(data.theirsImg, data.theirs) + '<br><br>con il tuo Pokémon!';
     document.getElementById('pokeTradeOverlay').classList.add('active');
   });
 
   socket.on('pokemon:traded', function(data) {
-    if (myPoke) myPoke.form = data.newForm;
+    if (myPoke) { myPoke.form = data.newForm; myPoke.img = data.newImg; }
     document.getElementById('pokeTradeOverlay').classList.remove('active');
   });
 

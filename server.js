@@ -262,11 +262,12 @@ function startQuiz() { if (quizTimer) clearInterval(quizTimer); quizTimer = setI
 // POKEMON System
 const pokemonData = {};
 const EVO_THRESH = [0,30,80,150,250,400,600,900,1300,2000];
+const POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
 const STARTERS = {
-  charmander:{name:'Charmander',emoji:'🧡',evos:['Charmander🧡','Charmeleon🔥','Charizard🔥']},
-  mimikyu:{name:'Mimikyu',emoji:'👻',evos:['Mimikyu👻','Mimikyu👻','Mimikyu💀']},
-  riolu:{name:'Riolu',emoji:'🐾',evos:['Riolu🐾','Lucario⚡','Lucario⭐']},
-  swinub:{name:'Swinub',emoji:'🐽',evos:['Swinub🐽','Piloswine❄️','Mamoswine💠']},
+  charmander:{name:'Charmander',evos:['Charmander','Charmeleon','Charizard'],imgs:[4,5,6]},
+  mimikyu:{name:'Mimikyu',evos:['Mimikyu','Mimikyu','Mimikyu💀'],imgs:[778,778,778]},
+  riolu:{name:'Riolu',evos:['Riolu','Lucario','Lucario⭐'],imgs:[447,448,448]},
+  swinub:{name:'Swinub',evos:['Swinub','Piloswine','Mamoswine'],imgs:[220,221,473]},
 };
 function getPokemonLv(xp) { for(let i=EVO_THRESH.length-1;i>=0;i--) if(xp>=EVO_THRESH[i]) return i+1; return 1; }
 function getPokeStage(lv) { return lv>=6?2:lv>=3?1:0; }
@@ -279,7 +280,7 @@ function addPokeXP(id, amt, reason) {
   if(ns>os) {
     const s=STARTERS[d.starter], oldE=s.evos[os], newE=s.evos[ns];
     d.currentForm=newE;
-    io.emit('chat message',{id:++msgCounter,nick:'Pokémon',avatar:newE.slice(-1),msg:`✨ ${users[id]?.nick||'Qualcuno'} ha fatto evolvere ${oldE} → ${newE}! Liv.${nl}`,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),system:true,reactions:{}});
+    io.emit('chat message',{id:++msgCounter,nick:'Pokémon',avatar:'<img src="'+POKE_IMG+STARTERS[d.starter].imgs[ns]+'.png" style="width:22px;height:22px;vertical-align:middle;image-rendering:pixelated">',msg:`✨ ${users[id]?.nick||'Qualcuno'} ha fatto evolvere ${oldE} → ${newE}! Liv.${nl}`,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),system:true,reactions:{}});
     io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
   }
 }
@@ -652,21 +653,23 @@ io.on('connection', (socket) => {
     if (!STARTERS[starter] || pokemonData[socket.id]) { socket.emit('pokemon:picked',{error:'Già scelto o non valido'}); return; }
     const d = { starter, currentForm: STARTERS[starter].evos[0], xp: 0, nick: u?u.nick:'' };
     pokemonData[socket.id] = d;
-    socket.emit('pokemon:picked', { starter, form: d.currentForm, level: 1, xp: 0 });
+    socket.emit('pokemon:picked', { starter, form: d.currentForm, img: POKE_IMG + STARTERS[d.starter].imgs[0] + '.png', level: 1, xp: 0 });
     io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
   });
 
   socket.on('pokemon:leaderboard', () => {
-    const list = Object.entries(pokemonData).filter(([id]) => users[id]).map(([id, d]) => ({
-      nick: users[id].nick, avatar: users[id].avatar, starter: d.starter, form: d.currentForm, xp: d.xp, level: getPokemonLv(d.xp)
-    })).sort((a,b) => b.xp - a.xp).slice(0, 20);
+    const list = Object.entries(pokemonData).filter(([id]) => users[id]).map(([id, d]) => {
+      const lv = getPokemonLv(d.xp);
+      return { nick: users[id].nick, avatar: users[id].avatar, starter: d.starter, form: d.currentForm, img: POKE_IMG + STARTERS[d.starter].imgs[getPokeStage(lv)] + '.png', xp: d.xp, level: lv };
+    }).sort((a,b) => b.xp - a.xp).slice(0, 20);
     socket.emit('pokemon:leaderboard', list);
   });
 
   socket.on('pokemon:tradeRequest', ({ to }) => {
     if (!users[to] || !pokemonData[socket.id] || !pokemonData[to]) return;
     const from = users[socket.id];
-    io.to(to).emit('pokemon:tradeOffer', { from: socket.id, nick: from.nick, mine: pokemonData[socket.id].currentForm, theirs: pokemonData[to].currentForm });
+    const d1 = pokemonData[socket.id], d2 = pokemonData[to];
+    io.to(to).emit('pokemon:tradeOffer', { from: socket.id, nick: from.nick, mine: d1.currentForm, mineImg: POKE_IMG + STARTERS[d1.starter].imgs[getPokeStage(getPokemonLv(d1.xp))] + '.png', theirs: d2.currentForm, theirsImg: POKE_IMG + STARTERS[d2.starter].imgs[getPokeStage(getPokemonLv(d2.xp))] + '.png' });
   });
 
   socket.on('pokemon:tradeAccept', ({ from }) => {
@@ -677,8 +680,9 @@ io.on('connection', (socket) => {
     const u1 = users[from], u2 = users[socket.id];
     if (u1 && u2) {
       io.emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`🔄 Scambio Pokémon: ${u1.nick} e ${u2.nick} si sono scambiati i Pokémon!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
-      io.to(from).emit('pokemon:traded', { newForm: pokemonData[from].currentForm });
-      socket.emit('pokemon:traded', { newForm: pokemonData[socket.id].currentForm });
+      const df = pokemonData[from], ds = pokemonData[socket.id];
+      io.to(from).emit('pokemon:traded', { newForm: df.currentForm, newImg: POKE_IMG + STARTERS[df.starter].imgs[getPokeStage(getPokemonLv(df.xp))] + '.png' });
+      socket.emit('pokemon:traded', { newForm: ds.currentForm, newImg: POKE_IMG + STARTERS[ds.starter].imgs[getPokeStage(getPokemonLv(ds.xp))] + '.png' });
       io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
     }
   });
