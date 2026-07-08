@@ -194,8 +194,8 @@ function advanceTurn(g) { g.currentPlayerIndex = (g.currentPlayerIndex + g.direc
 
 // MAPPA 2D
 const mapPlayers = {};
-const MAP_W = 24;
-const MAP_H = 18;
+const MAP_W = 30;
+const MAP_H = 22;
 const MAP_CHARS = [
   { id: 'hero', name: 'Eroe', color: '#7c3aed' },
   { id: 'mage', name: 'Mago', color: '#3b82f6' },
@@ -204,6 +204,33 @@ const MAP_CHARS = [
   { id: 'ghost', name: 'Fantasma', color: '#a78bfa' },
   { id: 'king', name: 'Re', color: '#ffd700' },
 ];
+const mapWildPokes = [];
+function generateWildPokes() {
+  mapWildPokes.length = 0;
+  const pool = [
+    { id: 25, name: 'Pikachu' }, { id: 1, name: 'Bulbasaur' },
+    { id: 4, name: 'Charmander' }, { id: 7, name: 'Squirtle' },
+    { id: 133, name: 'Eevee' }, { id: 39, name: 'Jigglypuff' },
+    { id: 54, name: 'Psyduck' }, { id: 92, name: 'Gastly' },
+    { id: 147, name: 'Dratini' }, { id: 74, name: 'Geodude' },
+    { id: 16, name: 'Pidgey' }, { id: 19, name: 'Rattata' },
+    { id: 41, name: 'Zubat' }, { id: 63, name: 'Abra' },
+    { id: 66, name: 'Machop' }, { id: 72, name: 'Tentacool' },
+    { id: 79, name: 'Slowpoke' }, { id: 88, name: 'Grimer' },
+    { id: 96, name: 'Drowzee' }, { id: 118, name: 'Goldeen' },
+  ];
+  for (let i = 0; i < 12; i++) {
+    const pk = pool[Math.floor(Math.random() * pool.length)];
+    mapWildPokes.push({
+      id: pk.id, name: pk.name,
+      x: Math.floor(Math.random() * MAP_W),
+      y: Math.floor(Math.random() * MAP_H),
+      spawnTime: Date.now()
+    });
+  }
+}
+generateWildPokes();
+setInterval(() => { generateWildPokes(); io.emit('map:wildPokes', mapWildPokes); }, 180000);
 
 // CASINO & QUIZ
 const casinoBals = {};
@@ -798,7 +825,7 @@ io.on('connection', (socket) => {
       attempts++;
     } while (Object.values(mapPlayers).some(p => p.x === x && p.y === y) && attempts < 100);
     mapPlayers[socket.id] = { x, y, char: char || 'hero', nick: u.nick, avatar: u.avatar };
-    socket.emit('map:init', { w: MAP_W, h: MAP_H, players: mapPlayers, myId: socket.id, chars: MAP_CHARS });
+    socket.emit('map:init', { w: MAP_W, h: MAP_H, players: mapPlayers, myId: socket.id, chars: MAP_CHARS, wildPokes: mapWildPokes });
     socket.broadcast.emit('map:playerJoin', { id: socket.id, ...mapPlayers[socket.id] });
   });
 
@@ -808,19 +835,33 @@ io.on('connection', (socket) => {
     if (Math.abs(x - mapPlayers[socket.id].x) + Math.abs(y - mapPlayers[socket.id].y) > 1) return;
     mapPlayers[socket.id].x = x;
     mapPlayers[socket.id].y = y;
-    socket.broadcast.emit('map:move', { id: socket.id, x, y });
-    // Random Pokémon encounter (8% chance per move)
-    if (Math.random() < 0.08) {
+    socket.broadcast.emit('map:move', { id: socket.id, x, y, char: mapPlayers[socket.id].char });
+  });
+
+  socket.on('map:catchPoke', ({ x, y }) => {
+    const idx = mapWildPokes.findIndex(p => p.x === x && p.y === y);
+    if (idx === -1) return;
+    const pk = mapWildPokes[idx];
+    mapWildPokes.splice(idx, 1);
+    socket.emit('map:caught', { id: pk.id, name: pk.name });
+    io.emit('chat message', { id:++msgCounter, nick:'Mappa', avatar:'🌳', msg:`⚡ ${users[socket.id]?.nick||'Qualcuno'} ha catturato ${pk.name}!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+    // Respawn after 30s
+    setTimeout(() => {
       const pool = [
         { id: 25, name: 'Pikachu' }, { id: 1, name: 'Bulbasaur' },
         { id: 4, name: 'Charmander' }, { id: 7, name: 'Squirtle' },
         { id: 133, name: 'Eevee' }, { id: 39, name: 'Jigglypuff' },
         { id: 54, name: 'Psyduck' }, { id: 92, name: 'Gastly' },
         { id: 147, name: 'Dratini' }, { id: 74, name: 'Geodude' },
+        { id: 16, name: 'Pidgey' }, { id: 19, name: 'Rattata' },
+        { id: 41, name: 'Zubat' }, { id: 63, name: 'Abra' },
+        { id: 66, name: 'Machop' }, { id: 72, name: 'Tentacool' },
       ];
-      const pk = pool[Math.floor(Math.random() * pool.length)];
-      io.to(socket.id).emit('map:wildPoke', pk);
-    }
+      const np = pool[Math.floor(Math.random() * pool.length)];
+      mapWildPokes.push({ id: np.id, name: np.name, x: Math.floor(Math.random()*MAP_W), y: Math.floor(Math.random()*MAP_H), spawnTime: Date.now() });
+      io.emit('map:wildPokes', mapWildPokes);
+    }, 30000);
+    io.emit('map:wildPokes', mapWildPokes);
   });
 
   socket.on('map:leave', () => {
