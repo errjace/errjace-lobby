@@ -1009,6 +1009,56 @@
     .uno-lobby .ul-create-row button { font-size: 0.65rem; }
     .uno-color-picker .cp-btn { width: 30px; height: 30px; }
   }
+  /* CASINO */
+  .casino-overlay { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .casino-overlay.active { display: flex; }
+  .casino-box { background: linear-gradient(135deg, rgba(15,5,30,0.98), rgba(30,10,50,0.98)); border: 2px solid #ffd700; border-radius: 14px; padding: 1rem; max-width: 380px; width: 92%; box-shadow: 0 8px 48px rgba(255,215,0,0.1); text-align: center; position: relative; }
+  .casino-box h3 { font-size: 1.2rem; color: #ffd700; letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+  .casino-bal { font-size: 0.85rem; color: #ffd700; margin-bottom: 0.5rem; background: rgba(255,215,0,0.05); padding: 0.3rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.1); }
+  .slot-machine { background: linear-gradient(135deg, #1a0a2e, #2d1b4e); border: 2px solid #ffd700; border-radius: 12px; padding: 1rem; margin: 0.5rem auto; max-width: 280px; }
+  .slot-reels { display: flex; gap: 6px; justify-content: center; }
+  .slot-reel { width: 72px; height: 72px; background: #000; border: 2px solid #ffd700; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; transition: all 0.2s; position: relative; overflow: hidden; }
+  .slot-reel.spinning { animation: reelBlur 0.08s linear infinite; }
+  .slot-reel.stop1 { animation: reelStop 0.3s ease-out; }
+  .slot-reel.stop2 { animation: reelStop 0.3s ease-out 0.2s both; }
+  .slot-reel.stop3 { animation: reelStop 0.3s ease-out 0.4s both; }
+  @keyframes reelBlur { 0%{transform:translateY(-3px);filter:blur(2px)} 50%{transform:translateY(3px);filter:blur(3px)} 100%{transform:translateY(-3px);filter:blur(2px)} }
+  @keyframes reelStop { 0%{transform:scale(1.3);filter:blur(3px)} 100%{transform:scale(1);filter:blur(0)} }
+  .slot-bets { display: flex; gap: 0.3rem; justify-content: center; margin: 0.5rem 0; flex-wrap: wrap; }
+  .sb-btn { padding: 0.35rem 0.65rem; font-size: 0.7rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.2); background: rgba(255,215,0,0.05); color: rgba(255,215,0,0.6); cursor: pointer; transition: all 0.15s; font-weight: 600; }
+  .sb-btn:hover { border-color: #ffd700; color: #ffd700; }
+  .sb-btn.active { background: rgba(255,215,0,0.2); border-color: #ffd700; color: #ffd700; }
+  .sb-btn:disabled { opacity: 0.3; cursor: default; }
+  .spin-btn { padding: 0.5rem 1.5rem; font-size: 0.85rem; border-radius: 8px; background: linear-gradient(135deg, #ffd700, #f59e0b); color: #1a0a2e; border: none; cursor: pointer; font-weight: 700; letter-spacing: 0.05em; transition: transform 0.15s, box-shadow 0.15s; margin: 0.3rem 0; }
+  .spin-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,215,0,0.3); }
+  .spin-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+  .casino-result { font-size: 0.85rem; color: #ffd700; min-height: 1.5rem; margin: 0.2rem 0; font-weight: 600; }
+  .casino-close { padding: 0.3rem 1rem; font-size: 0.7rem; border-radius: 6px; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border: none; cursor: pointer; margin-top: 0.3rem; }
+
+  /* QUIZ */
+  .quiz-overlay { display: none; position: fixed; inset: 0; z-index: 1001; background: rgba(0,0,0,0.75); align-items: center; justify-content: center; backdrop-filter: blur(6px); }
+  .quiz-overlay.active { display: flex; }
+  .quiz-box { background: linear-gradient(135deg, rgba(15,10,30,0.98), rgba(25,15,45,0.98)); border: 2px solid var(--accent); border-radius: 14px; padding: 1.5rem; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 8px 48px rgba(0,0,0,0.7); position: relative; }
+  .quiz-box .q-title { font-size: 0.7rem; color: var(--accentText); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.25rem; }
+  .quiz-box .q-question { font-size: 1rem; color: #fff; margin-bottom: 0.5rem; font-weight: 600; }
+  .quiz-box .q-pot { font-size: 0.75rem; color: #ffd700; margin-bottom: 0.75rem; }
+  .quiz-box .q-options { display: flex; flex-direction: column; gap: 0.4rem; }
+  .quiz-box .q-opt { padding: 0.6rem 1rem; border-radius: 8px; background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.15); color: #ddd; cursor: pointer; font-size: 0.85rem; transition: all 0.15s; text-align: left; }
+  .quiz-box .q-opt:hover { background: rgba(139,92,246,0.15); border-color: rgba(139,92,246,0.3); }
+  .quiz-box .q-opt:disabled { opacity: 0.4; cursor: default; }
+  .quiz-box .q-opt.correct { background: rgba(34,197,94,0.2); border-color: #22c55e; color: #22c55e; }
+  .quiz-box .q-opt.wrong { background: rgba(239,68,68,0.2); border-color: #ef4444; color: #ef4444; }
+  .quiz-box .q-timer { font-size: 0.65rem; color: rgba(255,255,255,0.3); margin-top: 0.75rem; }
+  .quiz-box .q-result { font-size: 0.9rem; font-weight: 700; margin-top: 0.5rem; }
+  .quiz-box .q-hint { font-size: 0.7rem; color: var(--accentText); margin-top: 0.3rem; }
+
+  @media (max-width: 768px) {
+    .slot-reel { width: 56px; height: 56px; font-size: 1.6rem; }
+    .casino-box { padding: 0.75rem; }
+    .quiz-box { padding: 1rem; }
+    .quiz-box .q-question { font-size: 0.85rem; }
+    .quiz-box .q-opt { font-size: 0.75rem; padding: 0.45rem 0.75rem; }
+  }
 </style>
 </head>
 <body>
@@ -1084,6 +1134,7 @@
       <button class="theme-btn" id="themeBtn" title="Tema">🎨</button>
       <button class="dama-btn" id="damaBtn" title="Sfida a Dama">♟</button>
       <button class="uno-btn" id="unoBtn" title="UNO">🃏</button>
+      <button class="dama-btn" id="casinoBtn" title="Casinò" style="font-size:0.8rem;">💰</button>
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <div class="voice-indicators" id="voiceIndicators"></div>
       <div class="theme-picker" id="themePicker">
@@ -1192,6 +1243,45 @@
     <h3>🃏 UNO <span id="unoTitle"></span></h3>
     <div class="uno-last-action" id="unoLastAction"></div>
     <div id="unoContent"></div>
+  </div>
+</div>
+
+<!-- CASINO Overlay -->
+<div class="casino-overlay" id="casinoOverlay">
+  <div class="casino-box">
+    <h3>💰 CASINÒ</h3>
+    <div class="casino-bal">Saldo: €<span id="casinoBalance">0</span></div>
+    <div class="slot-machine">
+      <div class="slot-reels">
+        <div class="slot-reel" id="slotReel1">🍒</div>
+        <div class="slot-reel" id="slotReel2">🍒</div>
+        <div class="slot-reel" id="slotReel3">🍒</div>
+      </div>
+    </div>
+    <div class="slot-bets" id="slotBets">
+      <button class="sb-btn active" data-bet="10">€10</button>
+      <button class="sb-btn" data-bet="50">€50</button>
+      <button class="sb-btn" data-bet="100">€100</button>
+      <button class="sb-btn" data-bet="500">€500</button>
+      <button class="sb-btn" data-bet="1000">€1K</button>
+      <button class="sb-btn" data-bet="5000">€5K</button>
+    </div>
+    <button class="spin-btn" id="spinBtn">🎰 GIRA!</button>
+    <div class="casino-result" id="casinoResult"></div>
+    <button class="casino-close" id="casinoClose">✕ Chiudi</button>
+  </div>
+</div>
+
+<!-- QUIZ Overlay -->
+<div class="quiz-overlay" id="quizOverlay">
+  <div class="quiz-box" id="quizBox">
+    <div class="q-title">🏆 QUIZ — Vinci €300!</div>
+    <div class="q-question" id="qQuestion"></div>
+    <div class="q-pot" id="qPrize">💰 €300</div>
+    <div class="q-options" id="qOptions"></div>
+    <div class="q-timer" id="qTimer">⏱ 30s</div>
+    <div class="q-result" id="qResult"></div>
+    <div class="q-hint" id="qHint"></div>
   </div>
 </div>
 
@@ -2500,6 +2590,167 @@
       document.getElementById('unoOverlay').classList.remove('active');
     }
     if (voiceActive) stopVoice();
+  });
+
+  // ===== CASINO SLOT MACHINE =====
+  let casinoBalance = 0;
+  let casinoBet = 10;
+  let spinning = false;
+
+  document.getElementById('casinoBtn').addEventListener('click', function() {
+    socket.emit('casino:open');
+    document.getElementById('casinoOverlay').classList.add('active');
+  });
+
+  // Bet buttons
+  document.querySelectorAll('#slotBets .sb-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (spinning) return;
+      document.querySelectorAll('#slotBets .sb-btn').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      casinoBet = parseInt(this.dataset.bet);
+    });
+  });
+
+  // Spin
+  document.getElementById('spinBtn').addEventListener('click', function() {
+    if (spinning) return;
+    if (casinoBet > casinoBalance) {
+      document.getElementById('casinoResult').textContent = '❌ Saldo insufficiente!';
+      return;
+    }
+    spinning = true;
+    this.disabled = true;
+    document.getElementById('casinoResult').textContent = '🎰 In giro...';
+
+    // Start reel animations
+    var reels = [1,2,3].map(function(i) { return document.getElementById('slotReel' + i); });
+    reels.forEach(function(r) { r.className = 'slot-reel spinning'; });
+
+    // Rapid change symbols during spinning
+    var syms = ['🍒','🍋','🍊','🍇','💎','⭐','7️⃣','👑'];
+    var spinInt = setInterval(function() {
+      reels.forEach(function(r) { r.textContent = syms[Math.floor(Math.random() * syms.length)]; });
+    }, 80);
+
+    socket.emit('casino:spin', { bet: casinoBet });
+  });
+
+  socket.on('casino:balance', function(balance) {
+    casinoBalance = balance;
+    document.getElementById('casinoBalance').textContent = balance.toLocaleString();
+    // Update bet buttons
+    document.querySelectorAll('#slotBets .sb-btn').forEach(function(btn) {
+      var b = parseInt(btn.dataset.bet);
+      btn.disabled = b > balance;
+    });
+  });
+
+  socket.on('casino:result', function(data) {
+    var reels = [1,2,3].map(function(i) { return document.getElementById('slotReel' + i); });
+
+    setTimeout(function() {
+      // Stop reels one by one
+      reels[0].className = 'slot-reel stop1';
+      reels[0].textContent = data.reels[0];
+      setTimeout(function() {
+        reels[1].className = 'slot-reel stop2';
+        reels[1].textContent = data.reels[1];
+        setTimeout(function() {
+          reels[2].className = 'slot-reel stop3';
+          reels[2].textContent = data.reels[2];
+
+          // Show result
+          var resultEl = document.getElementById('casinoResult');
+          casinoBalance = data.balance;
+          document.getElementById('casinoBalance').textContent = data.balance.toLocaleString();
+
+          if (data.payout > 0) {
+            var isJackpot = data.payout >= data.bet * 50;
+            resultEl.textContent = (isJackpot ? '👑 JACKPOT! ' : '🎉 Hai vinto ') + '€' + data.payout + '!';
+            resultEl.style.color = isJackpot ? '#ffd700' : '#22c55e';
+            if (isJackpot) {
+              resultEl.style.animation = 'unoPulse 0.5s ease-in-out 3';
+            }
+          } else {
+            resultEl.textContent = '😞 Hai perso €' + data.bet + '. Ritenta!';
+            resultEl.style.color = '#ef4444';
+          }
+
+          spinning = false;
+          document.getElementById('spinBtn').disabled = false;
+        }, 400);
+      }, 300);
+    }, 500);
+  });
+
+  document.getElementById('casinoClose').addEventListener('click', function() {
+    document.getElementById('casinoOverlay').classList.remove('active');
+  });
+  document.getElementById('casinoOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  // ===== QUIZ =====
+  var quizAnswered = false;
+
+  socket.on('quiz:question', function(data) {
+    quizAnswered = false;
+    var overlay = document.getElementById('quizOverlay');
+    document.getElementById('qQuestion').textContent = data.question;
+    document.getElementById('qPrize').textContent = '💰 €' + data.prize;
+    document.getElementById('qResult').textContent = '';
+    document.getElementById('qResult').style.color = '';
+    document.getElementById('qHint').textContent = '';
+    var optsEl = document.getElementById('qOptions');
+    optsEl.innerHTML = '';
+    document.getElementById('qTimer').textContent = '⏱ ' + data.timeLeft + 's';
+    overlay.classList.add('active');
+
+    data.options.forEach(function(opt, idx) {
+      var btn = document.createElement('button');
+      btn.className = 'q-opt';
+      btn.textContent = (idx + 1) + '. ' + opt;
+      btn.dataset.idx = idx;
+      btn.addEventListener('click', function() {
+        if (quizAnswered) return;
+        quizAnswered = true;
+        socket.emit('quiz:answer', { answer: idx });
+        // Disable all
+        optsEl.querySelectorAll('.q-opt').forEach(function(b) { b.disabled = true; });
+        this.classList.add('wrong');
+      });
+      optsEl.appendChild(btn);
+    });
+
+    // Timer countdown
+    var timeLeft = data.timeLeft;
+    var timerInt = setInterval(function() {
+      timeLeft--;
+      document.getElementById('qTimer').textContent = '⏱ ' + timeLeft + 's';
+      if (timeLeft <= 0) {
+        clearInterval(timerInt);
+        document.getElementById('qTimer').textContent = '⏱ Tempo scaduto!';
+      }
+    }, 1000);
+  });
+
+  socket.on('quiz:correct', function(data) {
+    document.getElementById('qResult').textContent = '✅ ' + data.nick + ' ha risposto correttamente! €' + data.prize;
+    document.getElementById('qResult').style.color = '#22c55e';
+    document.getElementById('qHint').textContent = 'La risposta era corretta! +€' + data.prize;
+    document.querySelectorAll('#qOptions .q-opt').forEach(function(b) { b.disabled = true; });
+    document.querySelectorAll('#qOptions .q-opt').forEach(function(b) { b.classList.add('correct'); });
+    setTimeout(function() { document.getElementById('quizOverlay').classList.remove('active'); }, 2000);
+  });
+
+  socket.on('quiz:timeout', function() {
+    document.getElementById('qTimer').textContent = '⏱ Tempo scaduto!';
+    document.getElementById('qResult').textContent = '⏰ Nessuno ha risposto!';
+    document.getElementById('qResult').style.color = 'rgba(255,255,255,0.3)';
+    document.getElementById('qHint').textContent = 'La prossima domanda tra 3 minuti!';
+    document.querySelectorAll('#qOptions .q-opt').forEach(function(b) { b.disabled = true; });
+    setTimeout(function() { document.getElementById('quizOverlay').classList.remove('active'); }, 3000);
   });
 </script>
 

@@ -192,6 +192,73 @@ function getUnoState(game, pid) {
 }
 function advanceTurn(g) { g.currentPlayerIndex = (g.currentPlayerIndex + g.direction + g.players.length) % g.players.length; }
 
+// CASINO & QUIZ
+const casinoBals = {};
+const CASINO_START = 10000;
+const QUIZ_PRIZE = 300;
+const QUIZ_INTERVAL = 180000;
+const QUIZ_TIME = 30000;
+let quizTimer = null;
+let quizActive = false;
+let currentQuiz = null;
+let quizAnswered = new Set();
+const QUIZ_QUESTIONS = [
+  {q:"In città il limite di velocità è:",o:["30 km/h","50 km/h","70 km/h","90 km/h"],a:1},
+  {q:"Il semaforo giallo indica:",o:["Accelerare","Fermarsi se possibile","Passare sempre","Suonare"],a:1},
+  {q:"Si può parcheggiare in doppia fila?",o:["Sì","No","Solo di notte","Solo domenica"],a:1},
+  {q:"Cosa significa lo zig-zag sulla strada?",o:["Divieto sosta","Fermata bus","Passaggio pedonale","Carico/scarico"],a:1},
+  {q:"Si può guidare dopo aver bevuto alcol?",o:["Sì","No","Un bicchiere","Dipende"],a:1},
+  {q:"L'assicurazione auto è obbligatoria?",o:["Sì","No","Solo auto nuove","Solo autostrada"],a:0},
+  {q:"Limite alcol neopatentati:",o:["0,5 g/L","0,3 g/L","0,0 g/L","0,8 g/L"],a:2},
+  {q:"Documento NON serve per guidare?",o:["Patente","Libretto","Carta identità","Assicurazione"],a:2},
+  {q:"Distanza sicurezza dipende da:",o:["Velocità","Freni","Tempo reazione","Tutti"],a:3},
+  {q:"In autostrada il limite è:",o:["110","120","130","150 km/h"],a:2},
+  {q:"Triangolo bianco bordo rosso significa:",o:["Divieto","Pericolo","Obbligo","Indicazione"],a:1},
+  {q:"Telefono mentre si guida:",o:["Sì","No","Solo vivavoce","Solo urgente"],a:2},
+  {q:"Cinture sicurezza obbligatorie:",o:["Solo autostrada","Sempre","Solo notte","Solo guidatore"],a:1},
+  {q:"Señale STOP obbliga a:",o:["Rallentare","Fermarsi e dare prec.","Solo se traffico","Suonare"],a:1},
+  {q:"Sorpasso a destra:",o:["Sì","No","Solo autostrada","Solo se impossibile a sx"],a:3},
+  {q:"Casco obbligatorio per:",o:["Bici","Moto","Auto","Tutti"],a:1},
+  {q:"Con pioggia distanza sicurezza:",o:["Diminuisce","Aumenta","Uguale","Non serve"],a:1},
+  {q:"Patente AM abilita:",o:["Auto","Ciclomotori","Camion","Moto"],a:1},
+  {q:"Parcheggio su strisce pedonali:",o:["Sì","No","Solo notte","5 minuti"],a:1},
+  {q:"Precedenza in rotatoria:",o:["Chi entra","Chi è dentro","Chi viene da destra","Chi da sinistra"],a:1},
+  {q:"Limite neopatentati in città:",o:["50","70","90","100 km/h"],a:0},
+  {q:"Segnale 'dare precedenza' ha forma:",o:["Cerchio","Triangolo","Quadrato","Rettangolo"],a:1},
+  {q:"Si può sorpassare in curva?",o:["Sì","No","Solo se visibilità","Solo di giorno"],a:1},
+  {q:"La revisione auto è obbligatoria ogni:",o:["1 anno","2 anni","3 anni","4 anni"],a:1},
+  {q:"Il libretto di circolazione contiene:",o:["Dati auto","Dati proprietario","Bollo","Multa"],a:0},
+];
+const SLOT_SYMS = [
+  {e:'🍒',w:30,p2:2,p3:5},{e:'🍋',w:25,p2:0,p3:8},{e:'🍊',w:20,p2:0,p3:12},{e:'🍇',w:15,p2:0,p3:20},
+  {e:'💎',w:10,p2:0,p3:30},{e:'⭐',w:8,p2:0,p3:50},{e:'7️⃣',w:5,p2:0,p3:100},{e:'👑',w:2,p2:0,p3:200},
+];
+function spinSlots() {
+  const r = [];
+  for (let i = 0; i < 3; i++) {
+    let t = Math.random() * 100, cum = 0;
+    for (const s of SLOT_SYMS) { cum += s.w; if (t <= cum) { r.push(s); break; } }
+    if (!r[i]) r[i] = SLOT_SYMS[0];
+  }
+  return r;
+}
+function calcSlot(r, bet) {
+  const [a,b,c] = r;
+  if (a.e === b.e && b.e === c.e) return bet * a.p3;
+  const ch = (a.e==='🍒'?1:0)+(b.e==='🍒'?1:0)+(c.e==='🍒'?1:0);
+  return ch >= 2 ? bet * 2 : 0;
+}
+function getBal(id) { if (!casinoBals[id]) casinoBals[id] = CASINO_START; return casinoBals[id]; }
+function resetQuiz() { quizActive = false; currentQuiz = null; quizAnswered = new Set(); }
+function sendQuiz() {
+  if (Object.keys(users).length < 1) return;
+  const q = QUIZ_QUESTIONS[Math.floor(Math.random() * QUIZ_QUESTIONS.length)];
+  currentQuiz = q; quizActive = true; quizAnswered = new Set();
+  io.emit('quiz:question', { question: q.q, options: q.o, prize: QUIZ_PRIZE, timeLeft: 30 });
+  setTimeout(() => { if (quizActive) { io.emit('quiz:timeout'); resetQuiz(); } }, QUIZ_TIME);
+}
+function startQuiz() { if (quizTimer) clearInterval(quizTimer); quizTimer = setInterval(sendQuiz, QUIZ_INTERVAL); }
+
 io.on('connection', (socket) => {
   const ip = socket.handshake.address;
   console.log(`[${new Date().toLocaleTimeString()}] Connesso: ${socket.id} — IP: ${ip}`);
@@ -506,6 +573,41 @@ io.on('connection', (socket) => {
     }
     if (u) io.to(gameId).emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`${u.nick} ha lasciato UNO.`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
   });
+
+  // CASINO events
+  socket.on('casino:open', () => { socket.emit('casino:balance', getBal(socket.id)); });
+
+  socket.on('casino:spin', ({ bet }) => {
+    const u = users[socket.id]; if (!u) return;
+    const bal = getBal(socket.id);
+    if (bet < 1 || bet > bal) return;
+    casinoBals[socket.id] = bal - bet;
+    const reels = spinSlots();
+    const payout = calcSlot(reels, bet);
+    casinoBals[socket.id] += payout;
+    socket.emit('casino:result', { reels: reels.map(r=>r.e), payout, balance: casinoBals[socket.id], bet });
+    if (payout > 0) {
+      const isJackpot = payout >= bet * 50;
+      io.emit('chat message', { id:++msgCounter, nick:'Casinò', avatar:'💰', msg:`🎰 ${isJackpot?'JACKPOT! ':''}${u.nick} ha vinto €${payout} alla slot!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+    }
+  });
+
+  // QUIZ events
+  socket.on('quiz:answer', ({ answer }) => {
+    if (!quizActive || !currentQuiz) return;
+    if (quizAnswered.has(socket.id)) return;
+    if (answer === currentQuiz.a) {
+      quizAnswered.add(socket.id);
+      casinoBals[socket.id] = getBal(socket.id) + QUIZ_PRIZE;
+      const u = users[socket.id];
+      socket.emit('casino:balance', casinoBals[socket.id]);
+      io.emit('quiz:correct', { nick: u ? u.nick : 'Qualcuno', prize: QUIZ_PRIZE });
+    }
+  });
+
+  // Start quiz timer + get initial balance
+  if (!quizTimer) startQuiz();
+  socket.emit('casino:balance', getBal(socket.id));
 
   // Voice Chat signaling
   socket.on('voice join', () => {
