@@ -1058,7 +1058,7 @@ io.on('connection', (socket) => {
       io.to(sid).emit('battle:start', {
         battleId: id, myIdx: b.players.findIndex(p => p.id === sid),
         players: b.players.map(p => ({ id: p.id, nick: p.nick, team: p.team.map(pk => ({ species:pk.species, img:pk.img, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves })), currentPoke: p.currentPoke })),
-        turnPlayer: b.turnPlayer, log: []
+        turnPlayer: b.turnPlayer, log: [], state: 'playing'
       });
     });
   });
