@@ -1,14 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="192" y2="192" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#3a0a6a"/>
-      <stop offset="100%" stop-color="#1a0530"/>
+      <stop offset="0%" stop-color="#4a0e78"/>
+      <stop offset="100%" stop-color="#1f0540"/>
     </linearGradient>
   </defs>
-  <rect width="192" height="192" rx="38" fill="url(#bg)"/>
-  <g transform="translate(96,84)">
-    <rect x="-54" y="-48" width="108" height="96" rx="18" fill="none" stroke="#fff" stroke-width="5"/>
-    <polygon points="-38,48 -28,62 -18,48" fill="url(#bg)" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>
-  </g>
-  <text x="96" y="105" font-family="Arial,Helvetica Neue,sans-serif" font-size="52" font-weight="700" fill="#fff" text-anchor="middle">E</text>
+  <rect width="192" height="192" rx="48" fill="url(#bg)"/>
+  <rect x="32" y="38" width="128" height="116" rx="22" fill="#fff"/>
+  <text x="96" y="118" font-family="Arial,Helvetica Neue,sans-serif" font-size="64" font-weight="700" fill="#2d0a4d" text-anchor="middle">E</text>
 </svg>
