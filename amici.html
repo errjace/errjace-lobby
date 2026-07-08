@@ -1284,6 +1284,12 @@
   <div class="casino-box">
     <h3>💰 CASINÒ</h3>
     <div class="casino-bal">Saldo: €<span id="casinoBalance">0</span></div>
+    <div class="casino-leaderboard-wrap">
+      <div class="casino-lb-header" id="casinoLbHeader" style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text2,#888);margin-bottom:4px;user-select:none;">
+        <span id="casinoLbArrow">▶</span> Classifica vincite
+      </div>
+      <div id="casinoLeaderboard" style="display:none;font-size:0.7rem;margin-bottom:8px;max-height:140px;overflow-y:auto;"></div>
+    </div>
     <div class="slot-machine">
       <div class="slot-reels">
         <div class="slot-reel" id="slotReel1">🍒</div>
@@ -2879,6 +2885,27 @@
   });
   document.getElementById('casinoOverlay').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
+  });
+
+  // Casino leaderboard toggle
+  document.getElementById('casinoLbHeader').addEventListener('click', function() {
+    var lb = document.getElementById('casinoLeaderboard');
+    var arrow = document.getElementById('casinoLbArrow');
+    lb.style.display = lb.style.display === 'none' ? 'block' : 'none';
+    arrow.textContent = lb.style.display === 'none' ? '▶' : '▼';
+  });
+  socket.on('casino:leaderboard', function(entries) {
+    var el = document.getElementById('casinoLeaderboard');
+    if (!entries.length) { el.innerHTML = '<div style="color:#888;padding:4px;">Nessuna vincita ancora</div>'; return; }
+    var html = '';
+    entries.forEach(function(e, i) {
+      var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)+'.';
+      html += '<div style="display:flex;justify-content:space-between;padding:2px 4px;border-bottom:1px solid rgba(255,255,255,0.05);">';
+      html += '<span>'+medal+' '+e.nick+'</span>';
+      html += '<span style="color:#22c55e;font-weight:700;">+€'+e.earn.toLocaleString()+'</span>';
+      html += '</div>';
+    });
+    el.innerHTML = html;
   });
 
   // ===== QUIZ =====

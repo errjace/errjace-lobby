@@ -194,6 +194,7 @@ function advanceTurn(g) { g.currentPlayerIndex = (g.currentPlayerIndex + g.direc
 
 // CASINO & QUIZ
 const casinoBals = {};
+const casinoEarnings = {}; // net earnings per socket
 const CASINO_START = 10000;
 const QUIZ_PRIZE = 10000;
 const QUIZ_INTERVAL = 180000;
@@ -202,6 +203,13 @@ let quizTimer = null;
 let quizActive = false;
 let currentQuiz = null;
 let quizAnswered = new Set();
+
+function broadcastCasinoLeaderboard() {
+  const entries = Object.keys(casinoEarnings).map(id => ({ id, nick: users[id]?.nick||'Sconosciuto', earn: casinoEarnings[id] }));
+  entries.sort((a,b) => b.earn - a.earn);
+  io.emit('casino:leaderboard', entries.slice(0, 10));
+}
+
 const QUIZ_QUESTIONS = [
   {q:"In città il limite di velocità è:",o:["30 km/h","50 km/h","70 km/h","90 km/h"],a:1},
   {q:"Il semaforo giallo indica:",o:["Accelerare","Fermarsi se possibile","Passare sempre","Suonare"],a:1},
@@ -646,7 +654,12 @@ io.on('connection', (socket) => {
     if (payout > 0) {
       const isJackpot = payout >= bet * 50;
       addPokeXP(socket.id, isJackpot ? 25 : 5, isJackpot ? 'jackpot' : 'vincita slot');
-      io.emit('chat message', { id:++msgCounter, nick:'Casinò', avatar:'💰', msg:`🎰 ${isJackpot?'JACKPOT! ':''}${u.nick} ha vinto €${payout} alla slot!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+      const netEarn = payout - bet;
+      casinoEarnings[socket.id] = (casinoEarnings[socket.id] || 0) + netEarn;
+      if (isJackpot) {
+        io.emit('chat message', { id:++msgCounter, nick:'Casinò', avatar:'💰', msg:`👑 ${u.nick} ha fatto JACKPOT! €${payout} 🎰`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+      }
+      broadcastCasinoLeaderboard();
     }
   });
 
@@ -658,6 +671,8 @@ io.on('connection', (socket) => {
       quizAnswered.add(socket.id);
       casinoBals[socket.id] = getBal(socket.id) + QUIZ_PRIZE;
       addPokeXP(socket.id, 30, 'quiz');
+      casinoEarnings[socket.id] = (casinoEarnings[socket.id] || 0) + QUIZ_PRIZE;
+      broadcastCasinoLeaderboard();
       const u = users[socket.id];
       socket.emit('casino:balance', casinoBals[socket.id]);
       io.emit('quiz:correct', { nick: u ? u.nick : 'Qualcuno', prize: QUIZ_PRIZE });
