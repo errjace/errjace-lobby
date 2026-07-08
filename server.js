@@ -411,7 +411,7 @@ const MOVE_POOL = {
 function getMovesForTypes(types) {
   let moves = [];
   types.forEach(t => {
-    if(MOVE_POOL[t]) { MOVE_POOL[t].forEach(m => moves.push({...m})); }
+    if(MOVE_POOL[t]) { MOVE_POOL[t].forEach(m => moves.push({...m, t: t})); }
   });
   // Shuffle and pick 4
   for(let i=moves.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[moves[i],moves[j]]=[moves[j],moves[i]];}
