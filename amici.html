@@ -1363,7 +1363,7 @@
   <!-- Mascotte fluttuante -->
   <div id="mascotte" style="display:none;position:absolute;bottom:70px;right:10px;z-index:50;cursor:pointer;">
     <div id="mascotteSpeech" class="mascotte-speech">👋 Ciao!</div>
-    <div class="mascotte-body">👻</div>
+    <div class="mascotte-body"><img src="IMG_1513.jpeg" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);"></div>
   </div>
 </div>
 
@@ -2854,36 +2854,18 @@
       document.getElementById('connStatus').className = 'conn-status disconnected';
     }
     socket.emit('join lobby', { nick: window.pendingNick, avatar: window.pendingAvatar });
-    // Avvia mascotte dopo un po'
-    setTimeout(showMascotte, 2000);
-    if (window.mascotteInterval) clearInterval(window.mascotteInterval);
-    window.mascotteInterval = setInterval(showMascotte, 45000 + Math.random()*30000);
+    // Welcome ERRJACE Room — 1 volta
+    setTimeout(showMascotte, 1500);
   });
 
-  // Mascotte personaggio
-  var mascotteChars = ['👻','🦊','🐉','🤖','👽','🕵️','🧙','🎃'];
-  var mascotteGreets = [
-    '👋 Ciao!',
-    'Benvenuto su ERRJACE!',
-    'Come va? 😊',
-    'Pronto per giocare?',
-    '👻 Buu!',
-    'Cliccami!',
-    'Salve! ✨',
-    'Ehi, tutto bene?',
-    'Che bello vederti! 🌟',
-    '🎉 Evviva!',
-    'Cosa vuoi fare oggi?',
-    'Mi sto annoiando... cliccami!'
-  ];
+  // Mascotte benvenuto (1 volta)
+  var mascotteGreets = ['✨ ERRJACE Room ✨', 'Benvenuto nella ERRJACE Room!', '🎉 ERRJACE ti dà il benvenuto!'];
   function showMascotte() {
     var el = document.getElementById('mascotte');
     var speech = document.getElementById('mascotteSpeech');
-    var body = el.querySelector('.mascotte-body');
-    if (!el || el.style.display === 'none' === false) return;
+    if (!el) return;
     el.className = 'mascotte-show';
     el.style.display = 'block';
-    body.textContent = mascotteChars[Math.floor(Math.random()*mascotteChars.length)];
     speech.textContent = mascotteGreets[Math.floor(Math.random()*mascotteGreets.length)];
     setTimeout(hideMascotte, 4000);
   }
@@ -2895,10 +2877,8 @@
   }
   document.getElementById('mascotte').addEventListener('click', function() {
     var speech = document.getElementById('mascotteSpeech');
-    var body = this.querySelector('.mascotte-body');
-    var reacts = ['💥 BAM!','😆 Ahah!','🫵 Ehi!','✨ Preso!','💫 Whee!','😜 Hehe!'];
+    var reacts = ['💥 ERRJACE!','😆 Grazie!','✨ Sempre!','💫 🔥'];
     speech.textContent = reacts[Math.floor(Math.random()*reacts.length)];
-    body.textContent = mascotteChars[Math.floor(Math.random()*mascotteChars.length)];
     this.style.transform = 'scale(1.2)';
     setTimeout(function() { if (mascotte.style) mascotte.style.transform = ''; }, 200);
     setTimeout(hideMascotte, 1500);
