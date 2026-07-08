@@ -1183,10 +1183,11 @@
     </div>
     <div class="chat-area">
       <div class="chat-messages" id="chatMessages"></div>
-      <div class="chat-input-row">
+      <div class="chat-input-row" style="position:relative;">
         <input type="text" id="chatInput" placeholder="Scrivi un messaggio..." autocomplete="off">
-        <button id="pokeSendBtn" title="Mostra Pokémon" style="font-size:1rem;padding:0.35rem 0.5rem;background:linear-gradient(135deg,#e11d48 50%,#fff 50%);border:2px solid #333;border-radius:50%;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;"></button>
+        <button id="pokeSendBtn" title="Mostra Pokémon" style="font-size:1rem;padding:0.35rem 0.5rem;background:linear-gradient(135deg,#e11d48 50%,#fff 50%);border:2px solid #333;border-radius:50%;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;position:relative;"></button>
         <button id="sendBtn">Invia</button>
+        <div id="pokeChatPicker" style="display:none;position:absolute;bottom:100%;left:0;right:0;background:var(--bg2,#1a1a2e);border:1px solid var(--accent,#7c3aed);border-radius:10px;padding:0.5rem;margin-bottom:4px;z-index:100;gap:0.5rem;flex-wrap:wrap;justify-content:center;"></div>
       </div>
       <div class="typing-indicator" id="typingIndicator"></div>
       <!-- Music Player -->
@@ -2340,7 +2341,7 @@
         const isMe = window.myNick && u.nick === window.myNick;
         var pokeName = u.pokemon.currentForm.replace(/[^\w\s]/g,'').trim();
         var pokeId = POKE_IDS[pokeName] || 4;
-        if (isMe && !myPoke) myPoke = { starter: u.pokemon.starter, form: u.pokemon.currentForm, img: POKE_IMG+pokeId+'.png', xp: xp };
+        if (isMe && !myPoke) myPoke = { starter: u.pokemon.starter, form: u.pokemon.currentForm, img: POKE_IMG+pokeId+'.png', xp: xp, caught: u.pokemon.clawPoke || null };
         var clawHtml = '';
         if (u.pokemon.clawPoke) clawHtml = `<img src="${u.pokemon.clawPoke.img}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-left:2px;opacity:0.8;border-radius:50%;border:1px solid #ffd700;" title="Catturato: ${u.pokemon.clawPoke.name}">`;
         pokeHtml = `<div class="poke-sidebar" data-sid="${u.id}" data-self="${isMe?'1':'0'}"><img src="${POKE_IMG+pokeId}.png" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;display:inline">${clawHtml}<span class="plv">Lv${lv}</span><div class="pxp"><div class="pxp-fill" style="width:${pct}%"></div></div></div>`;
@@ -2410,12 +2411,47 @@
   }
 
   document.getElementById('sendBtn').addEventListener('click', sendMessage);
-  document.getElementById('pokeSendBtn').addEventListener('click', function() {
+  document.getElementById('pokeSendBtn').addEventListener('click', function(e) {
     if (!myPoke) return;
+    var picker = document.getElementById('pokeChatPicker');
+    if (picker.style.display !== 'none') { picker.style.display = 'none'; return; }
+    picker.innerHTML = '';
+    // Starter
     var lv = getLv(myPoke.xp||0);
-    var msg = '⚡ Pokémon: ' + (myPoke.img?'<img src="'+myPoke.img+'" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle"> ':'') + myPoke.form + ' (Lv.' + lv + ', XP: ' + (myPoke.xp||0) + ')';
-    socket.emit('chat message', msg);
+    var starterCard = document.createElement('div');
+    starterCard.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.05);border-radius:8px;cursor:pointer;transition:0.2s;flex:1;min-width:120px;';
+    starterCard.innerHTML = '<img src="'+myPoke.img+'" style="width:40px;height:40px;image-rendering:pixelated"> <div><div style="font-weight:700;font-size:0.85rem;">'+myPoke.form+'</div><div style="font-size:0.7rem;color:var(--text2,#888);">Lv.'+lv+' ⚡ Starter</div></div>';
+    starterCard.onmouseover = function(){this.style.background='rgba(124,58,237,0.2)';};
+    starterCard.onmouseout = function(){this.style.background='rgba(255,255,255,0.05)';};
+    starterCard.onclick = function(){ picker.style.display='none'; sendPokeCard(myPoke.form, myPoke.xp, lv, myPoke.img, false); };
+    picker.appendChild(starterCard);
+    // Claw-caught
+    if (myPoke.caught) {
+      var clawCard = document.createElement('div');
+      clawCard.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.05);border-radius:8px;cursor:pointer;transition:0.2s;flex:1;min-width:120px;border:1px solid #ffd70044;';
+      clawCard.innerHTML = '<img src="'+myPoke.caught.img+'" style="width:40px;height:40px;image-rendering:pixelated"> <div><div style="font-weight:700;font-size:0.85rem;">'+myPoke.caught.name+'</div><div style="font-size:0.7rem;color:#ffd700;">🏆 Catturato</div></div>';
+      clawCard.onmouseover = function(){this.style.background='rgba(255,215,0,0.15)';};
+      clawCard.onmouseout = function(){this.style.background='rgba(255,255,255,0.05)';};
+      clawCard.onclick = function(){ picker.style.display='none'; sendPokeCard(myPoke.caught.name, null, null, myPoke.caught.img, myPoke.caught.legendary); };
+      picker.appendChild(clawCard);
+    }
+    picker.style.display = 'flex';
+    e.stopPropagation();
   });
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#pokeSendBtn') && !e.target.closest('#pokeChatPicker')) {
+      document.getElementById('pokeChatPicker').style.display = 'none';
+    }
+  });
+  function sendPokeCard(name, xp, lv, img, legendary) {
+    var card = '<div style="display:inline-flex;flex-direction:column;align-items:center;background:linear-gradient(135deg,'+(legendary?'#1a0a00':'#1a1a2e')+','+(legendary?'#2a1500':'#2a1a3e')+');border:2px solid '+(legendary?'#ffd700':'var(--accent,#7c3aed)')+';border-radius:12px;padding:8px 14px;margin:4px 0;">';
+    card += '<img src="'+img+'" style="width:64px;height:64px;image-rendering:pixelated;display:block;">';
+    card += '<div style="font-weight:700;font-size:0.9rem;margin-top:4px;">'+(legendary?'🌟 ':'')+name+(legendary?' 🌟':'')+'</div>';
+    if (lv) card += '<div style="font-size:0.7rem;color:var(--text2,#888);">Lv.'+lv+(xp?' · XP: '+xp:'')+'</div>';
+    if (legendary) card += '<div style="font-size:0.6rem;color:#ffd700;letter-spacing:2px;font-family:\'Black Ops One\',monospace;">LEGGENDARIO</div>';
+    card += '</div>';
+    socket.emit('chat message', card);
+  }
 
   let typingTimeout = null;
   document.getElementById('chatInput').addEventListener('keydown', function(e) {
@@ -2947,6 +2983,7 @@
     casinoBalance = data.balance;
     document.getElementById('casinoBalance').textContent = data.balance.toLocaleString();
     document.getElementById('clawBalance').textContent = data.balance.toLocaleString();
+    if (myPoke) myPoke.caught = { name: data.caught.name, id: data.caught.id, img: data.caught.img, legendary: data.caught.legendary };
 
     // Show sprites in balls
     clawBalls.forEach(function(b, i) {
@@ -3002,7 +3039,7 @@
   });
   socket.on('pokemon:picked', function(data) {
     if (data.error) return;
-    myPoke = { starter: data.starter, form: data.form, img: data.img, level: data.level, xp: data.xp };
+    myPoke = { starter: data.starter, form: data.form, img: data.img, level: data.level, xp: data.xp, caught: null };
     document.getElementById('pokePicker').classList.remove('active');
   });
 
