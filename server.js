@@ -686,8 +686,10 @@ io.on('connection', (socket) => {
       hit=sel[Math.floor(Math.random()*sel.length)];
       if(hit.t===2) delete clawCounters[socket.id];
     }
-    socket.emit('pokeclaw:result',{pokemon:sel.map(p=>({name:p.n,id:p.i})),caught:{name:hit.n,id:hit.i,legendary:hit.t===2},balance:casinoBals[socket.id]});
-    addPokeXP(socket.id, 10, 'pokéclaw');
+    var pokeData = pokemonData[socket.id];
+    if(pokeData) pokeData.clawPoke = { name: hit.n, id: hit.i, img: POKE_IMG+hit.i+'.png', legendary: hit.t===2 };
+    socket.emit('pokeclaw:result',{pokemon:sel.map(p=>({name:p.n,id:p.i})),caught:{name:hit.n,id:hit.i,legendary:hit.t===2,img:POKE_IMG+hit.i+'.png'},balance:casinoBals[socket.id]});
+    addPokeXP(socket.id, 10, 'pokéclaw'); // broadcasts users online
     if(hit.t===2){
       io.emit('chat message',{id:++msgCounter,nick:'🌟 LEGGENDARIO!',avatar:'<img src="'+POKE_IMG+hit.i+'.png" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle">',msg:`✨✨ ${u.nick.toUpperCase()} HA TROVATO ${hit.n.toUpperCase()}! ✨✨`,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),system:true,reactions:{}});
       io.emit('pokeclaw:legendary',{nick:u.nick,pokemon:hit.n,img:POKE_IMG+hit.i+'.png'});
@@ -698,7 +700,7 @@ io.on('connection', (socket) => {
   socket.on('pokemon:pick', ({ starter }) => {
     const u = users[socket.id];
     if (!STARTERS[starter] || pokemonData[socket.id]) { socket.emit('pokemon:picked',{error:'Già scelto o non valido'}); return; }
-    const d = { starter, currentForm: STARTERS[starter].evos[0], xp: 0, nick: u?u.nick:'' };
+    const d = { starter, currentForm: STARTERS[starter].evos[0], xp: 0, nick: u?u.nick:'', clawPoke: null };
     pokemonData[socket.id] = d;
     socket.emit('pokemon:picked', { starter, form: d.currentForm, img: POKE_IMG + STARTERS[d.starter].imgs[0] + '.png', level: 1, xp: 0 });
     io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
@@ -707,7 +709,7 @@ io.on('connection', (socket) => {
   socket.on('pokemon:leaderboard', () => {
     const list = Object.entries(pokemonData).filter(([id]) => users[id]).map(([id, d]) => {
       const lv = getPokemonLv(d.xp);
-      return { nick: users[id].nick, avatar: users[id].avatar, starter: d.starter, form: d.currentForm, img: POKE_IMG + STARTERS[d.starter].imgs[getPokeStage(lv)] + '.png', xp: d.xp, level: lv };
+      return { nick: users[id].nick, avatar: users[id].avatar, starter: d.starter, form: d.currentForm, img: POKE_IMG + STARTERS[d.starter].imgs[getPokeStage(lv)] + '.png', xp: d.xp, level: lv, clawPoke: d.clawPoke };
     }).sort((a,b) => b.xp - a.xp).slice(0, 20);
     socket.emit('pokemon:leaderboard', list);
   });

@@ -2341,7 +2341,9 @@
         var pokeName = u.pokemon.currentForm.replace(/[^\w\s]/g,'').trim();
         var pokeId = POKE_IDS[pokeName] || 4;
         if (isMe && !myPoke) myPoke = { starter: u.pokemon.starter, form: u.pokemon.currentForm, img: POKE_IMG+pokeId+'.png', xp: xp };
-        pokeHtml = `<div class="poke-sidebar" data-sid="${u.id}" data-self="${isMe?'1':'0'}"><img src="${POKE_IMG+pokeId}.png" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;display:inline"><span class="plv">Lv${lv}</span><div class="pxp"><div class="pxp-fill" style="width:${pct}%"></div></div></div>`;
+        var clawHtml = '';
+        if (u.pokemon.clawPoke) clawHtml = `<img src="${u.pokemon.clawPoke.img}" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-left:2px;opacity:0.8;border-radius:50%;border:1px solid #ffd700;" title="Catturato: ${u.pokemon.clawPoke.name}">`;
+        pokeHtml = `<div class="poke-sidebar" data-sid="${u.id}" data-self="${isMe?'1':'0'}"><img src="${POKE_IMG+pokeId}.png" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;display:inline">${clawHtml}<span class="plv">Lv${lv}</span><div class="pxp"><div class="pxp-fill" style="width:${pct}%"></div></div></div>`;
       }
       div.innerHTML = `<span class="online-dot"></span><span class="avatar">${u.avatar}</span><span class="name">${u.nick}</span>${pokeHtml}`;
       list.appendChild(div);
@@ -3010,7 +3012,9 @@
     list.forEach(function(p, i) {
       var tr = document.createElement('tr');
       var rnk = i + 1;
-      tr.innerHTML = '<td class="rank rank-' + rnk + '">#' + rnk + '</td><td>' + p.nick + '</td><td><img src="' + (p.img||'') + '" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle"> ' + p.form + '</td><td class="xp-num">' + p.xp + '</td><td>Lv' + p.level + '</td>';
+      var clawLb = '';
+      if (p.clawPoke) clawLb = ' <img src="'+p.clawPoke.img+'" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;opacity:0.7;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+p.clawPoke.name+'">';
+      tr.innerHTML = '<td class="rank rank-' + rnk + '">#' + rnk + '</td><td>' + p.nick + '</td><td><img src="' + (p.img||'') + '" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle"> ' + p.form + clawLb + '</td><td class="xp-num">' + p.xp + '</td><td>Lv' + p.level + '</td>';
       tbody.appendChild(tr);
     });
     document.getElementById('pokeLeaderOverlay').classList.add('active');
