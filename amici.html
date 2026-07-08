@@ -747,6 +747,41 @@
   .toggle-queue-btn { background: none; border: 1px solid var(--borderLight); color: var(--accentText); font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 6px; cursor: pointer; animation: none; transition: background 0.15s; }
   .toggle-queue-btn:hover { background: rgba(139,92,246,0.1); }
 
+  /* Like Toast Notification */
+  .like-toast {
+    position: fixed; top: -80px; left: 50%; transform: translateX(-50%);
+    z-index: 99999; transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: linear-gradient(135deg, rgba(20,8,40,0.96), rgba(30,10,60,0.96));
+    border: 1px solid var(--border); border-top: 2px solid #ef4444;
+    border-radius: 14px; padding: 0.75rem 1.25rem;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 30px rgba(239,68,68,0.1);
+    display: flex; align-items: center; gap: 0.75rem;
+    backdrop-filter: blur(12px); white-space: nowrap;
+  }
+  .like-toast.show { top: 16px; }
+  .like-toast .lt-text { font-size: 0.85rem; color: rgba(255,255,255,0.85); letter-spacing: 0.03em; }
+  .like-toast .lt-text strong { color: #ef4444; }
+  .like-toast .lt-heart {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none; color: #fff; font-size: 1rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.3s, box-shadow 0.3s; flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(239,68,68,0.3);
+  }
+  .like-toast .lt-heart:hover { transform: scale(1.25); box-shadow: 0 0 24px rgba(239,68,68,0.5); }
+  .like-toast .lt-heart.liked { animation: heartBoom 0.4s ease; }
+  @keyframes heartBoom {
+    0% { transform: scale(1); } 30% { transform: scale(1.4); }
+    60% { transform: scale(0.9); } 100% { transform: scale(1.15); }
+  }
+  .like-toast .lt-close {
+    background: none; border: none; color: rgba(255,255,255,0.2); font-size: 0.8rem;
+    cursor: pointer; padding: 0.2rem; transition: color 0.2s; animation: none;
+  }
+  .like-toast .lt-close:hover { color: rgba(255,255,255,0.6); }
+  .like-toast .lt-close::after { display: none; }
+
   .conn-status {
     position: fixed; top: 10px; right: 10px; z-index: 9999;
     font-size: 0.65rem; padding: 0.25rem 0.6rem; border-radius: 10px;
@@ -1055,6 +1090,13 @@
   </div>
 </div>
 
+<!-- Like Toast -->
+<div class="like-toast" id="likeToast">
+  <div class="lt-text">Lascia un ❤️ a <strong>ERRJACE</strong>!</div>
+  <button class="lt-heart" id="ltHeart">❤️</button>
+  <button class="lt-close" id="ltClose">✕</button>
+</div>
+
 <script>
   // ===== CONFIGURAZIONE =====
   const SECRET_TOKEN = "LOCAL ROOM BY ERRJACE";
@@ -1078,6 +1120,38 @@
     document.getElementById('connStatus').textContent = '● Disconnesso';
     document.getElementById('connStatus').className = 'conn-status disconnected';
   });
+
+  // ===== LIKE TOAST =====
+  var likeToastTimeout = null;
+  var likeToastShown = false;
+
+  function showLikeToast() {
+    var el = document.getElementById('likeToast');
+    el.classList.add('show');
+    likeToastShown = true;
+    if (likeToastTimeout) clearTimeout(likeToastTimeout);
+    likeToastTimeout = setTimeout(function() {
+      el.classList.remove('show');
+    }, 7000);
+  }
+
+  document.getElementById('ltClose').addEventListener('click', function() {
+    document.getElementById('likeToast').classList.remove('show');
+    if (likeToastTimeout) clearTimeout(likeToastTimeout);
+  });
+
+  document.getElementById('ltHeart').addEventListener('click', function() {
+    this.classList.add('liked');
+    setTimeout(function() { document.getElementById('ltHeart').classList.remove('liked'); }, 500);
+  });
+
+  // Show toast after 10 seconds, then every 3 minutes
+  setTimeout(function() {
+    if (!likeToastShown) showLikeToast();
+  }, 10000);
+  setInterval(function() {
+    if (socketConnected) showLikeToast();
+  }, 180000);
 
   // ===== YOUTUBE PLAYER =====
   let ytPlayer = null;
