@@ -230,8 +230,9 @@ const QUIZ_QUESTIONS = [
   {q:"Il libretto di circolazione contiene:",o:["Dati auto","Dati proprietario","Bollo","Multa"],a:0},
 ];
 const SLOT_SYMS = [
-  {e:'🍒',w:30,p2:2,p3:5},{e:'🍋',w:25,p2:0,p3:8},{e:'🍊',w:20,p2:0,p3:12},{e:'🍇',w:15,p2:0,p3:20},
-  {e:'💎',w:10,p2:0,p3:30},{e:'⭐',w:8,p2:0,p3:50},{e:'7️⃣',w:5,p2:0,p3:100},{e:'👑',w:2,p2:0,p3:200},
+  {e:'🍒',w:25,p2:2,p3:5},{e:'🍋',w:20,p2:2,p3:8},{e:'🍊',w:18,p2:2,p3:12},
+  {e:'🍇',w:15,p2:2,p3:20},{e:'💎',w:12,p2:2,p3:30},{e:'⭐',w:6,p2:0,p3:50},
+  {e:'7️⃣',w:3,p2:0,p3:100},{e:'👑',w:1,p2:0,p3:200},
 ];
 function spinSlots() {
   const r = [];
@@ -245,8 +246,10 @@ function spinSlots() {
 function calcSlot(r, bet) {
   const [a,b,c] = r;
   if (a.e === b.e && b.e === c.e) return bet * a.p3;
-  const ch = (a.e==='🍒'?1:0)+(b.e==='🍒'?1:0)+(c.e==='🍒'?1:0);
-  return ch >= 2 ? bet * 2 : 0;
+  if (a.e === b.e) return bet * a.p2;
+  if (a.e === c.e) return bet * a.p2;
+  if (b.e === c.e) return bet * b.p2;
+  return 0;
 }
 function getBal(id) { if (casinoBals[id] === undefined) casinoBals[id] = CASINO_START; return casinoBals[id]; }
 function resetQuiz() { quizActive = false; currentQuiz = null; quizAnswered = new Set(); }
