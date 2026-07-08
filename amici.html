@@ -1165,7 +1165,6 @@
       <button class="dama-btn" id="damaBtn" title="Sfida a Dama">♟</button>
       <button class="uno-btn" id="unoBtn" title="UNO">🃏</button>
       <button class="dama-btn" id="casinoBtn" title="Casinò" style="font-size:0.8rem;">💰</button>
-      <button class="dama-btn" id="lbBtn" title="Classifica vincite" style="font-size:0.9rem;">🏆</button>
       <button class="dama-btn poke-btn" id="pokeBtn" title="Pokémon" style="font-size:0.9rem;">⚡</button>
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <div class="voice-indicators" id="voiceIndicators"></div>
@@ -1179,7 +1178,10 @@
   </div>
   <div class="lobby-body">
     <div class="online-sidebar" id="onlineSidebar">
-      <h3>Online</h3>
+      <div style="display:flex;gap:4px;margin-bottom:4px;">
+        <span class="lb-tab" data-tab="online" style="cursor:pointer;font-size:0.7rem;padding:2px 8px;border-radius:6px;background:var(--accent);color:#fff;" id="tabOnline">Online</span>
+        <span class="lb-tab" data-tab="classifica" style="cursor:pointer;font-size:0.7rem;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.1);color:var(--text2);" id="tabClassifica">🏆 Classifica</span>
+      </div>
       <div id="onlineList"></div>
     </div>
     <div class="chat-area">
@@ -1304,16 +1306,6 @@
     <div class="casino-result" id="casinoResult"></div>
     <button class="casino-close" id="casinoClose">✕ Chiudi</button>
     <button class="spin-btn" id="clawOpenBtn" style="margin-top:0.5rem;font-size:0.75rem;background:linear-gradient(135deg,#e11d48 50%,#fff 50%) !important;border:2px solid #333 !important;">🔴 PESCA POKÉMON (€5K)</button>
-  </div>
-</div>
-
-<!-- LEADERBOARD Overlay -->
-<div class="overlay" id="lbOverlay" style="z-index:1100;">
-  <div class="popup" style="max-width:360px;padding:1rem;">
-    <h2 style="font-size:1rem;">🏆 Classifica Vincite</h2>
-    <div style="font-size:0.7rem;color:var(--text2,#888);margin-bottom:0.5rem;">Slot machine · Quiz</div>
-    <div id="lbContent" style="max-height:300px;overflow-y:auto;text-align:left;"></div>
-    <button class="game-btn" id="lbClose" style="margin-top:0.5rem;font-size:0.7rem;padding:0.35rem 0.75rem;background:rgba(255,255,255,0.1);">CHIUDI</button>
   </div>
 </div>
 
@@ -1840,16 +1832,19 @@
     if (e.target === this) this.classList.remove('active');
   });
 
-  socket.on('users online', function(users) {
-    onlineUsers = users;
-    const list = document.getElementById('onlineList');
+  function renderOnlineList() {
+    var list = document.getElementById('onlineList');
     list.innerHTML = '';
-    users.forEach(function(u) {
-      const div = document.createElement('div');
+    onlineUsers.forEach(function(u) {
+      var div = document.createElement('div');
       div.className = 'online-user';
       div.innerHTML = '<span class="online-dot"></span><span class="avatar">' + u.avatar + '</span>' + u.nick;
       list.appendChild(div);
     });
+  }
+  socket.on('users online', function(users) {
+    onlineUsers = users;
+    renderOnlineList();
   });
 
   function renderBoard(board, turn) {
@@ -2892,29 +2887,38 @@
     if (e.target === this) this.classList.remove('active');
   });
 
-  // Leaderboard overlay
-  document.getElementById('lbBtn').addEventListener('click', function() {
-    document.getElementById('lbOverlay').classList.add('active');
+  // Sidebar tabs (Online / Classifica)
+  var activeSidebarTab = 'online';
+  document.querySelectorAll('.lb-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.lb-tab').forEach(function(t) { t.style.background = 'rgba(255,255,255,0.1)'; t.style.color = 'var(--text2)'; });
+      this.style.background = 'var(--accent)'; this.style.color = '#fff';
+      activeSidebarTab = this.dataset.tab;
+      if (activeSidebarTab === 'classifica') showClassifica();
+      else showOnline();
+    });
   });
-  document.getElementById('lbClose').addEventListener('click', function() {
-    document.getElementById('lbOverlay').classList.remove('active');
-  });
-  document.getElementById('lbOverlay').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('active');
-  });
+  var lastLbEntries = [];
   socket.on('casino:leaderboard', function(entries) {
-    var el = document.getElementById('lbContent');
-    if (!entries.length) { el.innerHTML = '<div style="color:#888;padding:8px;text-align:center;">Nessuna vincita ancora</div>'; return; }
+    lastLbEntries = entries;
+    if (activeSidebarTab === 'classifica') showClassifica();
+  });
+  function showClassifica() {
+    var el = document.getElementById('onlineList');
+    if (!lastLbEntries.length) { el.innerHTML = '<div style="color:#888;padding:8px;text-align:center;font-size:0.75rem;">Nessuna vincita ancora</div>'; return; }
     var html = '';
-    entries.forEach(function(e, i) {
+    lastLbEntries.forEach(function(e, i) {
       var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)+'.';
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px;border-bottom:1px solid rgba(255,255,255,0.05);">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.75rem;">';
       html += '<span>'+medal+' '+e.nick+'</span>';
       html += '<span style="color:#22c55e;font-weight:700;">+€'+e.earn.toLocaleString()+'</span>';
       html += '</div>';
     });
     el.innerHTML = html;
-  });
+  }
+  function showOnline() {
+    if (typeof renderOnlineList === 'function') renderOnlineList();
+  }
 
   // ===== QUIZ =====
   var quizAnswered = false;
