@@ -1180,6 +1180,7 @@
       <div class="chat-messages" id="chatMessages"></div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="Scrivi un messaggio..." autocomplete="off">
+        <button id="pokeSendBtn" title="Mostra Pokémon" style="font-size:1rem;padding:0.35rem 0.5rem;background:linear-gradient(135deg,#e11d48 50%,#fff 50%);border:2px solid #333;border-radius:50%;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;"></button>
         <button id="sendBtn">Invia</button>
       </div>
       <div class="typing-indicator" id="typingIndicator"></div>
@@ -2303,6 +2304,7 @@
         const isMe = window.myNick && u.nick === window.myNick;
         var pokeName = u.pokemon.currentForm.replace(/[^\w\s]/g,'').trim();
         var pokeId = POKE_IDS[pokeName] || 4;
+        if (isMe && !myPoke) myPoke = { starter: u.pokemon.starter, form: u.pokemon.currentForm, img: POKE_IMG+pokeId+'.png', xp: xp };
         pokeHtml = `<div class="poke-sidebar" data-sid="${u.id}" data-self="${isMe?'1':'0'}"><img src="${POKE_IMG+pokeId}.png" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;display:inline"><span class="plv">Lv${lv}</span><div class="pxp"><div class="pxp-fill" style="width:${pct}%"></div></div></div>`;
       }
       div.innerHTML = `<span class="online-dot"></span><span class="avatar">${u.avatar}</span><span class="name">${u.nick}</span>${pokeHtml}`;
@@ -2370,6 +2372,12 @@
   }
 
   document.getElementById('sendBtn').addEventListener('click', sendMessage);
+  document.getElementById('pokeSendBtn').addEventListener('click', function() {
+    if (!myPoke) return;
+    var lv = getLv(myPoke.xp||0);
+    var msg = '⚡ Pokémon: ' + (myPoke.img?'<img src="'+myPoke.img+'" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle"> ':'') + myPoke.form + ' (Lv.' + lv + ', XP: ' + (myPoke.xp||0) + ')';
+    socket.emit('chat message', msg);
+  });
 
   let typingTimeout = null;
   document.getElementById('chatInput').addEventListener('keydown', function(e) {
