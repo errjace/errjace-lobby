@@ -1143,6 +1143,7 @@
   document.getElementById('ltHeart').addEventListener('click', function() {
     this.classList.add('liked');
     setTimeout(function() { document.getElementById('ltHeart').classList.remove('liked'); }, 500);
+    setTimeout(function() { document.getElementById('likeToast').classList.remove('show'); }, 300);
   });
 
   // Show toast after 10 seconds, only once per session
