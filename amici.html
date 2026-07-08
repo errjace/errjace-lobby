@@ -1387,10 +1387,10 @@
   </div>
 </div>
 
-<!-- MAPPA 2D Overlay -->
+<!-- MAPPA 2D Overlay (Canvas) -->
 <div class="casino-overlay" id="mapOverlay" style="z-index:1100;">
-  <div class="casino-box" style="max-width:800px;width:95vw;height:90vh;max-height:600px;display:flex;flex-direction:column;padding:0.75rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;padding:0 0.5rem;">
+  <div class="casino-box" style="max-width:820px;width:95vw;height:90vh;max-height:620px;display:flex;flex-direction:column;padding:0.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;padding:0 0.5rem;">
       <h3 style="font-size:0.9rem;">🌳 OVERWORLD</h3>
       <button id="mapClose" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:6px;cursor:pointer;">✕ Esci</button>
     </div>
@@ -1399,13 +1399,14 @@
       <div id="mapCharGrid" style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;"></div>
       <button id="mapCharConfirm" class="game-btn" style="font-size:0.8rem;display:none;">CONFERMA</button>
     </div>
-    <div id="mapCanvasWrap" style="display:none;flex:1;position:relative;overflow:hidden;background:#1a3a1a;border-radius:8px;border:2px solid #22c55e44;">
-      <div id="mapCanvas" style="display:grid;width:100%;height:100%;"></div>
-      <div id="mapPokemon" style="position:absolute;bottom:0.5rem;left:0.5rem;background:rgba(0,0,0,0.7);border-radius:8px;padding:0.3rem 0.6rem;display:none;align-items:center;gap:0.5rem;font-size:0.75rem;z-index:5;">
+    <div id="mapCanvasWrap" style="display:none;flex:1;position:relative;overflow:hidden;background:#c8e0c0;border-radius:8px;border:2px solid #22c55e44;">
+      <canvas id="mapCanvas"></canvas>
+      <canvas id="mapOverlayCanvas" style="position:absolute;inset:0;pointer-events:none;z-index:5;"></canvas>
+      <div id="mapPokemon" style="position:absolute;bottom:0.5rem;left:0.5rem;background:rgba(0,0,0,0.8);border:2px solid #ffd700;border-radius:10px;padding:0.3rem 0.7rem;display:none;align-items:center;gap:0.5rem;font-size:0.75rem;z-index:10;">
         <span id="mapPokeName"></span>
-        <button id="mapPokeCatch" style="background:#22c55e;border:none;color:#fff;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.65rem;">CATTURA</button>
+        <button id="mapPokeCatch" style="background:#22c55e;border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:4px;cursor:pointer;font-size:0.65rem;">CATTURA</button>
       </div>
-      <div style="position:absolute;bottom:0.5rem;right:0.5rem;font-size:0.6rem;color:rgba(255,255,255,0.3);z-index:2;">↑↓←→ per muoverti</div>
+      <div id="mapOverlayUi" style="position:absolute;top:0.5rem;left:0.5rem;font-size:0.65rem;color:rgba(255,255,255,0.6);text-shadow:0 1px 3px rgba(0,0,0,0.8);z-index:2;pointer-events:none;">↑↓←→ per muoverti</div>
     </div>
   </div>
 </div>
@@ -2608,14 +2609,17 @@
     document.getElementById('cinemaResults').innerHTML = '';
   };
 
-  // ===== MAPPA 2D MIGLIORATA =====
-  var mapData = { me: null, players: {}, char: null, wildPokes: [] };
-  var mapMoving = false;
+  // ===== MAPPA 2D CANVAS (Stile Pokémon DS) =====
+  var mapData = { me: null, players: {}, char: null, wildPokes: [], _mx:0, _my:0, _tx:0, _ty:0 };
+  var mapMoving = false, mapTiles = null, nearPokes = [];
+  var TILE = 32; // pixel size per tile
+  var CAM_W = 0, CAM_H = 0; // computed
+  var canvas, ctx, oCanvas, oCtx, mapAnimId = null;
 
   document.getElementById('owMapBtn').addEventListener('click', function() {
     document.getElementById('owPicker').classList.remove('active');
     document.getElementById('mapOverlay').classList.add('active');
-    showMapCharSelect();
+    setTimeout(function() { initCanvas(); showMapCharSelect(); }, 100);
   });
   document.getElementById('mapClose').addEventListener('click', function() {
     socket.emit('map:leave'); resetMap();
@@ -2624,55 +2628,153 @@
     if (e.target === this) { socket.emit('map:leave'); resetMap(); }
   });
 
+  function initCanvas() {
+    canvas = document.getElementById('mapCanvas');
+    ctx = canvas.getContext('2d');
+    oCanvas = document.getElementById('mapOverlayCanvas');
+    oCtx = oCanvas.getContext('2d');
+    var wrap = document.getElementById('mapCanvasWrap');
+    canvas.width = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+    oCanvas.width = wrap.clientWidth;
+    oCanvas.height = wrap.clientHeight;
+    CAM_W = Math.ceil(canvas.width / TILE) + 2;
+    CAM_H = Math.ceil(canvas.height / TILE) + 2;
+    ctx.imageSmoothingEnabled = false;
+    oCtx.imageSmoothingEnabled = false;
+  }
+
   function resetMap() {
+    if (mapAnimId) { cancelAnimationFrame(mapAnimId); mapAnimId = null; }
     document.getElementById('mapOverlay').classList.remove('active');
     document.getElementById('mapCharSelect').style.display = 'none';
     document.getElementById('mapCanvasWrap').style.display = 'none';
-    mapData = { me: null, players: {}, char: null, wildPokes: [] };
+    mapData = { me: null, players: {}, char: null, wildPokes: [], _mx:0, _my:0, _tx:0, _ty:0 };
+    mapTiles = null;
   }
+
+  // Character colors & icons
+  var CHARS = {
+    hero: { id:'hero', name:'Eroe', ico:'⚔️', body:'#7c3aed', hat:'#5b21b6', hair:'#4a1a0a' },
+    mage: { id:'mage', name:'Mago', ico:'🔮', body:'#3b82f6', hat:'#1d4ed8', hair:'#fbbf24' },
+    ninja: { id:'ninja', name:'Ninja', ico:'🥷', body:'#ef4444', hat:'#b91c1c', hair:'#111' },
+    robot: { id:'robot', name:'Robot', ico:'🤖', body:'#22c55e', hat:'#16a34a', hair:'#666' },
+    ghost: { id:'ghost', name:'Fantasma', ico:'👻', body:'#a78bfa', hat:'#7c3aed', hair:'#e9d5ff' },
+    king: { id:'king', name:'Re', ico:'👑', body:'#ffd700', hat:'#b8860b', hair:'#8b4513' },
+  };
 
   function showMapCharSelect() {
     document.getElementById('mapCharSelect').style.display = 'flex';
     document.getElementById('mapCanvasWrap').style.display = 'none';
     var grid = document.getElementById('mapCharGrid');
     grid.innerHTML = '';
-    var chars = ['hero','mage','ninja','robot','ghost','king'];
-    var colors = ['#7c3aed','#3b82f6','#ef4444','#22c55e','#a78bfa','#ffd700'];
-    var names = ['Eroe ⚔️','Mago 🔮','Ninja 🥷','Robot 🤖','Fantasma 👻','Re 👑'];
-    var icons = ['⚔️','🔮','🥷','🤖','👻','👑'];
-    chars.forEach(function(c, i) {
+    Object.keys(CHARS).forEach(function(c) {
+      var ch = CHARS[c];
       var div = document.createElement('div');
-      div.style.cssText = 'width:64px;height:64px;background:'+colors[i]+'22;border:3px solid '+colors[i]+';border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;transition:0.2s;';
-      div.innerHTML = '<div>'+icons[i]+'</div><div style="font-size:0.5rem;margin-top:2px;color:'+colors[i]+'">'+names[i].split(' ')[0]+'</div>';
+      div.style.cssText = 'width:72px;height:80px;background:'+ch.body+'22;border:3px solid '+ch.body+';border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:0.2s;gap:4px;';
+      div.innerHTML = '<div style="font-size:1.8rem;">'+ch.ico+'</div><div style="font-size:0.55rem;color:'+ch.body+';font-weight:700;">'+ch.name+'</div>';
       div.dataset.char = c;
-      div.title = names[i];
       div.onclick = function() {
-        document.querySelectorAll('#mapCharGrid > div').forEach(function(d) { d.style.borderColor = colors[chars.indexOf(d.dataset.char)]; d.style.transform = ''; d.style.background = colors[chars.indexOf(d.dataset.char)]+'22'; });
+        document.querySelectorAll('#mapCharGrid > div').forEach(function(d) { d.style.borderColor = (CHARS[d.dataset.char]||{}).body||'#7c3aed'; d.style.transform = ''; d.style.background = (CHARS[d.dataset.char]||{}).body+'22'; });
         this.style.borderColor = '#fff';
-        this.style.transform = 'scale(1.15)';
-        this.style.background = colors[chars.indexOf(this.dataset.char)]+'66';
+        this.style.transform = 'scale(1.1)';
+        this.style.background = ch.body+'66';
         mapData.char = this.dataset.char;
         document.getElementById('mapCharConfirm').style.display = 'inline-block';
       };
       grid.appendChild(div);
     });
     document.getElementById('mapCharConfirm').onclick = function() {
-      if (!mapData.char) return;
+      if (!mapData.char) { socket.emit('map:join', { char: 'hero' }); return; }
       socket.emit('map:join', { char: mapData.char });
     };
   }
 
-  var TILE_EMOJI = {
-    grass: { e:'🌿', bg:'#3a7a2a', solid:false },
-    tree: { e:'🌲', bg:'#1a5a1a', solid:true },
-    water: { e:'🌊', bg:'#1a3a6a', solid:true },
-    wall: { e:'⛰️', bg:'#4a3a2a', solid:true },
-    path: { e:'🟫', bg:'#6a5a3a', solid:false },
-    flower: { e:'🌸', bg:'#3a7a3a', solid:false },
-    sand: { e:'🏖️', bg:'#8a7a4a', solid:false },
-    lava: { e:'🌋', bg:'#6a2a0a', solid:true },
+  // === CANVAS TILE DRAWING ===
+  function drawGrass(ctx, x, y, s, seed) {
+    ctx.fillStyle = ['#4a8a3a','#3a7a2a','#5a9a4a','#4a8a3a','#3a7a2a'][seed % 5];
+    ctx.fillRect(x, y, s, s);
+    // Texture dots
+    for (var i = 0; i < 4; i++) {
+      ctx.fillStyle = ['#5a9a4a','#6aaa5a','#3a7a2a'][(seed+i) % 3];
+      ctx.fillRect(x + ((seed*3+i*7) % (s-4)), y + ((seed*5+i*11) % (s-4)), 2, 2);
+    }
+  }
+  function drawPath(ctx, x, y, s, seed) {
+    ctx.fillStyle = '#8a7a5a';
+    ctx.fillRect(x, y, s, s);
+    ctx.fillStyle = '#9a8a6a';
+    ctx.fillRect(x+2, y+2, s-4, s-4);
+    ctx.fillStyle = '#7a6a4a';
+    ctx.fillRect(x+4, y+4, 2, 2);
+  }
+  function drawTree(ctx, x, y, s, seed) {
+    // Trunk
+    ctx.fillStyle = '#5a3a1a';
+    ctx.fillRect(x + s*0.4, y + s*0.5, s*0.2, s*0.5);
+    // Canopy
+    ctx.fillStyle = ['#1a6a1a','#2a7a2a','#1a5a1a'][seed % 3];
+    ctx.beginPath();
+    ctx.arc(x + s/2, y + s*0.35, s*0.42, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = ['#2a8a2a','#3a9a3a','#2a7a2a'][(seed+1) % 3];
+    ctx.beginPath();
+    ctx.arc(x + s*0.35, y + s*0.3, s*0.28, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + s*0.65, y + s*0.3, s*0.28, 0, Math.PI*2);
+    ctx.fill();
+  }
+  function drawWater(ctx, x, y, s, seed, time) {
+    ctx.fillStyle = '#1a4a7a';
+    ctx.fillRect(x, y, s, s);
+    // Wave lines
+    ctx.strokeStyle = '#2a6a9a';
+    ctx.lineWidth = 1;
+    for (var i = 0; i < 3; i++) {
+      var wy = y + s*0.3 + i*s*0.2 + Math.sin(time*0.002 + i + seed)*2;
+      ctx.beginPath();
+      ctx.moveTo(x+4, wy);
+      ctx.quadraticCurveTo(x+s*0.4, wy + Math.sin(time*0.003 + i*2)*3, x+s-4, wy);
+      ctx.stroke();
+    }
+  }
+  function drawWall(ctx, x, y, s, seed) {
+    ctx.fillStyle = '#5a4a3a';
+    ctx.fillRect(x, y, s, s);
+    ctx.fillStyle = '#6a5a4a';
+    ctx.fillRect(x+2, y+2, s-4, s-4);
+    // Rock cracks
+    ctx.strokeStyle = '#4a3a2a';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x+s*0.3, y+s*0.2); ctx.lineTo(x+s*0.5, y+s*0.4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+s*0.7, y+s*0.6); ctx.lineTo(x+s*0.5, y+s*0.8); ctx.stroke();
+  }
+  function drawFlower(ctx, x, y, s, seed) {
+    drawGrass(ctx, x, y, s, seed);
+    ctx.fillStyle = ['#ff6b9d','#ffd700','#ff6b6b','#c084fc'][seed % 4];
+    ctx.beginPath();
+    ctx.arc(x + s*0.3, y + s*0.4, 3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = ['#ffd700','#ff6b9d','#c084fc','#ff6b6b'][seed % 4];
+    ctx.beginPath();
+    ctx.arc(x + s*0.7, y + s*0.6, 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+  function drawSand(ctx, x, y, s, seed) {
+    ctx.fillStyle = '#c8b87a';
+    ctx.fillRect(x, y, s, s);
+    ctx.fillStyle = '#b8a86a';
+    ctx.fillRect(x+5, y+8, 3, 3);
+    ctx.fillRect(x+18, y+15, 2, 2);
+    ctx.fillRect(x+12, y+5, 2, 2);
+  }
+
+  var TILE_DRAW = {
+    grass: drawGrass, path: drawPath, tree: drawTree,
+    water: drawWater, wall: drawWall, flower: drawFlower, sand: drawSand
   };
-  var TILE_TYPES = Object.keys(TILE_EMOJI);
+  var TILE_SOLID = { tree:true, water:true, wall:true };
 
   function generateMapTiles(w, h) {
     var tiles = [];
@@ -2682,66 +2784,222 @@
         var base = 'grass';
         var r = Math.random();
         if (r < 0.06) base = 'water';
-        else if (r < 0.12) base = 'tree';
+        else if (r < 0.14) base = 'tree';
         else if (r < 0.18) base = 'wall';
-        else if (r < 0.28) base = 'path';
-        else if (r < 0.34) base = 'flower';
-        else if (r < 0.38) base = 'sand';
-        else if (r < 0.39) base = 'lava';
-        // Clusters: trees near trees, water near water
+        else if (r < 0.26) base = 'path';
+        else if (r < 0.30) base = 'flower';
+        else if (r < 0.34) base = 'sand';
+        // Clusters
         if (x > 0 && tiles[y][x-1] === 'tree' && Math.random() < 0.4) base = 'tree';
         if (y > 0 && tiles[y-1][x] === 'water' && Math.random() < 0.4) base = 'water';
+        if (x > 0 && tiles[y][x-1] === 'water' && Math.random() < 0.3) base = 'water';
         tiles[y][x] = base;
       }
     }
     return tiles;
   }
 
-  var charIcons = { hero:'⚔️', mage:'🔮', ninja:'🥷', robot:'🤖', ghost:'👻', king:'👑' };
-  var charColors = { hero:'#7c3aed', mage:'#3b82f6', ninja:'#ef4444', robot:'#22c55e', ghost:'#a78bfa', king:'#ffd700' };
-  var mapTiles = null;
-  var nearPokes = [];
+  // === CHARACTER DRAWING ===
+  function drawChar(ctx, cx, cy, charId, isMe, direction, nick) {
+    var ch = CHARS[charId] || CHARS.hero;
+    var s = TILE;
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath();
+    ctx.ellipse(cx+s/2, cy+s-2, s*0.3, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+    // Body
+    ctx.fillStyle = ch.body;
+    ctx.fillRect(cx+8, cy+14, 16, 12);
+    // Head
+    ctx.fillStyle = '#f0c8a0';
+    ctx.fillRect(cx+10, cy+4, 12, 12);
+    // Hat
+    ctx.fillStyle = ch.hat;
+    ctx.fillRect(cx+8, cy+1, 16, 6);
+    ctx.fillRect(cx+5, cy+5, 22, 3);
+    // Eyes
+    ctx.fillStyle = '#333';
+    ctx.fillRect(cx+11, cy+9, 3, 2);
+    ctx.fillRect(cx+18, cy+9, 3, 2);
+    // Mouth
+    ctx.fillStyle = '#c88';
+    ctx.fillRect(cx+13, cy+14, 6, 1);
+    // Hair
+    ctx.fillStyle = ch.hair;
+    ctx.fillRect(cx+10, cy+2, 12, 3);
+    // Legs
+    ctx.fillStyle = '#333';
+    ctx.fillRect(cx+9, cy+26, 5, 4);
+    ctx.fillRect(cx+18, cy+26, 5, 4);
+    // Hat icon
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = ch.body;
+    ctx.fillText(ch.ico, cx+s/2, cy-4);
+    // Nickname
+    if (nick) {
+      ctx.font = '9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = isMe ? '#ffd700' : '#fff';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(nick, cx+s/2, cy-8);
+      ctx.shadowBlur = 0;
+    }
+  }
 
+  // === RENDER LOOP ===
+  function gameLoop(time) {
+    if (!mapTiles || !ctx) { mapAnimId = requestAnimationFrame(gameLoop); return; }
+    var w = mapData._w, h = mapData._h;
+    if (!w) { mapAnimId = requestAnimationFrame(gameLoop); return; }
+
+    // Camera centered on player
+    var camX = mapData._tx * TILE - canvas.width/2 + TILE/2;
+    var camY = mapData._ty * TILE - canvas.height/2 + TILE/2;
+    camX = Math.max(0, Math.min(w*TILE - canvas.width, camX));
+    camY = Math.max(0, Math.min(h*TILE - canvas.height, camY));
+
+    ctx.save();
+    ctx.translate(-camX, -camY);
+
+    // Draw tiles in viewport
+    var startX = Math.floor(camX/TILE);
+    var startY = Math.floor(camY/TILE);
+    var endX = Math.ceil((camX+canvas.width)/TILE) + 1;
+    var endY = Math.ceil((camY+canvas.height)/TILE) + 1;
+
+    for (var y = startY; y < endY && y < h; y++) {
+      for (var x = startX; x < endX && x < w; x++) {
+        if (y < 0 || x < 0) continue;
+        var tt = (mapTiles[y] && mapTiles[y][x]) ? mapTiles[y][x] : 'grass';
+        var drawFn = TILE_DRAW[tt] || drawGrass;
+        drawFn(ctx, x*TILE, y*TILE, TILE, x*7+y*13);
+      }
+    }
+
+    // Draw wild Pokémon
+    mapData.wildPokes.forEach(function(pk) {
+      if (pk.x < startX-1 || pk.x > endX || pk.y < startY-1 || pk.y > endY) return;
+      var px = pk.x * TILE, py = pk.y * TILE;
+      // Floating animation
+      var floatY = Math.sin(time*0.003 + pk.id) * 3;
+      // Glow
+      ctx.fillStyle = 'rgba(255,215,0,0.2)';
+      ctx.beginPath();
+      ctx.arc(px+TILE/2, py+TILE/2+floatY, 14, 0, Math.PI*2);
+      ctx.fill();
+      // Sprite
+      var img = new Image();
+      img.src = POKE_IMG+pk.id+'.png';
+      ctx.drawImage(img, px+4, py+4+floatY, TILE-8, TILE-8);
+      // Name
+      ctx.font = '8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fff';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 3;
+      ctx.fillText(pk.name, px+TILE/2, py-2);
+      ctx.shadowBlur = 0;
+    });
+
+    // Draw players (other players first, then self on top)
+    var mePos = null;
+    for (var id in mapData.players) {
+      var p = mapData.players[id];
+      if (id === mapData.me) { mePos = p; continue; }
+      var px = p.x * TILE, py = p.y * TILE;
+      drawChar(ctx, px, py, p.char, false, 0, p.nick);
+    }
+    // Draw self
+    if (mePos || mapData.me) {
+      var sx = mapData._tx * TILE, sy = mapData._ty * TILE;
+      drawChar(ctx, sx, sy, mapData.char, true, 0, null);
+    }
+
+    ctx.restore();
+
+    // Overlay canvas: interaction buttons
+    oCtx.clearRect(0, 0, oCanvas.width, oCanvas.height);
+    checkPokeProximity(oCtx, time);
+
+    mapAnimId = requestAnimationFrame(gameLoop);
+  }
+
+  // === PROXIMITY CHECK ===
+  function checkPokeProximity(oc, time) {
+    var mx = mapData._tx, my = mapData._ty;
+    if (mx === undefined) return;
+    nearPokes = mapData.wildPokes.filter(function(p) {
+      return Math.abs(p.x - mx) <= 1 && Math.abs(p.y - my) <= 1;
+    });
+    var el = document.getElementById('mapPokemon');
+    if (nearPokes.length > 0) {
+      var p = nearPokes[0];
+      // Show on canvas: indicator above Pokémon
+      if (oc) {
+        var px = p.x * TILE, py = p.y * TILE;
+        var camX = mapData._tx*TILE - canvas.width/2 + TILE/2;
+        var camY = mapData._ty*TILE - canvas.height/2 + TILE/2;
+        camX = Math.max(0, Math.min(mapData._w*TILE - canvas.width, camX));
+        camY = Math.max(0, Math.min(mapData._h*TILE - canvas.height, camY));
+        var screenX = px - camX + TILE/2;
+        var screenY = py - camY - 8 + Math.sin(time*0.004)*2;
+        // Arrow indicator
+        oc.fillStyle = '#ffd700';
+        oc.font = '16px sans-serif';
+        oc.textAlign = 'center';
+        oc.fillText('▼', screenX, screenY);
+      }
+      el.style.display = 'flex';
+      el.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:28px;height:28px;image-rendering:pixelated"> <span style="font-weight:600;">'+p.name+'</span> <button id="btnCatch" style="background:#22c55e;border:none;color:#fff;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:0.65rem;">CATTURA</button>';
+      var btn = document.getElementById('btnCatch');
+      if (btn) btn.onclick = function(e) { e.stopPropagation(); socket.emit('map:catchPoke', { x: p.x, y: p.y }); };
+    } else {
+      if (!el.innerHTML.includes('Catturato!')) el.style.display = 'none';
+    }
+  }
+
+  // === SOCKET HANDLERS ===
   socket.on('map:init', function(data) {
     document.getElementById('mapCharSelect').style.display = 'none';
     document.getElementById('mapCharConfirm').style.display = 'none';
     document.getElementById('mapCanvasWrap').style.display = 'block';
-    mapData.me = data.myId;
-    mapData.players = data.players;
-    mapData.wildPokes = data.wildPokes || [];
-    var myP = data.players[data.myId];
-    if (myP) { mapData._mx = myP.x; mapData._my = myP.y; }
-    mapTiles = generateMapTiles(data.w, data.h);
-    renderAll(data.w, data.h);
+    var wrap = document.getElementById('mapCanvasWrap');
+    setTimeout(function() {
+      initCanvas();
+      mapData.me = data.myId;
+      mapData.players = data.players;
+      mapData.wildPokes = data.wildPokes || [];
+      var myP = data.players[data.myId];
+      if (myP) { mapData._tx = mapData._mx = myP.x; mapData._ty = mapData._my = myP.y; }
+      mapTiles = generateMapTiles(data.w, data.h);
+      mapData._w = data.w; mapData._h = data.h;
+      if (mapAnimId) cancelAnimationFrame(mapAnimId);
+      mapAnimId = requestAnimationFrame(gameLoop);
+    }, 50);
   });
 
   socket.on('map:playerJoin', function(p) {
     mapData.players[p.id] = { x: p.x, y: p.y, char: p.char, nick: p.nick };
-    renderAll();
   });
 
   socket.on('map:move', function(p) {
-    Object.keys(mapData.players).forEach(function(id) {
-      if (mapData.players[id] && mapData.players[id].x !== undefined) {
-        // Already rendered players
-      }
-    });
-    if (mapData.players[p.id]) {
+    if (p.id === mapData.me) {
+      mapData._tx = p.x; mapData._ty = p.y;
+    } else if (mapData.players[p.id]) {
       mapData.players[p.id].x = p.x;
       mapData.players[p.id].y = p.y;
-      mapData.players[p.id].char = p.char;
-      renderAll();
     }
   });
 
   socket.on('map:playerLeave', function(p) {
     delete mapData.players[p.id];
-    renderAll();
   });
 
   socket.on('map:wildPokes', function(pokes) {
     mapData.wildPokes = pokes;
-    renderAll();
   });
 
   socket.on('map:caught', function(pk) {
@@ -2752,107 +3010,30 @@
     setTimeout(function() { el.style.display = 'none'; el.innerHTML = ''; el.style.border = ''; }, 3000);
   });
 
-  // Check proximity to wild Pokémon and auto-show catch button
-  function checkPokeProximity() {
-    var mx = mapData._mx, my = mapData._my;
-    if (mx === undefined) return;
-    nearPokes = mapData.wildPokes.filter(function(p) {
-      return Math.abs(p.x - mx) <= 1 && Math.abs(p.y - my) <= 1;
-    });
-    var el = document.getElementById('mapPokemon');
-    if (nearPokes.length > 0) {
-      var p = nearPokes[0];
-      el.style.display = 'flex';
-      el.style.border = '2px solid #ffd700';
-      el.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:28px;height:28px;image-rendering:pixelated"> <span>'+p.name+'</span> <button id="btnCatch" style="background:#22c55e;border:none;color:#fff;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:0.65rem;">CATTURA</button>';
-      document.getElementById('btnCatch').onclick = function(e) { e.stopPropagation(); socket.emit('map:catchPoke', { x: p.x, y: p.y }); };
-    } else if (!el.querySelector('#btnCatch')) {
-      // Only hide if not showing a catch result
-      if (!el.innerHTML.includes('Catturato!')) el.style.display = 'none';
-    }
-  }
-
-  function renderAll(w, h) {
-    var canvas = document.getElementById('mapCanvas');
-    if (!mapTiles) return;
-    var ww = w || mapData._w, hh = h || mapData._h;
-    if (w) { mapData._w = w; mapData._h = h; }
-    canvas.style.gridTemplateColumns = 'repeat('+ww+',1fr)';
-    canvas.style.gridTemplateRows = 'repeat('+hh+',1fr)';
-    canvas.innerHTML = '';
-    for (var y = 0; y < hh; y++) {
-      for (var x = 0; x < ww; x++) {
-        var tileType = mapTiles[y] && mapTiles[y][x] ? mapTiles[y][x] : 'grass';
-        var tileInfo = TILE_EMOJI[tileType] || TILE_EMOJI.grass;
-        var tile = document.createElement('div');
-        tile.style.cssText = 'background:'+tileInfo.bg+';border:1px solid rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;font-size:0.7rem;position:relative;';
-
-        var isMeHere = mapData._mx === x && mapData._my === y;
-        var otherHere = null;
-        for (var id in mapData.players) {
-          var pp = mapData.players[id];
-          if (pp && pp.x === x && pp.y === y) { otherHere = pp; break; }
-        }
-
-        if (isMeHere) {
-          tile.style.background = '#ffd70055';
-          tile.style.boxShadow = 'inset 0 0 10px #ffd700';
-          tile.textContent = charIcons[mapData.char] || '🧑';
-          tile.style.fontSize = '0.85rem';
-        } else if (otherHere) {
-          tile.style.background = (charColors[otherHere.char] || '#7c3aed') + '44';
-          tile.textContent = charIcons[otherHere.char] || '?';
-          tile.title = otherHere.nick;
-          tile.style.fontSize = '0.8rem';
-          tile.style.borderRadius = '4px';
-        } else {
-          // Check for wild Pokémon
-          var pokeHere = mapData.wildPokes.find(function(p) { return p.x === x && p.y === y; });
-          if (pokeHere) {
-            tile.innerHTML = '<img src="'+POKE_IMG+pokeHere.id+'.png" style="width:75%;height:75%;image-rendering:pixelated;object-fit:contain;position:relative;z-index:1;" title="'+pokeHere.name+'">';
-            tile.style.background = tileInfo.bg;
-            // Pulsing border for Pokémon
-            tile.style.animation = 'pokePulse 1.5s ease-in-out infinite';
-          } else {
-            tile.textContent = tileInfo.e;
-            tile.style.animation = '';
-          }
-        }
-        canvas.appendChild(tile);
-      }
-    }
-    checkPokeProximity();
-  }
-
-  // Keyboard movement for map
+  // === KEYBOARD INPUT ===
   document.addEventListener('keydown', function(e) {
-    if (document.getElementById('mapOverlay').classList.contains('active') && document.getElementById('mapCanvasWrap').style.display !== 'none') {
-      if (mapMoving) return;
-      var dx = 0, dy = 0;
-      if (e.key === 'ArrowUp' || e.key === 'w') dy = -1;
-      else if (e.key === 'ArrowDown' || e.key === 's') dy = 1;
-      else if (e.key === 'ArrowLeft' || e.key === 'a') dx = -1;
-      else if (e.key === 'ArrowRight' || e.key === 'd') dx = 1;
-      else return;
-      e.preventDefault();
-      mapMoving = true;
-      setTimeout(function() { mapMoving = false; }, 120);
-      var mx = mapData._mx || 0, my = mapData._my || 0;
-      var nx = mx + dx, ny = my + dy;
-      if (nx < 0 || nx >= mapData._w || ny < 0 || ny >= mapData._h) return;
-      if (mapTiles && mapTiles[ny] && mapTiles[ny][nx]) {
-        var tileInfo = TILE_EMOJI[mapTiles[ny][nx]];
-        if (tileInfo && tileInfo.solid) return;
-      }
-      // Check if another player is there
-      for (var id in mapData.players) {
-        var pp = mapData.players[id];
-        if (pp.x === nx && pp.y === ny) return;
-      }
-      mapData._mx = nx; mapData._my = ny;
-      socket.emit('map:move', { x: nx, y: ny });
-      renderAll();
+    if (!document.getElementById('mapOverlay').classList.contains('active')) return;
+    if (document.getElementById('mapCharSelect').style.display !== 'none') return;
+    if (mapMoving) return;
+    var dx = 0, dy = 0;
+    if (e.key === 'ArrowUp' || e.key === 'w') dy = -1;
+    else if (e.key === 'ArrowDown' || e.key === 's') dy = 1;
+    else if (e.key === 'ArrowLeft' || e.key === 'a') dx = -1;
+    else if (e.key === 'ArrowRight' || e.key === 'd') dx = 1;
+    else return;
+    e.preventDefault();
+    mapMoving = true;
+    setTimeout(function() { mapMoving = false; }, 160);
+    var nx = mapData._tx + dx, ny = mapData._ty + dy;
+    if (nx < 0 || nx >= mapData._w || ny < 0 || ny >= mapData._h) return;
+    if (mapTiles && mapTiles[ny] && TILE_SOLID[mapTiles[ny][nx]]) return;
+    // Check other players
+    for (var id in mapData.players) {
+      var pp = mapData.players[id];
+      if (pp.x === nx && pp.y === ny) return;
     }
+    mapData._tx = nx; mapData._ty = ny;
+    socket.emit('map:move', { x: nx, y: ny });
   });
 
   document.getElementById('pokeSendBtn').addEventListener('click', function(e) {

@@ -194,8 +194,8 @@ function advanceTurn(g) { g.currentPlayerIndex = (g.currentPlayerIndex + g.direc
 
 // MAPPA 2D
 const mapPlayers = {};
-const MAP_W = 30;
-const MAP_H = 22;
+const MAP_W = 50;
+const MAP_H = 38;
 const MAP_CHARS = [
   { id: 'hero', name: 'Eroe', color: '#7c3aed' },
   { id: 'mage', name: 'Mago', color: '#3b82f6' },
@@ -219,7 +219,7 @@ function generateWildPokes() {
     { id: 79, name: 'Slowpoke' }, { id: 88, name: 'Grimer' },
     { id: 96, name: 'Drowzee' }, { id: 118, name: 'Goldeen' },
   ];
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 20; i++) {
     const pk = pool[Math.floor(Math.random() * pool.length)];
     mapWildPokes.push({
       id: pk.id, name: pk.name,
