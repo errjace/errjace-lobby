@@ -430,44 +430,50 @@
   }
   #grazieBtn:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 30px rgba(124,58,237,0.4) !important; }
 
-  /* ===== PORTALE OVERWORLD ===== */
-  .portal-page { position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#0d0a1a 0%,#050510 100%);z-index:10;cursor:pointer;transition:opacity 0.8s,transform 0.8s;overflow:hidden; }
-  .portal-page.hidden { opacity:0;transform:scale(1.05);pointer-events:none; }
+  /* ===== PORTALE OVERWORLD (serio) ===== */
+  .portal-page { position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:#0a0a12;z-index:10;cursor:pointer;overflow:hidden; }
+  .portal-page .pp-bg { position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,#1a0a2e 0%,#0a0a12 60%,#050510 100%); }
+  .portal-page .pp-grid { position:absolute;inset:0;background-image:linear-gradient(rgba(124,58,237,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,0.03) 1px,transparent 1px);background-size:40px 40px; }
   .portal-bg-stars { position:absolute;inset:0;overflow:hidden; }
   .portal-bg-stars span { position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:starTwinkle 2s ease-in-out infinite alternate; }
-  @keyframes starTwinkle { 0%{opacity:0.2} 100%{opacity:1} }
-  .portal-ring { position:relative;width:220px;height:220px;margin-bottom:1.5rem; }
-  .portal-ring .ring { position:absolute;inset:0;border-radius:50%;border:3px solid transparent; }
-  .portal-ring .ring:nth-child(1) { border-top-color:var(--accent,#7c3aed);border-right-color:var(--accent2,#3b82f6);animation:portalSpin 3s linear infinite; }
-  .portal-ring .ring:nth-child(2) { inset:15px; border-bottom-color:#a78bfa;border-left-color:#8b5cf6;animation:portalSpin 4s linear infinite reverse; }
-  .portal-ring .ring:nth-child(3) { inset:30px; border-top-color:#e11d48;border-right-color:#ffd700;animation:portalSpin 2.5s linear infinite; }
-  .portal-ring .ring:nth-child(4) { inset:45px; border-bottom-color:#6366f1;border-left-color:#06b6d4;animation:portalSpin 3.5s linear infinite reverse; }
-  .portal-ring .core { position:absolute;inset:55px;border-radius:50%;background:radial-gradient(circle,#a78bfa44,#7c3aed22,transparent);animation:portalPulse 2s ease-in-out infinite; }
-  .portal-ring .core::after { content:'';position:absolute;inset:5px;border-radius:50%;background:radial-gradient(circle,#fff1,#7c3aed11,transparent);filter:blur(4px);animation:portalPulse 2s ease-in-out infinite reverse; }
-  @keyframes portalSpin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-  @keyframes portalPulse { 0%{transform:scale(0.85);opacity:0.6} 50%{transform:scale(1.15);opacity:1} 100%{transform:scale(0.85);opacity:0.6} }
-  .portal-glow { position:absolute;inset:-30px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,0.15),transparent 70%);filter:blur(20px);animation:portalPulse 3s ease-in-out infinite; }
-  .portal-glow2 { position:absolute;inset:-10px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,0.1),transparent 60%);filter:blur(30px);animation:portalPulse 2.5s ease-in-out infinite reverse; }
+  @keyframes starTwinkle { 0%{opacity:0.1} 100%{opacity:0.8} }
+  /* Vortex profondo */
+  .portal-vortex { position:relative;width:260px;height:260px;margin-bottom:1.5rem; }
+  .portal-vortex .pv-outer { position:absolute;inset:-20px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,0.06),transparent 70%);filter:blur(30px);animation:pvPulse 4s ease-in-out infinite; }
+  .portal-vortex .pv-ring { position:absolute;border-radius:50%;border:2px solid transparent; }
+  .portal-vortex .pv-r1 { inset:0;width:260px;height:260px;border-color:#7c3aed33;border-top-color:#7c3aed;border-width:3px;animation:pvSpin 6s linear infinite;box-shadow:0 0 30px rgba(124,58,237,0.15); }
+  .portal-vortex .pv-r2 { inset:18px;width:224px;height:224px;border-color:#a78bfa22;border-bottom-color:#a78bfa;animation:pvSpin 8s linear infinite reverse;box-shadow:0 0 20px rgba(167,139,250,0.1); }
+  .portal-vortex .pv-r3 { inset:36px;width:188px;height:188px;border-color:#3b82f633;border-left-color:#3b82f6;border-width:3px;animation:pvSpin 5s linear infinite;box-shadow:0 0 25px rgba(59,130,246,0.12); }
+  .portal-vortex .pv-r4 { inset:54px;width:152px;height:152px;border-color:#6366f122;border-right-color:#6366f1;animation:pvSpin 7s linear infinite reverse; }
+  .portal-vortex .pv-r5 { inset:72px;width:116px;height:116px;border-color:#e11d4822;border-top-color:#e11d48;border-width:2px;animation:pvSpin 4s linear infinite; }
+  .portal-vortex .pv-core { position:absolute;inset:88px;width:84px;height:84px;border-radius:50%;background:radial-gradient(circle,#a78bfa66,#7c3aed44,#1a0a2e);animation:pvPulse 3s ease-in-out infinite;box-shadow:0 0 60px rgba(124,58,237,0.3),inset 0 0 40px rgba(124,58,237,0.2); }
+  .portal-vortex .pv-core::after { content:'';position:absolute;inset:10px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.08),transparent 70%);filter:blur(8px);animation:pvPulse 2.5s ease-in-out infinite reverse; }
+  /* Linee di energia nell'abisso */
+  .portal-vortex .pv-abyss { position:absolute;inset:95px;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#0a0a12 30%,transparent 70%);z-index:2; }
+  .portal-vortex .pv-abyss::before { content:'';position:absolute;inset:-10px;border-radius:50%;border:1px solid rgba(124,58,237,0.15);animation:pvSpin 10s linear infinite; }
+  .portal-vortex .pv-abyss::after { content:'';position:absolute;inset:-20px;border-radius:50%;border:1px solid rgba(59,130,246,0.1);animation:pvSpin 12s linear infinite reverse; }
+  @keyframes pvSpin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+  @keyframes pvPulse { 0%,100%{transform:scale(0.9);opacity:0.7} 50%{transform:scale(1.1);opacity:1} }
+  /* Scritte */
+  .portal-text { font-family:'Black Ops One',monospace;font-size:1rem;color:#c4b5fd;text-shadow:0 0 30px rgba(124,58,237,0.5);letter-spacing:4px;text-align:center;position:relative;z-index:2; }
+  .portal-text span { display:block;font-size:0.6rem;color:rgba(255,255,255,0.25);letter-spacing:6px;margin-top:0.6rem;font-family:'Anton',sans-serif; }
+  .portal-hint { position:absolute;bottom:2.5rem;font-size:0.55rem;color:rgba(255,255,255,0.12);letter-spacing:3px;text-transform:uppercase;animation:pvPulse 3s ease-in-out infinite; }
+  @media(max-width:600px){ .portal-vortex {width:180px;height:180px;} .portal-vortex .pv-r1 {width:180px;height:180px;} .portal-vortex .pv-r2 {inset:14px;width:152px;height:152px;} .portal-vortex .pv-r3 {inset:28px;width:124px;height:124px;} .portal-vortex .pv-r4 {inset:40px;width:100px;height:100px;} .portal-vortex .pv-r5 {inset:52px;width:76px;height:76px;} .portal-vortex .pv-core {inset:66px;width:48px;height:48px;} .portal-vortex .pv-abyss {inset:71px;width:38px;height:38px;} .portal-text{font-size:0.8rem;} .portal-hint{font-size:0.45rem;} }
 
-  /* Personaggio pixel */
-  .portal-char { position:relative;display:flex;flex-direction:column;align-items:center;margin-bottom:0.75rem; }
-  .portal-char .char-head { width:28px;height:28px;background:#e8b88a;border:2px solid #333;border-radius:4px;position:relative;image-rendering:pixelated;box-shadow:0 0 0 1px #333; }
-  .portal-char .char-head .eye-l { position:absolute;top:7px;left:5px;width:4px;height:4px;background:#222;border-radius:1px; }
-  .portal-char .char-head .eye-r { position:absolute;top:7px;right:5px;width:4px;height:4px;background:#222;border-radius:1px; }
-  .portal-char .char-head .hat { position:absolute;top:-8px;left:-4px;width:36px;height:10px;background:linear-gradient(#7c3aed,#5b21b6);border-radius:10px 10px 0 0;border:2px solid #333;border-bottom:none; }
-  .portal-char .char-head .hat::after { content:'';position:absolute;top:-6px;left:8px;width:16px;height:8px;background:linear-gradient(#8b5cf6,#7c3aed);border-radius:8px 8px 0 0;border:2px solid #333;border-bottom:none; }
-  .portal-char .char-body { width:20px;height:18px;background:#7c3aed;border:2px solid #333;border-top:none;border-radius:0 0 4px 4px;margin-top:-1px;position:relative; }
-  .portal-char .char-body .arm-l { position:absolute;left:-8px;top:0;width:6px;height:14px;background:#e8b88a;border:2px solid #333;border-radius:3px;transform-origin:top;animation:charWave 1.5s ease-in-out infinite; }
-  .portal-char .char-body .arm-r { position:absolute;right:-8px;top:2px;width:6px;height:12px;background:#7c3aed;border:2px solid #333;border-radius:3px; }
-  .portal-char .char-body .leg-l { position:absolute;left:-2px;bottom:-10px;width:8px;height:10px;background:#222;border:2px solid #333;border-top:none;border-radius:0 0 3px 3px; }
-  .portal-char .char-body .leg-r { position:absolute;right:-2px;bottom:-10px;width:8px;height:10px;background:#222;border:2px solid #333;border-top:none;border-radius:0 0 3px 3px; }
-  @keyframes charWave { 0%,100%{transform:rotate(-15deg)} 50%{transform:rotate(15deg)} }
-
-  .portal-text { font-family:'Black Ops One',monospace;font-size:1.1rem;color:var(--accentText,#a78bfa);text-shadow:0 0 20px rgba(124,58,237,0.6),0 0 40px rgba(124,58,237,0.3);animation:textPulse 1.5s ease-in-out infinite;letter-spacing:2px;text-align:center; }
-  .portal-sub { font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:0.5rem;letter-spacing:4px;text-transform:uppercase; }
-  @keyframes textPulse { 0%,100%{opacity:0.7;transform:scale(1)} 50%{opacity:1;transform:scale(1.03)} }
-  .portal-click-hint { position:absolute;bottom:2rem;font-size:0.6rem;color:rgba(255,255,255,0.15);letter-spacing:2px;animation:textPulse 2s ease-in-out infinite; }
-  @media(max-width:600px){ .portal-ring {width:160px;height:160px;} .portal-ring .ring:nth-child(4){inset:30px} .portal-ring .core{inset:38px} .portal-text{font-size:0.9rem;} }
+  /* ===== ONDA D'URTO (click portal) ===== */
+  .ripple-overlay { position:fixed;inset:0;z-index:9999;pointer-events:none;background:radial-gradient(circle at 50% 50%,transparent 0%,transparent 0%);opacity:0;transition:none; }
+  .ripple-overlay.active { animation:rippleBlast 1s cubic-bezier(0.22,1,0.36,1) forwards; }
+  @keyframes rippleBlast {
+    0%{opacity:0;background:radial-gradient(circle at 50% 50%,rgba(10,10,18,0) 0%,rgba(10,10,18,0) 100%);backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);}
+    15%{opacity:1;background:radial-gradient(circle at 50% 50%,transparent 10%,rgba(10,10,18,0.4) 40%,#0a0a12 100%);backdrop-filter:blur(0px);}
+    50%{background:radial-gradient(circle at 50% 50%,transparent 0%,rgba(124,58,237,0.3) 30%,rgba(10,10,18,0.8) 60%,#0a0a12 100%);backdrop-filter:blur(8px);}
+    100%{opacity:1;background:radial-gradient(circle at 50% 50%,transparent 0%,rgba(124,58,237,0.2) 0%,#0a0a12 100%);backdrop-filter:blur(12px);}
+  }
+  .ripple-overlay.fade-out { animation:rippleFade 0.6s ease-in forwards; }
+  @keyframes rippleFade {
+    0%{opacity:1;backdrop-filter:blur(12px);}
+    100%{opacity:0;backdrop-filter:blur(0px);}
+  }
 
   /* LOBBY - Chat */
   #lobbyBox {
@@ -1165,27 +1171,23 @@
   </div>
 </div>
 
+<div class="ripple-overlay" id="rippleOverlay"></div>
 <div class="portal-page" id="portalPage">
+  <div class="pp-bg"></div>
+  <div class="pp-grid"></div>
   <div class="portal-bg-stars" id="portalStars"></div>
-  <div class="portal-char">
-    <div class="char-head">
-      <div class="eye-l"></div><div class="eye-r"></div>
-      <div class="hat"></div>
-    </div>
-    <div class="char-body">
-      <div class="arm-l"></div><div class="arm-r"></div>
-      <div class="leg-l"></div><div class="leg-r"></div>
-    </div>
+  <div class="portal-vortex">
+    <div class="pv-outer"></div>
+    <div class="pv-ring pv-r1"></div>
+    <div class="pv-ring pv-r2"></div>
+    <div class="pv-ring pv-r3"></div>
+    <div class="pv-ring pv-r4"></div>
+    <div class="pv-ring pv-r5"></div>
+    <div class="pv-core"></div>
+    <div class="pv-abyss"></div>
   </div>
-  <div class="portal-ring">
-    <div class="portal-glow"></div>
-    <div class="portal-glow2"></div>
-    <div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div>
-    <div class="core"></div>
-  </div>
-  <div class="portal-text">CLICCAMI PER ENTRARE<br>NELL'OVERWORLD</div>
-  <div class="portal-sub">✦ ERRJACE Private ROOM ✦</div>
-  <div class="portal-click-hint">🖱 clicca ovunque</div>
+  <div class="portal-text">ENTRA NELL'ABISSO<span>TOCCA IL PORTALE</span></div>
+  <div class="portal-hint">✦ clicca ovunque ✦</div>
 </div>
 <div class="container" id="loginBox" style="display:none;">
   <h1><span>ERRJACE</span> Private ROOM</h1>
@@ -2423,25 +2425,31 @@
   // Portal click → login
   function showPortalAfterLogin() {
     var pp = document.getElementById('portalPage');
-    pp.classList.remove('hidden');
     pp.style.display = 'flex';
     var stars = document.getElementById('portalStars');
     stars.innerHTML = '';
-    for (var i = 0; i < 60; i++) {
+    for (var i = 0; i < 80; i++) {
       var s = document.createElement('span');
       s.style.left = Math.random()*100+'%';
       s.style.top = Math.random()*100+'%';
-      s.style.animationDelay = Math.random()*3+'s';
-      s.style.width = s.style.height = (1+Math.random()*2)+'px';
+      s.style.animationDelay = Math.random()*4+'s';
+      s.style.width = s.style.height = (1+Math.random()*3)+'px';
       stars.appendChild(s);
     }
     pp.addEventListener('click', function handler() {
-      pp.classList.add('hidden');
+      pp.removeEventListener('click', handler);
+      var ripple = document.getElementById('rippleOverlay');
+      ripple.classList.remove('fade-out');
+      ripple.classList.add('active');
       setTimeout(function() {
         pp.style.display = 'none';
         document.getElementById('nickOverlay').classList.add('active');
-        pp.removeEventListener('click', handler);
-      }, 800);
+      }, 400);
+      setTimeout(function() {
+        ripple.classList.remove('active');
+        ripple.classList.add('fade-out');
+        setTimeout(function() { ripple.classList.remove('fade-out'); }, 600);
+      }, 1200);
     });
   }
 
