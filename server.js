@@ -670,18 +670,19 @@ io.on('connection', (socket) => {
     if (!clawCounters[socket.id]) clawCounters[socket.id] = 0;
     clawCounters[socket.id]++;
     const com=CLAW_POOL.filter(p=>p.t===0), ra=CLAW_POOL.filter(p=>p.t===1), leg=CLAW_POOL.filter(p=>p.t===2);
-    var sel=[], forceLeg=clawCounters[socket.id]>=3;
+    var sel=[], forceLeg=clawCounters[socket.id]>=3, hit=null;
     for(var i=0;i<4;i++){var c=[...com];sel.push(c[Math.floor(Math.random()*c.length)]||{n:'Magikarp',i:129,t:0});}
     sel.push(ra[Math.floor(Math.random()*ra.length)]||{n:'Pikachu',i:25,t:1});
     if(forceLeg){
-      sel.push(leg[Math.floor(Math.random()*leg.length)]||{n:'Mewtwo',i:150,t:2});
-      clawCounters[socket.id]=0;
+      hit=leg[Math.floor(Math.random()*leg.length)]||{n:'Mewtwo',i:150,t:2};
+      sel.push(hit);
+      delete clawCounters[socket.id];
     }else{
       var r2=Math.random();
       sel.push(r2<0.7?(com[Math.floor(Math.random()*com.length)]||{n:'Pidgey',i:16,t:0}):r2<0.95?(ra[Math.floor(Math.random()*ra.length)]||{n:'Eevee',i:133,t:1}):(leg[Math.floor(Math.random()*leg.length)]||{n:'Mewtwo',i:150,t:2}));
+      hit=sel[Math.floor(Math.random()*sel.length)];
+      if(hit.t===2) delete clawCounters[socket.id];
     }
-    var hit=sel[Math.floor(Math.random()*sel.length)];
-    if(hit.t===2&&!forceLeg) clawCounters[socket.id]=0; // reset if lucky
     socket.emit('pokeclaw:result',{pokemon:sel.map(p=>({name:p.n,id:p.i})),caught:{name:hit.n,id:hit.i,legendary:hit.t===2},balance:casinoBals[socket.id]});
     addPokeXP(socket.id, 10, 'pokéclaw');
     if(hit.t===2){
