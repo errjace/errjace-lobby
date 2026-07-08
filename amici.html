@@ -745,10 +745,11 @@
     overflow: hidden;
     background: #000;
     aspect-ratio: 16/9;
-    max-height: 130px;
+    max-height: 0;
     position: relative;
     transition: max-height 0.3s ease;
   }
+  .yt-player-wrap.active { max-height: 130px; margin-bottom: 0.5rem; }
   .yt-player-wrap.collapsed { max-height: 0 !important; margin-bottom: 0 !important; }
   .ytp-minimize {
     position:absolute;top:4px;right:4px;z-index:10;
@@ -1319,7 +1320,7 @@
           <button id="musicSearchBtn">Cerca</button>
         </div>
         <div class="music-results" id="musicResults"></div>
-        <div class="yt-player-wrap" id="ytPlayerWrap" style="display:none;">
+        <div class="yt-player-wrap" id="ytPlayerWrap">
           <button class="ytp-minimize" id="ytpMinimize" title="Minimizza">−</button>
           <div id="ytPlayer"></div>
         </div>
@@ -1726,24 +1727,34 @@
   let isMuted = false;
   let searchResults = [];
   let ytReady = false;
+  let ytInitAttempted = false;
 
   function onYouTubeIframeAPIReady() {
-    ytPlayer = new YT.Player('ytPlayer', {
-      height: '100%',
-      width: '100%',
-      playerVars: {
-        autoplay: 0,
-        controls: 1,
-        disablekb: 1,
-        fs: 0,
-        modestbranding: 1,
-        rel: 0,
-      },
-      events: {
-        onStateChange: onYtStateChange,
-        onReady: function() { ytReady = true; ytPlayer.setVolume(parseInt(document.getElementById('volRange').value)); },
-      }
-    });
+    ytInitAttempted = true;
+  }
+
+  function ensureYtPlayer() {
+    if (ytPlayer) return true;
+    if (!ytInitAttempted) return false;
+    try {
+      ytPlayer = new YT.Player('ytPlayer', {
+        height: '100%',
+        width: '100%',
+        playerVars: {
+          autoplay: 1,
+          controls: 1,
+          disablekb: 1,
+          fs: 0,
+          modestbranding: 1,
+          rel: 0,
+        },
+        events: {
+          onStateChange: onYtStateChange,
+          onReady: function() { ytReady = true; ytPlayer.setVolume(parseInt(document.getElementById('volRange').value)); },
+        }
+      });
+      return true;
+    } catch(e) { return false; }
   }
 
   let remoteAction = false;
@@ -1826,12 +1837,14 @@
 
   function actuallyPlay(data) {
     currentVideo = data;
-    document.getElementById('ytPlayerWrap').style.display = 'block';
+    document.getElementById('ytPlayerWrap').classList.add('active');
+    document.getElementById('ytPlayerWrap').classList.remove('collapsed');
+    document.getElementById('ytpRestore').style.display = 'none';
     document.getElementById('musicTitle').textContent = data.title;
     document.getElementById('musicArtist').textContent = data.artist;
     document.getElementById('musicPlayBtn').textContent = '⏸';
     document.getElementById('musicSearch').value = '';
-    if (ytPlayer && ytPlayer.loadVideoById) {
+    if (ensureYtPlayer() && ytPlayer && ytPlayer.loadVideoById) {
       ytPlayer.loadVideoById(data.videoId);
     }
     if (progressInterval) clearInterval(progressInterval);
@@ -1888,7 +1901,7 @@
     document.getElementById('musicPlayBtn').textContent = '▶';
     document.getElementById('musicTitle').textContent = 'Nessun video in riproduzione';
     document.getElementById('musicArtist').textContent = 'Cerca un video per iniziare';
-    document.getElementById('ytPlayerWrap').style.display = 'none';
+    document.getElementById('ytPlayerWrap').classList.remove('active');
     document.getElementById('progressWrap').style.display = 'none';
   });
 
@@ -1981,7 +1994,7 @@
     document.getElementById('musicPlayBtn').textContent = '▶';
     document.getElementById('musicTitle').textContent = 'Nessun video in riproduzione';
     document.getElementById('musicArtist').textContent = 'Cerca un video per iniziare';
-    document.getElementById('ytPlayerWrap').style.display = 'none';
+    document.getElementById('ytPlayerWrap').classList.remove('active');
     document.getElementById('progressWrap').style.display = 'none';
     document.getElementById('musicResults').classList.add('active');
   });
