@@ -853,6 +853,83 @@
   .challenge-list .cl-item:hover { background: rgba(139,92,246,0.1); }
   .challenge-list .cl-item .avatar { font-size: 1.1rem; }
 
+  /* UNO Card Game */
+  .uno-btn { width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; background: rgba(139,92,246,0.15); border: 1px solid var(--borderLight); cursor: pointer; transition: transform 0.2s, background 0.2s; }
+  .uno-btn:hover { transform: scale(1.15); background: rgba(139,92,246,0.3); }
+  .uno-btn::after { display: none; }
+  .uno-btn.active { background: rgba(239,68,68,0.3); border-color: rgba(239,68,68,0.4); }
+
+  .uno-overlay { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .uno-overlay.active { display: flex; }
+  .uno-box { background: linear-gradient(135deg, rgba(10,10,25,0.98), rgba(20,8,35,0.98)); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; max-width: 650px; width: 95%; max-height: 90vh; box-shadow: 0 8px 48px rgba(0,0,0,0.7); display: flex; flex-direction: column; position: relative; }
+  .uno-box h3 { font-size: 1rem; margin-bottom: 0.2rem; color: var(--accentText); letter-spacing: 0.08em; text-align: center; }
+  .uno-last-action { text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.35); margin-bottom: 0.5rem; min-height: 1.2rem; }
+  .uno-other-players { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.5rem; flex-wrap: wrap; }
+  .uno-other-player { text-align: center; background: rgba(255,255,255,0.04); border-radius: 8px; padding: 0.3rem 0.5rem; border: 1px solid rgba(139,92,246,0.08); min-width: 56px; }
+  .uno-other-player .u-avatar { font-size: 1.2rem; }
+  .uno-other-player .u-name { font-size: 0.6rem; color: rgba(255,255,255,0.4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60px; }
+  .uno-other-player .u-count { font-size: 0.7rem; color: var(--accentText); font-weight: 600; }
+  .uno-other-player.current { border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.06); }
+  .uno-other-player.current .u-count { color: #fbbf24; }
+  .uno-other-player.winner { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.06); }
+  .uno-other-player.winner .u-count { color: #22c55e; }
+
+  .uno-table-area { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 0.5rem 0; }
+  .uno-deck-pile { width: 60px; height: 88px; background: linear-gradient(135deg, #dc2626, #ea580c, #eab308, #22c55e, #3b82f6, #8b5cf6); border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.4rem; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 0.15s; position: relative; }
+  .uno-deck-pile:hover { transform: scale(1.05); }
+  .uno-deck-pile .deck-count { position: absolute; bottom: -16px; font-size: 0.6rem; color: rgba(255,255,255,0.3); }
+  .uno-discard-pile { width: 60px; height: 88px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; position: relative; }
+  .uno-dir-indicator { text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.3); margin-bottom: 0.25rem; }
+
+  .uno-hand { display: flex; gap: 0.3rem; justify-content: center; flex-wrap: wrap; min-height: 80px; padding: 0.25rem; margin: 0.25rem 0; }
+  .uno-card { width: 52px; height: 78px; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; position: relative; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.15); }
+  .uno-card:hover { transform: translateY(-10px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 2; }
+  .uno-card .card-inner { width: 80%; height: 65%; border-radius: 50%; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; flex-direction: column; }
+  .uno-card .card-text { font-size: 1rem; font-weight: 800; line-height: 1; }
+  .uno-card .card-sub { font-size: 0.5rem; font-weight: 600; text-transform: uppercase; line-height: 1; }
+  .uno-card.card-red { background: linear-gradient(135deg, #ef4444, #dc2626); color: #dc2626; }
+  .uno-card.card-yellow { background: linear-gradient(135deg, #eab308, #ca8a04); color: #ca8a04; }
+  .uno-card.card-green { background: linear-gradient(135deg, #22c55e, #16a34a); color: #16a34a; }
+  .uno-card.card-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #2563eb; }
+  .uno-card.card-wild { background: linear-gradient(135deg, #ef4444, #eab308, #22c55e, #3b82f6); animation: unoWild 2s linear infinite; background-size: 300% 300%; color: #fff; }
+  @keyframes unoWild { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  .uno-card.card-wild .card-inner { background: rgba(255,255,255,0.3); }
+  .uno-card.card-wild .card-text, .uno-card.card-wild .card-sub { color: #fff; }
+  .uno-card.playable { border-color: rgba(251,191,36,0.6); box-shadow: 0 0 10px rgba(251,191,36,0.3); }
+  .uno-card.dim { opacity: 0.4; cursor: default; }
+  .uno-card.dim:hover { transform: none; box-shadow: none; }
+
+  .uno-actions { display: flex; gap: 0.4rem; justify-content: center; margin-top: 0.25rem; flex-wrap: wrap; }
+  .uno-actions button { padding: 0.35rem 0.75rem; font-size: 0.7rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; letter-spacing: 0.05em; animation: none; transition: transform 0.15s; }
+  .uno-actions button:hover { transform: scale(1.05); }
+  .uno-actions button::after { display: none; }
+  .uno-actions .ua-draw { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff; }
+  .uno-actions .ua-pass { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+  .uno-actions .ua-uno { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; animation: unoPulse 0.8s ease-in-out infinite; }
+  @keyframes unoPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
+  .uno-actions .ua-start { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+  .uno-actions .ua-leave { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); }
+
+  .uno-color-picker { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 10; gap: 0.3rem; padding: 0.5rem; background: rgba(0,0,0,0.85); border-radius: 10px; border: 1px solid var(--border); }
+  .uno-color-picker.active { display: flex; }
+  .uno-color-picker .cp-btn { width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: transform 0.15s; }
+  .uno-color-picker .cp-btn:hover { transform: scale(1.2); }
+
+  .uno-lobby { text-align: center; padding: 1rem; }
+  .uno-lobby h3 { font-size: 1.1rem; margin-bottom: 0.75rem; }
+  .uno-lobby .ul-info { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-bottom: 1rem; }
+  .uno-lobby .ul-list { max-height: 200px; overflow-y: auto; margin: 0.5rem auto; max-width: 300px; }
+  .uno-lobby .ul-item { display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.75rem; border-radius: 8px; margin-bottom: 0.25rem; background: rgba(139,92,246,0.06); font-size: 0.8rem; }
+  .uno-lobby .ul-item .ul-join { padding: 0.25rem 0.5rem; font-size: 0.7rem; border-radius: 6px; background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff; border: none; cursor: pointer; }
+  .uno-lobby .ul-create-row { margin-top: 0.75rem; display: flex; gap: 0.5rem; align-items: center; justify-content: center; }
+  .uno-lobby .ul-create-row select { padding: 0.35rem; border-radius: 6px; background: rgba(15,15,30,0.8); color: #fff; border: 1px solid var(--border); font-size: 0.8rem; }
+  .uno-lobby .ul-create-row button { padding: 0.35rem 0.75rem; font-size: 0.75rem; border-radius: 6px; background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff; border: none; cursor: pointer; }
+  .uno-lobby .ul-waiting { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 0.5rem; }
+  .uno-lobby .ul-players { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin: 0.5rem 0; }
+  .uno-lobby .ul-players span { font-size: 1.2rem; }
+
+  .uno-skip { text-decoration: line-through; opacity: 0.5; }
+
   @media (max-width: 768px) {
     body { overflow: auto; overflow-x: hidden; align-items: flex-start; padding: 0.25rem; }
     .orb { display: none; }
@@ -913,6 +990,24 @@
     .chat-input-row input { font-size: 0.75rem; padding: 0.4rem 0.5rem; }
     .chat-input-row button { padding: 0.4rem 0.6rem; font-size: 0.7rem; }
     .yt-player-wrap { max-height: 110px; }
+  }
+  @media (max-width: 768px) {
+    .uno-box { padding: 0.5rem; max-width: 100%; width: 100%; border-radius: 0; max-height: 100vh; }
+    .uno-card { width: 40px; height: 60px; }
+    .uno-card .card-text { font-size: 0.75rem; }
+    .uno-card .card-sub { font-size: 0.4rem; }
+    .uno-deck-pile, .uno-discard-pile { width: 44px; height: 66px; }
+    .uno-other-player { min-width: 44px; padding: 0.2rem 0.35rem; }
+    .uno-other-player .u-avatar { font-size: 0.9rem; }
+    .uno-other-player .u-count { font-size: 0.6rem; }
+    .uno-hand { gap: 0.2rem; }
+    .uno-actions button { font-size: 0.6rem; padding: 0.25rem 0.5rem; }
+    .uno-table-area { gap: 0.5rem; }
+    .uno-box h3 { font-size: 0.85rem; }
+    .uno-lobby .ul-item { font-size: 0.7rem; }
+    .uno-lobby .ul-create-row select { font-size: 0.7rem; }
+    .uno-lobby .ul-create-row button { font-size: 0.65rem; }
+    .uno-color-picker .cp-btn { width: 30px; height: 30px; }
   }
 </style>
 </head>
@@ -988,6 +1083,7 @@
       <div class="online-count" id="onlineCount">👤 0 online</div>
       <button class="theme-btn" id="themeBtn" title="Tema">🎨</button>
       <button class="dama-btn" id="damaBtn" title="Sfida a Dama">♟</button>
+      <button class="uno-btn" id="unoBtn" title="UNO">🃏</button>
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <div class="voice-indicators" id="voiceIndicators"></div>
       <div class="theme-picker" id="themePicker">
@@ -1087,6 +1183,15 @@
     <h2 style="font-size:1.1rem;">♟ Sfida un utente</h2>
     <div class="challenge-list" id="challengeList"></div>
     <button class="game-btn" id="challengeListClose" style="margin-top:0.5rem;font-size:0.7rem;padding:0.35rem 0.75rem;background:rgba(255,255,255,0.1);">ANNULLA</button>
+  </div>
+</div>
+
+<!-- UNO Overlay -->
+<div class="uno-overlay" id="unoOverlay">
+  <div class="uno-box" id="unoBox">
+    <h3>🃏 UNO <span id="unoTitle"></span></h3>
+    <div class="uno-last-action" id="unoLastAction"></div>
+    <div id="unoContent"></div>
   </div>
 </div>
 
@@ -2076,6 +2181,325 @@
     if (!typingTimeout) socket.emit('typing start');
     clearTimeout(typingTimeout);
     typingTimeout = setTimeout(() => { socket.emit('typing stop'); typingTimeout = null; }, 1500);
+  });
+
+  // ===== UNO GAME =====
+  let unoGameState = null;
+  let unoGameId = null;
+  let unoChosenCardIdx = -1;
+  let unoPendingWild = false;
+
+  const UNO_COLORS = {
+    red: '#ef4444', yellow: '#eab308', green: '#22c55e', blue: '#3b82f6'
+  };
+
+  function renderUnoContent() {
+    const container = document.getElementById('unoContent');
+    if (!unoGameState) return;
+
+    if (unoGameState.status === 'waiting') {
+      renderUnoLobby(container);
+      return;
+    }
+
+    if (unoGameState.status === 'playing' || unoGameState.status === 'finished') {
+      renderUnoGame(container);
+      return;
+    }
+  }
+
+  function renderUnoLobby(container) {
+    const isHost = unoGameState.host === socket.id;
+    const players = unoGameState.players || [];
+    const max = unoGameState.maxPlayers || 4;
+
+    let html = '<div class="uno-lobby">';
+    html += '<div class="ul-info">In attesa di giocatori...</div>';
+    html += '<div class="ul-players">';
+    players.forEach(p => { html += '<span title="' + p.nick + '">' + p.avatar + '</span>'; });
+    html += '</div>';
+    html += '<div class="ul-info">' + players.length + '/' + max + ' giocatori</div>';
+
+    if (isHost && players.length >= 2) {
+      html += '<div class="uno-actions"><button class="ua-start" id="unoStartBtn">INIZIA PARTITA</button></div>';
+    } else if (isHost) {
+      html += '<div class="ul-waiting">Aspetta altri giocatori per iniziare...</div>';
+    } else {
+      html += '<div class="ul-waiting">In attesa che l\'host inizi...</div>';
+    }
+    html += '<div class="uno-actions" style="margin-top:0.5rem;"><button class="ua-leave" id="unoLeaveBtn">ESCI</button></div>';
+    html += '</div>';
+    container.innerHTML = html;
+
+    const startBtn = document.getElementById('unoStartBtn');
+    if (startBtn) startBtn.addEventListener('click', function() {
+      socket.emit('uno:start', { gameId: unoGameId });
+    });
+
+    document.getElementById('unoLeaveBtn').addEventListener('click', function() {
+      socket.emit('uno:leave', { gameId: unoGameId });
+      unoGameState = null;
+      unoGameId = null;
+      document.getElementById('unoOverlay').classList.remove('active');
+    });
+  }
+
+  function renderCardHTML(card, extra) {
+    const cls = 'uno-card card-' + card.c + (extra || '');
+    const val = card.v === 'skip' ? '⊘' : card.v === 'reverse' ? '⟳' : card.v === 'draw2' ? '+2' : card.v === 'wild' ? '★' : card.v === 'wild4' ? '+4' : card.v;
+    const sub = card.v === 'skip' ? 'SKIP' : card.v === 'reverse' ? 'REV' : card.v === 'draw2' ? 'DRAW 2' : card.v === 'wild' ? 'WILD' : card.v === 'wild4' ? 'WILD 4' : '';
+    return '<div class="' + cls + '"><div class="card-inner"><span class="card-text">' + val + '</span>' + (sub ? '<span class="card-sub">' + sub + '</span>' : '') + '</div></div>';
+  }
+
+  function renderUnoGame(container) {
+    const gs = unoGameState;
+    const me = gs.players.find(p => p.id === socket.id);
+    const myHand = gs.hand || [];
+    const isMyTurn = gs.currentPlayerId === socket.id;
+    const topCard = gs.topCard;
+    const dir = gs.direction === 1 ? '→' : '←';
+    const finished = gs.status === 'finished';
+    const iWon = finished && gs.winner === socket.id;
+
+    let html = '';
+
+    // Other players
+    html += '<div class="uno-other-players">';
+    gs.players.forEach(p => {
+      const isCurrent = p.id === gs.currentPlayerId;
+      const isWinner = finished && p.id === gs.winner;
+      html += '<div class="uno-other-player' + (isCurrent ? ' current' : '') + (isWinner ? ' winner' : '') + '">';
+      html += '<div class="u-avatar">' + p.avatar + '</div>';
+      html += '<div class="u-name">' + p.nick + '</div>';
+      html += '<div class="u-count">' + (isWinner ? '👑' : p.cardCount + ' carte') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // Direction
+    html += '<div class="uno-dir-indicator">' + dir + ' ' + (gs.players.find(p => p.id === gs.currentPlayerId)?.nick || '') + '</div>';
+
+    // Table area (deck + discard)
+    html += '<div class="uno-table-area">';
+    html += '<div class="uno-deck-pile" id="unoDeckBtn">🃏<span class="deck-count">' + gs.deckCount + '</span></div>';
+    if (topCard) {
+      html += '<div class="uno-discard-pile">' + renderCardHTML(topCard) + '</div>';
+    } else {
+      html += '<div class="uno-discard-pile"></div>';
+    }
+    html += '</div>';
+
+    // My hand
+    if (!finished) {
+      html += '<div class="uno-hand" id="unoHand">';
+      myHand.forEach(function(card, idx) {
+        const extra = isMyTurn && !unoPendingWild ? ' playable dim' : ' dim';
+        html += '<div class="uno-card-wrap" data-idx="' + idx + '">' + renderCardHTML(card, extra) + '</div>';
+      });
+      html += '</div>';
+    }
+
+    // Actions
+    html += '<div class="uno-actions" id="unoActions">';
+    if (finished) {
+      const msg = iWon ? '🎉 HAI VINTO!' : '😞 ' + (gs.players.find(p => p.id === gs.winner)?.nick || 'Qualcuno') + ' ha vinto!';
+      html += '<span style="font-size:0.85rem;font-weight:700;color:' + (iWon ? '#22c55e' : 'rgba(255,255,255,0.4)') + ';">' + msg + '</span>';
+    } else {
+      if (isMyTurn && !unoPendingWild) {
+        html += '<button class="ua-draw" id="unoDrawBtn">PESCA</button>';
+        html += '<button class="ua-pass" id="unoPassBtn">PASSA</button>';
+      }
+      if (myHand.length === 1) {
+        html += '<button class="ua-uno" id="unoUnoBtn">UNO!</button>';
+      }
+    }
+    html += '<button class="ua-leave" id="unoLeaveBtn2">ESCI</button>';
+    html += '</div>';
+
+    // Color picker for wild cards
+    html += '<div class="uno-color-picker' + (unoPendingWild ? ' active' : '') + '" id="unoColorPicker">';
+    Object.entries(UNO_COLORS).forEach(function(e) {
+      html += '<div class="cp-btn" style="background:' + e[1] + '" data-color="' + e[0] + '"></div>';
+    });
+    html += '</div>';
+
+    container.innerHTML = html;
+    bindUnoEvents();
+  }
+
+  function bindUnoEvents() {
+    // Card clicks
+    document.querySelectorAll('#unoHand .uno-card-wrap').forEach(function(wrap) {
+      wrap.addEventListener('click', function() {
+        const idx = parseInt(this.dataset.idx);
+        if (!unoGameState || unoGameState.status !== 'playing') return;
+        if (unoGameState.currentPlayerId !== socket.id) return;
+        const hand = unoGameState.hand || [];
+        const card = hand[idx];
+        if (!card) return;
+        if (card.c === 'wild') {
+          unoChosenCardIdx = idx;
+          unoPendingWild = true;
+          renderUnoGame(document.getElementById('unoContent'));
+          return;
+        }
+        socket.emit('uno:playCard', { gameId: unoGameId, cardIndex: idx });
+      });
+    });
+
+    // Color picker
+    document.querySelectorAll('#unoColorPicker .cp-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (unoChosenCardIdx >= 0) {
+          socket.emit('uno:playCard', { gameId: unoGameId, cardIndex: unoChosenCardIdx, chosenColor: this.dataset.color });
+          unoChosenCardIdx = -1;
+          unoPendingWild = false;
+        }
+      });
+    });
+
+    // Draw
+    const drawBtn = document.getElementById('unoDrawBtn');
+    if (drawBtn) drawBtn.addEventListener('click', function() {
+      socket.emit('uno:drawCard', { gameId: unoGameId });
+    });
+
+    // Pass
+    const passBtn = document.getElementById('unoPassBtn');
+    if (passBtn) passBtn.addEventListener('click', function() {
+      socket.emit('uno:pass', { gameId: unoGameId });
+    });
+
+    // UNO call
+    const unoBtn = document.getElementById('unoUnoBtn');
+    if (unoBtn) unoBtn.addEventListener('click', function() {
+      socket.emit('uno:sayUno', { gameId: unoGameId });
+      this.disabled = true;
+      this.style.opacity = '0.3';
+    });
+
+    // Leave
+    const leaveBtn = document.getElementById('unoLeaveBtn2');
+    if (leaveBtn) leaveBtn.addEventListener('click', function() {
+      socket.emit('uno:leave', { gameId: unoGameId });
+      unoGameState = null;
+      unoGameId = null;
+      document.getElementById('unoOverlay').classList.remove('active');
+    });
+  }
+
+  // Show UNO lobby list
+  document.getElementById('unoBtn').addEventListener('click', function() {
+    socket.emit('uno:list');
+    const overlay = document.getElementById('unoOverlay');
+    overlay.classList.add('active');
+    const container = document.getElementById('unoContent');
+    container.innerHTML = '<div class="uno-lobby"><div class="ul-info">Caricamento partite...</div></div>';
+  });
+
+  // Socket: UNO list
+  socket.on('uno:list', function(games) {
+    const container = document.getElementById('unoContent');
+    if (!container) return;
+    if (!document.getElementById('unoOverlay').classList.contains('active')) return;
+
+    let html = '<div class="uno-lobby">';
+    html += '<h3 style="font-size:1rem;">🃏 Partite disponibili</h3>';
+    if (games.length === 0) {
+      html += '<div class="ul-info">Nessuna partita disponibile. Creane una!</div>';
+    } else {
+      html += '<div class="ul-list">';
+      games.forEach(function(g) {
+        html += '<div class="ul-item"><span>' + g.hostNick + ' (' + g.playerCount + '/' + g.maxPlayers + ')</span><button class="ul-join" data-id="' + g.id + '">UNISCITI</button></div>';
+      });
+      html += '</div>';
+    }
+    html += '<div class="ul-create-row">';
+    html += '<label style="font-size:0.7rem;color:var(--accentText);">Giocatori:</label>';
+    html += '<select id="unoMaxPlayers">';
+    for (let i = 2; i <= 6; i++) html += '<option value="' + i + '"' + (i === 4 ? ' selected' : '') + '>' + i + '</option>';
+    html += '</select>';
+    html += '<button id="unoCreateBtn">CREA PARTITA</button>';
+    html += '</div>';
+    html += '<div class="uno-actions" style="margin-top:1rem;"><button class="ua-leave" id="unoLobbyClose">CHIUDI</button></div>';
+    html += '</div>';
+    container.innerHTML = html;
+
+    // Join buttons
+    container.querySelectorAll('.ul-join').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        socket.emit('uno:join', { gameId: this.dataset.id });
+      });
+    });
+
+    // Create
+    document.getElementById('unoCreateBtn').addEventListener('click', function() {
+      const max = parseInt(document.getElementById('unoMaxPlayers').value);
+      socket.emit('uno:create', { maxPlayers: max });
+    });
+
+    // Close
+    document.getElementById('unoLobbyClose').addEventListener('click', function() {
+      document.getElementById('unoOverlay').classList.remove('active');
+    });
+  });
+
+  // Socket: UNO joined
+  socket.on('uno:joined', function(data) {
+    unoGameId = data.gameId;
+    document.getElementById('unoTitle').textContent = '';
+  });
+
+  // Socket: UNO state
+  socket.on('uno:state', function(state) {
+    unoGameState = state;
+    const overlay = document.getElementById('unoOverlay');
+    if (!overlay.classList.contains('active')) overlay.classList.add('active');
+    renderUnoContent();
+
+    // Update title
+    if (state.status !== 'waiting') {
+      document.getElementById('unoTitle').textContent = '— ' + state.players.map(function(p) { return p.nick; }).join(' · ');
+    } else {
+      document.getElementById('unoTitle').textContent = '— Sala';
+    }
+
+    // Last action
+    document.getElementById('unoLastAction').textContent = state.lastAction || '';
+  });
+
+  // Socket: UNO error
+  socket.on('uno:error', function(msg) {
+    const container = document.getElementById('unoContent');
+    if (container) {
+      const div = document.createElement('div');
+      div.style.cssText = 'text-align:center;padding:0.5rem;color:#ef4444;font-size:0.75rem;animation:fadeIn 0.3s;';
+      div.textContent = '❌ ' + msg;
+      container.appendChild(div);
+      setTimeout(function() { div.remove(); }, 3000);
+    }
+  });
+
+  // Close UNO overlay on Esc
+  document.getElementById('unoOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+      if (unoGameState && unoGameState.status === 'waiting' && unoGameState.host === socket.id) {
+        socket.emit('uno:leave', { gameId: unoGameId });
+      }
+      unoGameState = null;
+      unoGameId = null;
+      this.classList.remove('active');
+    }
+  });
+
+  // Handle UNO disconnect cleanup
+  socket.on('disconnect', function() {
+    if (unoGameState) {
+      unoGameState = null;
+      unoGameId = null;
+      document.getElementById('unoOverlay').classList.remove('active');
+    }
+    if (voiceActive) stopVoice();
   });
 </script>
 

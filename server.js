@@ -161,6 +161,37 @@ function applyMove(board, from, to) {
   return captured;
 }
 
+// UNO Game
+const unoGames = {};
+
+function createUnoDeck() {
+  const d = [];
+  const cl = ['red','yellow','green','blue'];
+  const nums = ['0','1','1','2','2','3','3','4','4','5','5','6','6','7','7','8','8','9','9'];
+  const acts = ['skip','skip','reverse','reverse','draw2','draw2'];
+  cl.forEach(c => { nums.forEach(n => d.push({c,v:n})); acts.forEach(a => d.push({c,v:a})); });
+  for (let i = 0; i < 4; i++) { d.push({c:'wild',v:'wild'}); d.push({c:'wild',v:'wild4'}); }
+  return d;
+}
+function shuffle(a) { for (let i = a.length-1;i>0;i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function canPlayUno(card, top, curColor) { if (card.c === 'wild') return true; if (card.c === curColor) return true; if (card.v === top.v) return true; return false; }
+
+function getUnoState(game, pid) {
+  const players = game.players.map(p => ({ id: p.id, nick: p.nick, avatar: p.avatar, cardCount: p.cards.length }));
+  const me = game.players.find(p => p.id === pid);
+  return {
+    id: game.id, status: game.status, host: game.host, maxPlayers: game.maxPlayers,
+    players, hand: me ? me.cards : [],
+    topCard: game.discardPile[game.discardPile.length-1] || null,
+    deckCount: game.deck.length,
+    currentColor: game.currentColor,
+    currentPlayerId: game.players[game.currentPlayerIndex]?.id || null,
+    direction: game.direction, winner: game.winner,
+    lastAction: game.lastAction,
+  };
+}
+function advanceTurn(g) { g.currentPlayerIndex = (g.currentPlayerIndex + g.direction + g.players.length) % g.players.length; }
+
 io.on('connection', (socket) => {
   const ip = socket.handshake.address;
   console.log(`[${new Date().toLocaleTimeString()}] Connesso: ${socket.id} — IP: ${ip}`);
@@ -349,6 +380,133 @@ io.on('connection', (socket) => {
     delete games[gameId];
   });
 
+  // UNO Game events
+  socket.on('uno:list', () => {
+    const a = Object.values(unoGames).filter(g => g.status === 'waiting' && g.players.length < g.maxPlayers).map(g => ({ id: g.id, hostNick: g.players[0]?.nick || '?', playerCount: g.players.length, maxPlayers: g.maxPlayers }));
+    socket.emit('uno:list', a);
+  });
+
+  socket.on('uno:create', ({ maxPlayers }) => {
+    const u = users[socket.id]; if (!u) return;
+    for (const gid in unoGames) { if (unoGames[gid].players.some(p => p.id === socket.id)) { socket.emit('uno:error', 'Già in una partita!'); return; } }
+    const id = 'uno_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+    const game = { id, host: socket.id, status: 'waiting', players: [{id:socket.id,nick:u.nick,avatar:u.avatar,cards:[]}], maxPlayers: Math.max(2,Math.min(6,maxPlayers||4)), deck:[], discardPile:[], currentColor:'', direction:1, currentPlayerIndex:0, winner:null, lastAction:'', };
+    unoGames[id] = game;
+    socket.join(id);
+    socket.emit('uno:joined', { gameId: id });
+    socket.emit('uno:state', getUnoState(game, socket.id));
+    console.log(`[${new Date().toLocaleTimeString()}] UNO: ${u.nick} ha creato ${id}`);
+  });
+
+  socket.on('uno:join', ({ gameId }) => {
+    const u = users[socket.id]; if (!u) return;
+    const game = unoGames[gameId]; if (!game) { socket.emit('uno:error','Partita non trovata'); return; }
+    if (game.status !== 'waiting') { socket.emit('uno:error','Già iniziata'); return; }
+    if (game.players.length >= game.maxPlayers) { socket.emit('uno:error','Partita piena'); return; }
+    for (const gid in unoGames) { if (unoGames[gid].players.some(p => p.id === socket.id)) { socket.emit('uno:error','Già in una partita!'); return; } }
+    game.players.push({id:socket.id,nick:u.nick,avatar:u.avatar,cards:[]});
+    socket.join(gameId);
+    socket.emit('uno:joined', { gameId });
+    game.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(game, p.id)));
+    io.to(gameId).emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`${u.nick} si è unito a UNO! (${game.players.length}/${game.maxPlayers})`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+  });
+
+  socket.on('uno:start', ({ gameId }) => {
+    const game = unoGames[gameId]; if (!game) return;
+    if (game.host !== socket.id) { socket.emit('uno:error','Solo l\'host può iniziare'); return; }
+    if (game.players.length < 2) { socket.emit('uno:error','Servono almeno 2 giocatori'); return; }
+    const deck = shuffle(createUnoDeck());
+    game.players.forEach(p => { p.cards = deck.splice(0, 7); });
+    let ti = 0; while (ti < deck.length && deck[ti].c === 'wild') ti++;
+    if (ti >= deck.length) game.discardPile.push(deck.pop());
+    else game.discardPile.push(deck.splice(ti,1)[0]);
+    game.deck = deck;
+    game.status = 'playing'; game.currentPlayerIndex = 0; game.direction = 1;
+    game.currentColor = game.discardPile[0].c; game.winner = null;
+    game.lastAction = 'Partita iniziata!';
+    game.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(game, p.id)));
+    console.log(`[${new Date().toLocaleTimeString()}] UNO: ${gameId} iniziata (${game.players.length} giocatori)`);
+  });
+
+  socket.on('uno:playCard', ({ gameId, cardIndex, chosenColor }) => {
+    const u = users[socket.id]; if (!u) return;
+    const game = unoGames[gameId]; if (!game || game.status !== 'playing') return;
+    const pIdx = game.players.findIndex(p => p.id === socket.id);
+    if (pIdx === -1 || pIdx !== game.currentPlayerIndex) return;
+    const player = game.players[pIdx];
+    const card = player.cards[cardIndex]; if (!card) return;
+    if (!canPlayUno(card, game.discardPile[game.discardPile.length-1], game.currentColor)) return;
+    player.cards.splice(cardIndex, 1);
+    game.discardPile.push(card);
+    game.currentColor = card.c === 'wild' ? (chosenColor||'red') : card.c;
+    let skip = false, draw = 0;
+    if (card.v === 'skip') { skip = true; game.lastAction = `${u.nick} salta!`; }
+    else if (card.v === 'reverse') { if (game.players.length === 2) skip = true; else game.direction *= -1; game.lastAction = `${u.nick} inverte!`; }
+    else if (card.v === 'draw2') { draw = 2; skip = true; game.lastAction = `${u.nick} +2!`; }
+    else if (card.v === 'wild4') { draw = 4; skip = true; game.lastAction = `${u.nick} +4!`; }
+    else game.lastAction = `${u.nick} gioca ${card.v}`;
+    if (player.cards.length === 0) {
+      game.status = 'finished'; game.winner = socket.id;
+      game.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(game, p.id)));
+      io.to(gameId).emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`🎉 ${u.nick} ha vinto a UNO!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+      delete unoGames[gameId]; return;
+    }
+    if (skip) advanceTurn(game);
+    advanceTurn(game);
+    if (draw > 0) {
+      const np = game.players[game.currentPlayerIndex];
+      if (game.deck.length < draw) { game.deck = shuffle(game.discardPile.slice(0,-1)); game.discardPile = [game.discardPile[game.discardPile.length-1]]; }
+      for (let i = 0; i < draw && game.deck.length > 0; i++) np.cards.push(game.deck.pop());
+      game.lastAction += ` ${np.nick} pesca ${draw}!`;
+    }
+    game.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(game, p.id)));
+  });
+
+  socket.on('uno:drawCard', ({ gameId }) => {
+    const game = unoGames[gameId]; if (!game || game.status !== 'playing') return;
+    const pIdx = game.players.findIndex(p => p.id === socket.id);
+    if (pIdx === -1 || pIdx !== game.currentPlayerIndex) return;
+    if (game.deck.length === 0) { game.deck = shuffle(game.discardPile.slice(0,-1)); game.discardPile = [game.discardPile[game.discardPile.length-1]]; }
+    if (game.deck.length === 0) return;
+    const card = game.deck.pop();
+    game.players[pIdx].cards.push(card);
+    if (!canPlayUno(card, game.discardPile[game.discardPile.length-1], game.currentColor)) { advanceTurn(game); game.lastAction = `${users[socket.id]?.nick} pesca e passa`; }
+    else game.lastAction = `${users[socket.id]?.nick} pesca (giocabile)`;
+    game.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(game, p.id)));
+  });
+
+  socket.on('uno:pass', ({ gameId }) => {
+    const game = unoGames[gameId]; if (!game || game.status !== 'playing') return;
+    if (game.players.findIndex(p => p.id === socket.id) !== game.currentPlayerIndex) return;
+    advanceTurn(game);
+    game.lastAction = `${users[socket.id]?.nick} passa`;
+    game.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(game, p.id)));
+  });
+
+  socket.on('uno:sayUno', ({ gameId }) => {
+    const game = unoGames[gameId]; if (!game) return;
+    if (!game.players.some(p => p.id === socket.id)) return;
+    io.to(gameId).emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`🔔 ${users[socket.id]?.nick} grida UNO!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+  });
+
+  socket.on('uno:leave', ({ gameId }) => {
+    const game = unoGames[gameId]; if (!game) return;
+    const pIdx = game.players.findIndex(p => p.id === socket.id);
+    if (pIdx === -1) return;
+    const u = users[socket.id];
+    if (game.status === 'waiting') {
+      game.players.splice(pIdx, 1);
+      if (game.players.length === 0) { delete unoGames[gameId]; return; }
+      if (game.host === socket.id) game.host = game.players[0].id;
+      game.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(game, p.id)));
+    } else {
+      game.players.splice(pIdx, 1);
+      if (game.players.length < 2) { game.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(game, p.id))); delete unoGames[gameId]; }
+      else { if (game.host === socket.id) game.host = game.players[0].id; game.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(game, p.id))); }
+    }
+    if (u) io.to(gameId).emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`${u.nick} ha lasciato UNO.`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+  });
+
   // Voice Chat signaling
   socket.on('voice join', () => {
     const u = users[socket.id];
@@ -374,6 +532,16 @@ io.on('connection', (socket) => {
           const other = g.player1 === socket.id ? g.player2 : g.player1;
           io.to(other).emit('game end', { reason: 'Avversario si è disconnesso' });
           delete games[gid];
+        }
+      }
+      // Clean up UNO games
+      for (const gid in unoGames) {
+        const g = unoGames[gid];
+        const pIdx = g.players.findIndex(p => p.id === socket.id);
+        if (pIdx !== -1) {
+          g.players.splice(pIdx, 1);
+          if (g.players.length < 2) { g.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(g, p.id))); delete unoGames[gid]; }
+          else { if (g.host === socket.id) g.host = g.players[0].id; g.players.forEach(p => io.to(p.id).emit('uno:state', getUnoState(g, p.id))); }
         }
       }
       io.emit('chat message', {
