@@ -245,6 +245,8 @@
   .popup h2 { font-size: 1.4rem; }
   .popup p { color: var(--accentText); margin-bottom: 1.5rem; font-size: 0.9rem; }
   .popup input { text-align: center; }
+  .secondary-btn { background: transparent; border: 1px solid rgba(139,92,246,0.3); color: var(--accentText); padding: 0.6rem 1.5rem; border-radius: 10px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; width: 100%; }
+  .secondary-btn:hover { background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.5); }
   .nick-error { color: #ef4444; font-size: 0.85rem; margin-bottom: 0.75rem; display: none; }
 
   .avatar-label { color: var(--accentText); font-size: 0.8rem; margin-bottom: 0.75rem; text-align: center; letter-spacing: 0.05em; }
@@ -536,6 +538,7 @@
     gap: 1rem;
     flex: 1;
     min-height: 0;
+    overflow: hidden;
   }
   /* Online users sidebar */
   .online-sidebar {
@@ -568,6 +571,7 @@
   .online-user:hover { background: rgba(139,92,246,0.08); }
   .online-user .avatar { font-size: 1.2rem; }
   .online-user .name { color: #ccc; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .admin-badge { color: #fff; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em; background: rgba(139,92,246,0.25); padding: 1px 6px; border-radius: 4px; margin-left: 4px; flex-shrink: 0; }
   .online-dot {
     width: 7px; height: 7px;
     background: #22c55e;
@@ -581,6 +585,7 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 0;
   }
   .chat-messages {
     flex: 1;
@@ -1303,6 +1308,18 @@
   </div>
 </div>
 
+<!-- Popup cambio nickname -->
+<div class="overlay" id="renameOverlay">
+  <div class="popup">
+    <h2>Cambia nickname ✏️</h2>
+    <p>Inserisci il nuovo nickname</p>
+    <input type="text" id="renameInput" placeholder="Nuovo nickname" maxlength="20" autocomplete="off">
+    <div class="nick-error" id="renameError" style="display:none;">Inserisci un nickname valido.</div>
+    <button id="renameConfirmBtn">Cambia</button>
+    <button class="secondary-btn" id="renameCancelBtn" style="margin-top:8px;">Annulla</button>
+  </div>
+</div>
+
 <!-- Popup buon divertimento -->
 <div class="overlay" id="buonDivOverlay">
   <div class="popup popup-boom">
@@ -1319,6 +1336,7 @@
     <h2><span>✦</span> Lobby</h2>
     <div class="lh-right">
       <div class="online-count" id="onlineCount">👤 0 online</div>
+      <button class="theme-btn" id="renameBtn" title="Cambia nickname">✏️</button>
       <button class="theme-btn" id="themeBtn" title="Tema">🎨</button>
       <button class="dama-btn" id="damaBtn" title="Sfida a Dama">♟</button>
       <button class="uno-btn" id="unoBtn" title="UNO">🃏</button>
@@ -1757,6 +1775,20 @@
 
   const socket = io({ transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: 10, reconnectionDelay: 1000 });
   let socketConnected = false;
+  const ADMINS = ['ERRJACE'];
+
+  // Token di persistenza (salvato in localStorage)
+  function getToken() {
+    var t = localStorage.getItem('opencode_user_token');
+    if (!t) {
+      t = crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+      localStorage.setItem('opencode_user_token', t);
+    }
+    return t;
+  }
 
   // Register PWA service worker
   if ('serviceWorker' in navigator) {
@@ -2240,7 +2272,8 @@
       }
       var self = window.myNick && u.nick === window.myNick;
       var gameBtns = self ? '' : '<span class="battle-challenge-btn" data-to="'+u.id+'" title="Sfida a battaglia Pokémon">⚔️</span><span class="target-challenge-btn" data-to="'+u.id+'" title="Sfida a Tiro al Bersaglio">🎯</span>';
-      div.innerHTML = '<span class="online-dot"></span><span class="avatar">'+u.avatar+'</span><span class="name">'+u.nick+'</span>'+gameBtns+pokeHtml;
+      var adminBadge = ADMINS.indexOf(u.nick) !== -1 ? '<span class="admin-badge">ADMIN</span>' : '';
+      div.innerHTML = '<span class="online-dot"></span><span class="avatar">'+u.avatar+'</span><span class="name">'+u.nick+adminBadge+'</span>'+gameBtns+pokeHtml;
       list.appendChild(div);
     });
     document.getElementById('onlineCount').textContent = '👤 ' + onlineUsers.length + ' online';
@@ -3039,7 +3072,34 @@
       document.getElementById('connStatus').textContent = '● Connessione...';
       document.getElementById('connStatus').className = 'conn-status disconnected';
     }
-    socket.emit('join lobby', { nick: window.pendingNick, avatar: window.pendingAvatar });
+    socket.emit('join lobby', { nick: window.pendingNick, avatar: window.pendingAvatar, token: getToken() });
+  });
+
+  // Cambio nickname
+  document.getElementById('renameBtn').addEventListener('click', function() {
+    document.getElementById('renameInput').value = window.myNick || '';
+    document.getElementById('renameError').style.display = 'none';
+    document.getElementById('renameOverlay').classList.add('active');
+    setTimeout(function() { document.getElementById('renameInput').focus(); }, 200);
+  });
+
+  document.getElementById('renameCancelBtn').addEventListener('click', function() {
+    document.getElementById('renameOverlay').classList.remove('active');
+  });
+
+  document.getElementById('renameConfirmBtn').addEventListener('click', function() {
+    var nick = document.getElementById('renameInput').value.trim();
+    if (nick.length < 2) {
+      document.getElementById('renameError').style.display = 'block';
+      return;
+    }
+    document.getElementById('renameError').style.display = 'none';
+    document.getElementById('renameOverlay').classList.remove('active');
+    socket.emit('change nick', { nick: nick });
+  });
+
+  document.getElementById('renameInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('renameConfirmBtn').click();
   });
 
   // XP → level helper
@@ -3048,6 +3108,11 @@
   var POKE_IDS = { Charmander:4, Charmeleon:5, Charizard:6, Mimikyu:778, Riolu:447, Lucario:448, Swinub:220, Piloswine:221, Mamoswine:473 };
 
   // Socket events
+  socket.on('nick changed', function(data) {
+    window.myNick = data.nick;
+    window.pendingNick = data.nick;
+  });
+
   socket.on('users online', function(users) {
     // handled by renderOnlineList
   });
@@ -3063,7 +3128,7 @@
       div.innerHTML = `
         <div class="msg-head">
           <span class="msg-avatar">${data.avatar}</span>
-          <span class="msg-nick">${data.nick}</span>
+          <span class="msg-nick">${data.nick}</span>${(ADMINS.indexOf(data.nick)!==-1)?'<span class="admin-badge" style="font-size:0.55rem;">ADMIN</span>':''}
           <span class="msg-time">${data.time}</span>
         </div>
         <div class="msg-text">${data.msg}</div>
