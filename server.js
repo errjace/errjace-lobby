@@ -445,6 +445,41 @@ function addPokeXP(id, amt, reason) {
 }
 setInterval(()=>{Object.keys(pokemonData).forEach(id=>{if(users[id])addPokeXP(id,1,'online');});},60000);
 
+// === NEGOZIO LEGGENDARI ===
+const LEGENDARY_SHOP = [
+  // 50k€
+  {id:144,name:'Articuno',price:50000},{id:145,name:'Zapdos',price:50000},{id:146,name:'Moltres',price:50000},
+  {id:243,name:'Raikou',price:50000},{id:244,name:'Entei',price:50000},{id:245,name:'Suicune',price:50000},
+  {id:377,name:'Regirock',price:50000},{id:378,name:'Regice',price:50000},{id:379,name:'Registeel',price:50000},
+  {id:380,name:'Latias',price:50000},{id:381,name:'Latios',price:50000},
+  {id:480,name:'Uxie',price:50000},{id:481,name:'Mesprit',price:50000},{id:482,name:'Azelf',price:50000},
+  {id:485,name:'Heatran',price:50000},{id:488,name:'Cresselia',price:50000},
+  {id:638,name:'Cobalion',price:50000},{id:639,name:'Terrakion',price:50000},{id:640,name:'Virizion',price:50000},
+  {id:641,name:'Tornadus',price:50000},{id:642,name:'Thundurus',price:50000},{id:645,name:'Landorus',price:50000},
+  {id:647,name:'Keldeo',price:50000},
+  {id:785,name:'Tapu Koko',price:50000},{id:786,name:'Tapu Lele',price:50000},{id:787,name:'Tapu Bulu',price:50000},{id:788,name:'Tapu Fini',price:50000},
+  {id:894,name:'Regieleki',price:50000},{id:895,name:'Regidrago',price:50000},
+  {id:896,name:'Glastrier',price:50000},{id:897,name:'Spectrier',price:50000},
+  // 100k€
+  {id:150,name:'Mewtwo',price:100000},{id:151,name:'Mew',price:100000},
+  {id:249,name:'Lugia',price:100000},{id:250,name:'Ho-Oh',price:100000},{id:251,name:'Celebi',price:100000},
+  {id:382,name:'Kyogre',price:100000},{id:383,name:'Groudon',price:100000},{id:384,name:'Rayquaza',price:100000},
+  {id:385,name:'Jirachi',price:100000},{id:386,name:'Deoxys',price:100000},
+  {id:483,name:'Dialga',price:100000},{id:484,name:'Palkia',price:100000},{id:487,name:'Giratina',price:100000},
+  {id:486,name:'Regigigas',price:100000},
+  {id:491,name:'Darkrai',price:100000},{id:492,name:'Shaymin',price:100000},{id:493,name:'Arceus',price:100000},
+  {id:494,name:'Victini',price:100000},
+  {id:643,name:'Reshiram',price:100000},{id:644,name:'Zekrom',price:100000},{id:646,name:'Kyurem',price:100000},
+  {id:649,name:'Genesect',price:100000},{id:648,name:'Meloetta',price:100000},
+  {id:716,name:'Xerneas',price:100000},{id:717,name:'Yveltal',price:100000},{id:718,name:'Zygarde',price:100000},
+  {id:719,name:'Diancie',price:100000},{id:720,name:'Hoopa',price:100000},{id:721,name:'Volcanion',price:100000},
+  {id:791,name:'Solgaleo',price:100000},{id:792,name:'Lunala',price:100000},{id:800,name:'Necrozma',price:100000},
+  {id:802,name:'Marshadow',price:100000},{id:807,name:'Zeraora',price:100000},{id:801,name:'Magearna',price:100000},
+  {id:888,name:'Zacian',price:100000},{id:889,name:'Zamazenta',price:100000},{id:890,name:'Eternatus',price:100000},
+  {id:893,name:'Zarude',price:100000},{id:898,name:'Calyrex',price:100000},
+  {id:789,name:'Cosmog',price:100000},
+];
+
 // ===== BATTAGLIA POKEMON (Showdown-style) =====
 const TYPES = ['normal','fire','water','electric','grass','ice','fighting','poison','ground','flying','psychic','bug','rock','ghost','dragon','dark','steel','fairy'];
 const TYPE_CHART = {
@@ -1106,6 +1141,31 @@ io.on('connection', (socket) => {
     socket.emit('casino:balance', casinoBals[socket.id]);
     io.to(to).emit('casino:balance', casinoBals[to]);
     broadcastCasinoLeaderboard();
+  });
+
+  // NEGOZIO LEGGENDARI
+  socket.on('legendary:list', () => {
+    socket.emit('legendary:list', LEGENDARY_SHOP);
+  });
+
+  socket.on('legendary:buy', ({ id }) => {
+    const u = users[socket.id];
+    if (!u) return;
+    const poke = LEGENDARY_SHOP.find(p => p.id === id);
+    if (!poke) return;
+    const bal = getBal(socket.id);
+    if (bal < poke.price) { socket.emit('legendary:error', { msg: 'Saldo insufficiente!' }); return; }
+    const pd = pokemonData[socket.id];
+    if (!pd) { socket.emit('legendary:error', { msg: 'Prima scegli un Pokémon starter con ⚡!' }); return; }
+    if (pd.team && pd.team.length >= 5) { socket.emit('legendary:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
+    casinoBals[socket.id] = bal - poke.price;
+    socket.emit('casino:balance', casinoBals[socket.id]);
+    if (!pd.team) pd.team = [];
+    pd.team.push({ name: poke.name, id: poke.id, img: POKE_IMG+poke.id+'.png', legendary: true });
+    syncTokenData(socket.id);
+    socket.emit('legendary:bought', { name: poke.name });
+    io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
+    io.emit('chat message', { id:++msgCounter, nick:'🏪 NEGOZIO', avatar:'🏪', msg:`${u.nick} ha acquistato ${poke.name}! ✨`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
   });
 
   // QUIZ events

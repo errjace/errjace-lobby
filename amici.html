@@ -1361,6 +1361,7 @@
       <button class="dama-btn" id="casinoBtn" title="Casinò" style="font-size:0.8rem;">💰</button>
       <button class="dama-btn poke-btn" id="pokeBtn" title="Pokémon" style="font-size:0.9rem;">⚡</button>
       <button class="dama-btn" id="portalBtn" title="Overworld" style="font-size:0.9rem;">🌀</button>
+      <button class="dama-btn" id="shopBtn" title="Negozio Leggendari" style="font-size:0.9rem;">🏪</button>
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <div class="voice-indicators" id="voiceIndicators"></div>
       <div class="theme-picker" id="themePicker">
@@ -1580,6 +1581,19 @@
     <button class="spin-btn" id="clawPlayBtn">🔴 PESCA! (€5K)</button>
     <div class="casino-result" id="clawError" style="color:#ef4444;font-size:0.75rem;"></div>
     <button class="casino-close" id="clawClose">✕ Chiudi</button>
+  </div>
+</div>
+
+<!-- NEGOZIO LEGGENDARI -->
+<div class="casino-overlay" id="shopOverlay" style="z-index:1200;">
+  <div class="casino-box" style="max-width:600px;width:95vw;max-height:85vh;display:flex;flex-direction:column;padding:0.8rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+      <h3 style="font-size:1rem;">🏪 NEGOZIO LEGGENDARI</h3>
+      <span style="font-size:0.75rem;color:var(--text2);">Saldo: €<b id="shopBalance">0</b></span>
+      <button id="shopClose" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:6px;cursor:pointer;">✕</button>
+    </div>
+    <div id="shopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;overflow-y:auto;padding:4px;min-height:200px;max-height:65vh;"></div>
+    <div class="nick-error" id="shopError" style="display:none;margin-top:4px;"></div>
   </div>
 </div>
 
@@ -3320,6 +3334,54 @@
     if (e.target === this) this.classList.remove('active');
   });
 
+  // === NEGOZIO LEGGENDARI ===
+  var shopData = [];
+
+  document.getElementById('shopBtn').addEventListener('click', function() {
+    socket.emit('legendary:list');
+  });
+
+  socket.on('legendary:list', function(list) {
+    shopData = list;
+    document.getElementById('shopBalance').textContent = (casinoBalance || 0).toLocaleString();
+    var grid = document.getElementById('shopGrid');
+    grid.innerHTML = '';
+    list.forEach(function(p) {
+      var card = document.createElement('div');
+      var priceClass = p.price >= 100000 ? 'gold' : 'silver';
+      card.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:10px;padding:6px;text-align:center;border:1px solid '+(p.price>=100000?'#ffd70044':'#c0c0c044')+';cursor:pointer;transition:0.2s;';
+      card.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto;"><div style="font-size:0.7rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.65rem;color:'+(p.price>=100000?'#ffd700':'#c0c0c0')+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
+      card.addEventListener('click', function() {
+        socket.emit('legendary:buy', { id: p.id });
+      });
+      grid.appendChild(card);
+    });
+    document.getElementById('shopOverlay').classList.add('active');
+  });
+
+  document.getElementById('shopClose').addEventListener('click', function() {
+    document.getElementById('shopOverlay').classList.remove('active');
+  });
+  document.getElementById('shopOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  socket.on('legendary:bought', function(data) {
+    document.getElementById('shopOverlay').classList.remove('active');
+    // Show a toast notification
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #ffd700;border-radius:12px;padding:0.6rem 1.2rem;z-index:9999;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#ffd700;font-weight:700;animation:fadeIn 0.3s;';
+    toast.innerHTML = '✨ '+data.name+' aggiunto al team! ✨';
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; setTimeout(function() { if (toast.parentNode) toast.remove(); }, 500); }, 2500);
+  });
+
+  socket.on('legendary:error', function(data) {
+    document.getElementById('shopError').textContent = data.msg;
+    document.getElementById('shopError').style.display = 'block';
+    setTimeout(function() { document.getElementById('shopError').style.display = 'none'; }, 3000);
+  });
+
   // ===== MAPPA 2D CANVAS (Stile Pokémon DS) =====
   var mapData = { me: null, players: {}, char: null, wildPokes: [], _mx:0, _my:0, _tx:0, _ty:0 };
   var mapMoving = false, mapTiles = null, nearPokes = [];
@@ -4312,6 +4374,8 @@
   socket.on('casino:balance', function(balance) {
     casinoBalance = balance;
     document.getElementById('casinoBalance').textContent = balance.toLocaleString();
+    var shopBal = document.getElementById('shopBalance');
+    if (shopBal) shopBal.textContent = balance.toLocaleString();
     // Update bet buttons
     document.querySelectorAll('#slotBets .sb-btn').forEach(function(btn) {
       var b = parseInt(btn.dataset.bet);
