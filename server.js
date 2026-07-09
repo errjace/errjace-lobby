@@ -420,7 +420,7 @@ setInterval(() => {
 // =========================
 
 const EVO_THRESH = [0,30,80,150,250,400,600,900,1300,2000];
-const POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
+const POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/';
 const CLAW_COST = 5000;
 const CLAW_POOL = [
   {n:'Pidgeotto',i:17,t:0},{n:'Raticate',i:20,t:0},{n:'Fearow',i:22,t:0},{n:'Arbok',i:24,t:0},
@@ -453,7 +453,7 @@ function addPokeXP(id, amt, reason) {
   if(ns>os) {
     const s=STARTERS[d.starter], oldE=s.evos[os], newE=s.evos[ns];
     d.currentForm=newE;
-    io.emit('chat message',{id:++msgCounter,nick:'Pokémon',avatar:'<img src="'+POKE_IMG+STARTERS[d.starter].imgs[ns]+'.png" style="width:22px;height:22px;vertical-align:middle;image-rendering:pixelated">',msg:`✨ ${users[id]?.nick||'Qualcuno'} ha fatto evolvere ${oldE} → ${newE}! Liv.${nl}`,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),system:true,reactions:{}});
+    io.emit('chat message',{id:++msgCounter,nick:'Pokémon',avatar:'<img src="'+POKE_IMG+STARTERS[d.starter].imgs[ns]+'.png" style="width:22px;height:22px;vertical-align:middle;">',msg:`✨ ${users[id]?.nick||'Qualcuno'} ha fatto evolvere ${oldE} → ${newE}! Liv.${nl}`,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),system:true,reactions:{}});
     io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
   }
   syncTokenData(id);
@@ -1254,7 +1254,7 @@ io.on('connection', (socket) => {
     socket.emit('pokeclaw:result',{pokemon:sel.map(p=>({name:p.n,id:p.i})),caught:{name:hit.n,id:hit.i,legendary:hit.t===2,img:POKE_IMG+hit.i+'.png'},team:pokeData?pokeData.team:[],balance:casinoBals[socket.id]});
     addPokeXP(socket.id, 10, 'pokéclaw'); // broadcasts users online
     if(hit.t===2){
-      io.emit('chat message',{id:++msgCounter,nick:'🌟 LEGGENDARIO!',avatar:'<img src="'+POKE_IMG+hit.i+'.png" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle">',msg:`✨✨ ${u.nick.toUpperCase()} HA TROVATO ${hit.n.toUpperCase()}! ✨✨`,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),system:true,reactions:{}});
+      io.emit('chat message',{id:++msgCounter,nick:'🌟 LEGGENDARIO!',avatar:'<img src="'+POKE_IMG+hit.i+'.png" style="width:22px;height:22px;vertical-align:middle">',msg:`✨✨ ${u.nick.toUpperCase()} HA TROVATO ${hit.n.toUpperCase()}! ✨✨`,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),system:true,reactions:{}});
       io.emit('pokeclaw:legendary',{nick:u.nick,pokemon:hit.n,img:POKE_IMG+hit.i+'.png'});
     }
   });

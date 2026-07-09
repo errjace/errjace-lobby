@@ -1143,6 +1143,9 @@
   @keyframes bfxShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
   .bfx-flash { animation:bfxFlash 0.3s ease-out; }
   @keyframes bfxFlash { 0%{filter:brightness(2)} 100%{filter:brightness(1)} }
+  .poke-bob { animation:pokeBob 2s ease-in-out infinite; }
+  .poke-bob-reverse { animation:pokeBob 2.5s ease-in-out infinite reverse; }
+  @keyframes pokeBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
   @media(max-width:600px){ #opponentSprite,#playerSprite { width:100px!important;height:100px!important; } #opponentSprite img,#playerSprite img { max-width:100px!important;max-height:100px!important; } .battle-arena { min-height:140px!important; } .battle-container { max-width:100%!important;height:95vh!important;padding:0.25rem!important; } .move-btn { font-size:0.6rem!important;padding:0.3rem 0.4rem!important; } }
   .casino-bal { font-size: 0.85rem; color: #ffd700; margin-bottom: 0.5rem; background: rgba(255,215,0,0.05); padding: 0.3rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.1); }
   .slot-machine { background: linear-gradient(135deg, #1a0a2e, #2d1b4e); border: 2px solid #ffd700; border-radius: 12px; padding: 1rem; margin: 0.5rem auto; max-width: 280px; }
@@ -1694,7 +1697,7 @@
     <div class="battle-arena" style="flex:1;background:rgba(0,0,0,0.7);border-radius:10px;margin:2px 0;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;border:1px solid rgba(124,58,237,0.06);overflow:hidden;min-height:200px;">
       <!-- Opponent sprite -->
       <div id="opponentSprite" style="width:140px;height:140px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px;">
-        <img src="" style="max-width:140px;max-height:140px;image-rendering:pixelated;">
+        <img src="" class="poke-bob" style="max-width:140px;max-height:140px;">
       </div>
       <div class="bfx" id="battleFx"></div>
       <canvas id="battleCanvas" style="position:absolute;inset:0;z-index:12;pointer-events:none;display:block;"></canvas>
@@ -1704,7 +1707,7 @@
       </div>
       <!-- Player sprite -->
       <div id="playerSprite" style="width:140px;height:140px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:4px;">
-        <img src="" style="max-width:140px;max-height:140px;image-rendering:pixelated;">
+        <img src="" class="poke-bob-reverse" style="max-width:140px;max-height:140px;">
       </div>
     </div>
     <!-- Player HP bar (sotto l'arena) -->
@@ -1753,10 +1756,10 @@
   <div class="poke-popup">
     <h2>Scegli il tuo Pokémon</h2>
     <div class="poke-grid">
-      <div class="poke-card" data-starter="charmander"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto 0.25rem"><div class="name">Charmander</div><div class="evo">Charmeleon → Charizard</div></div>
-      <div class="poke-card" data-starter="mimikyu"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/778.png" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto 0.25rem"><div class="name">Mimikyu</div><div class="evo">Mimikyu → Mimikyu💀</div></div>
-      <div class="poke-card" data-starter="riolu"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/447.png" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto 0.25rem"><div class="name">Riolu</div><div class="evo">Lucario → Lucario⭐</div></div>
-      <div class="poke-card" data-starter="swinub"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/220.png" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto 0.25rem"><div class="name">Swinub</div><div class="evo">Piloswine → Mamoswine</div></div>
+      <div class="poke-card" data-starter="charmander"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/4.png" style="width:48px;height:48px;display:block;margin:0 auto 0.25rem"><div class="name">Charmander</div><div class="evo">Charmeleon → Charizard</div></div>
+      <div class="poke-card" data-starter="mimikyu"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/778.png" style="width:48px;height:48px;display:block;margin:0 auto 0.25rem"><div class="name">Mimikyu</div><div class="evo">Mimikyu → Mimikyu💀</div></div>
+      <div class="poke-card" data-starter="riolu"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/447.png" style="width:48px;height:48px;display:block;margin:0 auto 0.25rem"><div class="name">Riolu</div><div class="evo">Lucario → Lucario⭐</div></div>
+      <div class="poke-card" data-starter="swinub"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/220.png" style="width:48px;height:48px;display:block;margin:0 auto 0.25rem"><div class="name">Swinub</div><div class="evo">Piloswine → Mamoswine</div></div>
     </div>
     <div style="text-align:center;margin-top:1rem;"><button id="pokePickerClose" style="background:rgba(255,255,255,0.1);border:none;padding:0.4rem 1.2rem;border-radius:8px;color:var(--text2,#888);cursor:pointer;font-family:'Black Ops One',monospace;font-size:0.75rem;">SALTA</button></div>
   </div>
@@ -2297,11 +2300,11 @@
         var teamHtml = '';
         if (u.pokemon.team && u.pokemon.team.length > 0) {
           u.pokemon.team.forEach(function(tp) {
-            teamHtml += '<img src="'+tp.img+'" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+tp.name+'">';
+            teamHtml += '<img src="'+tp.img+'" style="width:22px;height:22px;vertical-align:middle;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+tp.name+'">';
           });
           teamHtml = '<span class="team-imgs">' + teamHtml + '</span>';
         }
-        pokeHtml = '<div class="poke-sidebar" data-sid="'+u.id+'" data-self="'+(isMe?'1':'0')+'"><img src="'+POKE_IMG+pokeId+'.png" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;display:inline">'+teamHtml+'<span class="plv">Lv'+lv+'</span><div class="pxp"><div class="pxp-fill" style="width:'+pct+'%"></div></div></div>';
+        pokeHtml = '<div class="poke-sidebar" data-sid="'+u.id+'" data-self="'+(isMe?'1':'0')+'"><img src="'+POKE_IMG+pokeId+'.png" style="width:20px;height:20px;vertical-align:middle;display:inline">'+teamHtml+'<span class="plv">Lv'+lv+'</span><div class="pxp"><div class="pxp-fill" style="width:'+pct+'%"></div></div></div>';
       }
       var self = window.myNick && u.nick === window.myNick;
       var gameBtns = self ? '' : '<span class="battle-challenge-btn" data-to="'+u.id+'" title="Sfida a battaglia Pokémon">⚔️</span><span class="target-challenge-btn" data-to="'+u.id+'" title="Sfida a Tiro al Bersaglio">🎯</span>';
@@ -2808,7 +2811,7 @@
       var opt = document.createElement('div');
       opt.className = 'switch-option';
       var pct = Math.max(0, pk.currentHp / pk.maxHp * 100);
-      opt.innerHTML = '<img src="'+pk.img+'" style="width:24px;height:24px;image-rendering:pixelated;"> <span>'+pk.species+'</span> <div class="so-hp"><div class="so-fill" style="width:'+pct+'%"></div></div> <span style="font-size:0.55rem;color:rgba(255,255,255,0.4);">'+pk.currentHp+'/'+pk.maxHp+'</span>';
+      opt.innerHTML = '<img src="'+pk.img+'" style="width:24px;height:24px;"> <span>'+pk.species+'</span> <div class="so-hp"><div class="so-fill" style="width:'+pct+'%"></div></div> <span style="font-size:0.55rem;color:rgba(255,255,255,0.4);">'+pk.currentHp+'/'+pk.maxHp+'</span>';
       opt.onclick = function() { socket.emit('battle:switch', { battleId: battleData.battleId, index: idx }); panel.style.display = 'none'; };
       panel.appendChild(opt);
     });
@@ -3464,7 +3467,7 @@
 
   // XP → level helper
   function getLv(xp) { var thr=[0,30,80,150,250,400,600,900,1300,2000]; for(var i=thr.length-1;i>=0;i--) if(xp>=thr[i]) return i+1; return 1; }
-  var POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
+  var POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/';
   var POKE_IDS = { Charmander:4, Charmeleon:5, Charizard:6, Mimikyu:778, Riolu:447, Lucario:448, Swinub:220, Piloswine:221, Mamoswine:473 };
 
   // Socket events
@@ -3580,7 +3583,7 @@
       var card = document.createElement('div');
       var priceClass = p.price >= 100000 ? 'gold' : 'silver';
       card.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:10px;padding:6px;text-align:center;border:1px solid '+(p.price>=100000?'#ffd70044':'#c0c0c044')+';cursor:pointer;transition:0.2s;';
-      card.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto;"><div style="font-size:0.7rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.65rem;color:'+(p.price>=100000?'#ffd700':'#c0c0c0')+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
+      card.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:48px;height:48px;display:block;margin:0 auto;"><div style="font-size:0.7rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.65rem;color:'+(p.price>=100000?'#ffd700':'#c0c0c0')+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
       card.addEventListener('click', function() {
         socket.emit('legendary:buy', { id: p.id });
       });
@@ -4051,7 +4054,7 @@
       if (lastNearPokeId !== p.id || lastNearPokeId === -1) {
         lastNearPokeId = p.id;
         el.style.display = 'flex';
-        el.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:36px;height:36px;image-rendering:pixelated"> <span style="font-weight:600;font-size:0.85rem;">'+p.name+'</span> <button id="btnCatch" style="background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;padding:4px 14px;border-radius:6px;cursor:pointer;font-size:0.7rem;font-weight:700;letter-spacing:1px;">CATTURA</button>';
+        el.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:36px;height:36px;"> <span style="font-weight:600;font-size:0.85rem;">'+p.name+'</span> <button id="btnCatch" style="background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;padding:4px 14px;border-radius:6px;cursor:pointer;font-size:0.7rem;font-weight:700;letter-spacing:1px;">CATTURA</button>';
         document.getElementById('btnCatch').onclick = function(e) {
           e.stopPropagation();
           this.textContent = '...';
@@ -4124,7 +4127,7 @@
     var el = document.getElementById('mapPokemon');
     el.style.display = 'flex';
     el.style.border = '2px solid #22c55e';
-    el.innerHTML = '<img src="'+POKE_IMG+pk.id+'.png" style="width:32px;height:32px;image-rendering:pixelated"> <span style="color:#22c55e;font-weight:700;">Catturato! '+pk.name+'</span>';
+    el.innerHTML = '<img src="'+POKE_IMG+pk.id+'.png" style="width:32px;height:32px;"> <span style="color:#22c55e;font-weight:700;">Catturato! '+pk.name+'</span>';
     setTimeout(function() { el.style.display = 'none'; el.innerHTML = ''; el.style.border = ''; }, 3000);
   });
 
@@ -4194,7 +4197,7 @@
     var lv = getLv(myPoke.xp||0);
     var starterCard = document.createElement('div');
     starterCard.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.05);border-radius:8px;cursor:pointer;transition:0.2s;flex:1;min-width:120px;';
-    starterCard.innerHTML = '<img src="'+myPoke.img+'" style="width:40px;height:40px;image-rendering:pixelated"> <div><div style="font-weight:700;font-size:0.85rem;">'+myPoke.form+'</div><div style="font-size:0.7rem;color:var(--text2,#888);">Lv.'+lv+' ⚡ Starter</div></div>';
+    starterCard.innerHTML = '<img src="'+myPoke.img+'" style="width:40px;height:40px;"> <div><div style="font-weight:700;font-size:0.85rem;">'+myPoke.form+'</div><div style="font-size:0.7rem;color:var(--text2,#888);">Lv.'+lv+' ⚡ Starter</div></div>';
     starterCard.onmouseover = function(){this.style.background='rgba(124,58,237,0.2)';};
     starterCard.onmouseout = function(){this.style.background='rgba(255,255,255,0.05)';};
     starterCard.onclick = function(){ picker.style.display='none'; sendPokeCard(myPoke.form, myPoke.xp, lv, myPoke.img, false); };
@@ -4204,7 +4207,7 @@
       myPoke.team.forEach(function(tp) {
         var card = document.createElement('div');
         card.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.05);border-radius:8px;cursor:pointer;transition:0.2s;flex:1;min-width:120px;border:1px solid #ffd70044;';
-        card.innerHTML = '<img src="'+tp.img+'" style="width:40px;height:40px;image-rendering:pixelated"> <div><div style="font-weight:700;font-size:0.85rem;">'+tp.name+'</div><div style="font-size:0.7rem;color:#ffd700;">🏆 Team ('+(myPoke.team.indexOf(tp)+1)+'/5)</div></div>';
+        card.innerHTML = '<img src="'+tp.img+'" style="width:40px;height:40px;"> <div><div style="font-weight:700;font-size:0.85rem;">'+tp.name+'</div><div style="font-size:0.7rem;color:#ffd700;">🏆 Team ('+(myPoke.team.indexOf(tp)+1)+'/5)</div></div>';
         card.onmouseover = function(){this.style.background='rgba(255,215,0,0.15)';};
         card.onmouseout = function(){this.style.background='rgba(255,255,255,0.05)';};
         card.onclick = function(){ picker.style.display='none'; sendPokeCard(tp.name, null, null, tp.img, tp.legendary); };
@@ -4221,7 +4224,7 @@
   });
   function sendPokeCard(name, xp, lv, img, legendary) {
     var card = '<div style="display:inline-flex;flex-direction:column;align-items:center;background:linear-gradient(135deg,'+(legendary?'#1a0a00':'#1a1a2e')+','+(legendary?'#2a1500':'#2a1a3e')+');border:2px solid '+(legendary?'#ffd700':'var(--accent,#7c3aed)')+';border-radius:12px;padding:8px 14px;margin:4px 0;">';
-    card += '<img src="'+img+'" style="width:64px;height:64px;image-rendering:pixelated;display:block;">';
+    card += '<img src="'+img+'" style="width:64px;height:64px;display:block;">';
     card += '<div style="font-weight:700;font-size:0.9rem;margin-top:4px;">'+(legendary?'🌟 ':'')+name+(legendary?' 🌟':'')+'</div>';
     if (lv) card += '<div style="font-size:0.7rem;color:var(--text2,#888);">Lv.'+lv+(xp?' · XP: '+xp:'')+'</div>';
     if (legendary) card += '<div style="font-size:0.6rem;color:#ffd700;letter-spacing:2px;font-family:\'Black Ops One\',monospace;">LEGGENDARIO</div>';
@@ -4805,7 +4808,7 @@
       if (p) {
         var img = document.createElement('img');
         img.src = POKE_IMG + p.id + '.png';
-        img.style.cssText = 'width:36px;height:36px;image-rendering:pixelated;position:relative;z-index:1;';
+        img.style.cssText = 'width:36px;height:36px;position:relative;z-index:1;';
         b.innerHTML = '<div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#333;"></div>';
         b.appendChild(img);
         b.style.background = 'rgba(255,255,255,0.1)';
@@ -4823,7 +4826,7 @@
       target.classList.add('caught');
       setTimeout(function() {
         document.getElementById('clawResult').style.display = 'block';
-        document.getElementById('clawCaugthPoke').innerHTML = '<img src="' + POKE_IMG + data.caught.id + '.png" style="width:48px;height:48px;image-rendering:pixelated;vertical-align:middle"> ' + data.caught.name;
+        document.getElementById('clawCaugthPoke').innerHTML = '<img src="' + POKE_IMG + data.caught.id + '.png" style="width:48px;height:48px;vertical-align:middle"> ' + data.caught.name;
         document.getElementById('clawCaugthName').textContent = data.caught.legendary ? '🌟 LEGGENDARIO! 🌟' : 'Pokémon catturato!';
         if (data.caught.legendary) {
           document.getElementById('clawGG').style.display = 'flex';
@@ -4866,11 +4869,11 @@
       var clawLb = '';
       if (p.team && p.team.length > 0) {
         p.team.forEach(function(tp) {
-          clawLb += ' <img src="'+tp.img+'" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;opacity:0.7;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+tp.name+'">';
+          clawLb += ' <img src="'+tp.img+'" style="width:14px;height:14px;vertical-align:middle;opacity:0.7;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+tp.name+'">';
         });
         clawLb = '<span style="display:inline-flex;align-items:center;">' + clawLb + '</span>';
       }
-      tr.innerHTML = '<td class="rank rank-' + rnk + '">#' + rnk + '</td><td>' + p.nick + '</td><td><img src="' + (p.img||'') + '" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle"> ' + p.form + ' ' + clawLb + '</td><td class="xp-num">' + p.xp + '</td><td>Lv' + p.level + '</td>';
+      tr.innerHTML = '<td class="rank rank-' + rnk + '">#' + rnk + '</td><td>' + p.nick + '</td><td><img src="' + (p.img||'') + '" style="width:22px;height:22px;vertical-align:middle"> ' + p.form + ' ' + clawLb + '</td><td class="xp-num">' + p.xp + '</td><td>Lv' + p.level + '</td>';
       tbody.appendChild(tr);
     });
     document.getElementById('pokeLeaderOverlay').classList.add('active');
@@ -4921,7 +4924,7 @@
   var tradeFrom = null;
   socket.on('pokemon:tradeOffer', function(data) {
     tradeFrom = data.from;
-    var imgHtml = function(url,label) { return '<img src="'+(url||'')+'" style="width:32px;height:32px;image-rendering:pixelated;vertical-align:middle"> ' + label; };
+    var imgHtml = function(url,label) { return '<img src="'+(url||'')+'" style="width:32px;height:32px;vertical-align:middle"> ' + label; };
     document.getElementById('pokeTradeText').innerHTML = data.nick + ' vuole scambiare<br><br>' + imgHtml(data.mineImg, data.mine) + '<br>↓<br>' + imgHtml(data.theirsImg, data.theirs) + '<br><br>con il tuo Pokémon!';
     document.getElementById('pokeTradeOverlay').classList.add('active');
   });
