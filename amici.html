@@ -1159,7 +1159,7 @@
   /* TIRO AL BERSAGLIO */
   .target-arena { background:rgba(0,0,0,0.5);border:2px solid rgba(255,215,0,0.15);border-radius:12px;margin:0.5rem 0;overflow:hidden; }
   .target-info { display:flex;justify-content:space-between;padding:0.4rem 0.75rem;background:rgba(255,255,255,0.03);font-size:0.75rem;color:rgba(255,255,255,0.6);border-bottom:1px solid rgba(255,215,0,0.1); }
-  .target-poke { position:absolute;cursor:pointer;transition:transform 0.1s;image-rendering:pixelated;z-index:5;border-radius:50%; }
+  .target-poke { position:absolute;cursor:pointer;transition:transform 0.1s;z-index:5;border-radius:50%;user-select:none; }
   .target-poke:hover { transform:scale(1.3); }
   .target-poke.caught { animation:targetPop 0.3s ease-out forwards; }
   .target-poke.miss { animation:targetFade 0.3s ease-out forwards; }
@@ -4525,39 +4525,39 @@
     var isRare = Math.random() < 0.15; // 15% gold/rare
     var isLegendary = Math.random() < 0.03; // 3% legendary
 
-    var img = document.createElement('img');
-    img.className = 'target-poke' + (isRare ? ' gold' : '') + (isLegendary ? ' legendary' : '');
-    img.src = POKE_IMG + pk.id + '.png';
-    img.draggable = false;
-    var size = isLegendary ? 60 : isRare ? 50 : 40;
-    img.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+(Math.random()*80+10)+'%;top:'+(Math.random()*80+10)+'%;';
-    img.dataset.points = isLegendary ? 3 : isRare ? 2 : 1;
-    img.dataset.name = pk.name;
+    var el = document.createElement('div');
+    el.className = 'target-poke' + (isRare ? ' gold' : '') + (isLegendary ? ' legendary' : '');
+    var size = isLegendary ? 60 : isRare ? 50 : 44;
+    var left = Math.random() * 80 + 10;
+    var top = Math.random() * 80 + 10;
+    el.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+left+'%;top:'+top+'%;display:flex;align-items:center;justify-content:center;background:'+(isLegendary?'rgba(124,58,237,0.25)':isRare?'rgba(255,215,0,0.2)':'rgba(255,255,255,0.08)')+';border:2px solid '+(isLegendary?'#a78bfa':isRare?'#ffd700':'rgba(255,255,255,0.15)')+';font-size:'+(size*0.35)+'px;font-weight:700;color:#fff;';
+    el.textContent = isLegendary ? '⭐' : isRare ? '🌟' : '⚪';
+    el.dataset.points = isLegendary ? 3 : isRare ? 2 : 1;
+    el.dataset.name = pk.name;
+    el.title = pk.name;
 
-    img.addEventListener('click', function(e) {
+    el.addEventListener('click', function(e) {
       e.stopPropagation();
       if (!this.parentNode || this.classList.contains('caught')) return;
       this.classList.add('caught');
       targetScore += parseInt(this.dataset.points);
       document.getElementById('targetScore').textContent = targetScore;
       playSound('slotwin');
-      // Sparkle effect
       var sp = document.createElement('div');
-      sp.style.cssText = 'position:absolute;left:'+this.style.left+';top:'+this.style.top+';pointer-events:none;font-size:1.3rem;z-index:20;animation:targetPop 0.4s ease-out forwards;';
+      sp.style.cssText = 'position:absolute;left:'+left+'%;top:'+top+'%;pointer-events:none;font-size:1.3rem;z-index:20;animation:targetPop 0.4s ease-out forwards;';
       sp.textContent = this.dataset.points >= 3 ? '🌟' : '+1';
       arena.appendChild(sp);
       setTimeout(function() { if (sp.parentNode) sp.remove(); }, 400);
-      setTimeout(function() { if (img.parentNode) img.remove(); }, 300);
+      setTimeout(function() { if (el.parentNode) el.remove(); }, 300);
     });
 
-    arena.appendChild(img);
+    arena.appendChild(el);
 
-    // Auto-remove after duration
-    var duration = isLegendary ? 800 : isRare ? 900 : 700;
+    var duration = isLegendary ? 1200 : isRare ? 1500 : 1000;
     setTimeout(function() {
-      if (img.parentNode && !img.classList.contains('caught')) {
-        img.classList.add('miss');
-        setTimeout(function() { if (img.parentNode) img.remove(); }, 300);
+      if (el.parentNode && !el.classList.contains('caught')) {
+        el.classList.add('miss');
+        setTimeout(function() { if (el.parentNode) el.remove(); }, 300);
       }
     }, duration);
   }
