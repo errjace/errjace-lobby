@@ -3,3 +3,4 @@ cloudflared.exe
 *.log
 npm-debug.log*
 data.json
+mappa over/

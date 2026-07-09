@@ -3626,6 +3626,18 @@
   var canvas, ctx, oCanvas, oCtx, mapAnimId = null;
   var pokeImgCache = {};
 
+  // Spritesheet loading for map tiles
+  var tileSheets = {};
+  function loadTileSheets() {
+    var names = ['ground','trees','water','rocks','details','bushes'];
+    names.forEach(function(n) {
+      var img = new Image();
+      img.src = 'tiles/'+n+'.png';
+      tileSheets[n] = img;
+    });
+  }
+  loadTileSheets();
+
   document.getElementById('owMapBtn').addEventListener('click', function() {
     document.getElementById('owPicker').classList.remove('active');
     document.getElementById('mapOverlay').classList.add('active');
@@ -3820,9 +3832,83 @@
     ctx.fillRect(x+14, y+28, 4, 3);
   }
 
+  // Tile source positions (spritesheet, tile_x, tile_y) for each type
+  var TILE_SRC = {
+    grass:  { sheet:'ground', tiles:[[11,0],[11,1],[0,2],[1,2],[4,2],[5,2]] },
+    path:   { sheet:'ground', tiles:[[10,0],[10,1],[6,2],[7,2]] },
+    tree:   { sheet:'trees',  tiles:[[1,1],[4,1],[9,2]] },
+    water:  { sheet:'water',  tiles:[[0,0],[1,0],[2,0],[3,0],[4,0]] },
+    wall:   { sheet:'rocks',  tiles:[[0,0],[1,0],[2,0]] },
+    flower: { sheet:'details',tiles:[[0,1],[4,0]] },
+    sand:   { sheet:'ground', tiles:[[0,0],[1,0],[8,0],[9,0]] },
+  };
+
+  // Draw a tile from spritesheet, with procedural fallback
+  function drawTile(ctx, x, y, s, seed, type, time) {
+    var src = TILE_SRC[type];
+    if (src && tileSheets[src.sheet] && tileSheets[src.sheet].complete) {
+      var list = src.tiles;
+      var idx = (seed * 7 + 13) % list.length;
+      var tx = list[idx][0], ty = list[idx][1];
+      var ts32 = 32; // source tile size
+      ctx.drawImage(tileSheets[src.sheet], tx*ts32, ty*ts32, ts32, ts32, x, y, s, s);
+      // Water animation overlay
+      if (type === 'water' && time) {
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        for (var i = 0; i < 3; i++) {
+          var wy = y + s*0.2 + i*s*0.25 + Math.sin(time*0.002 + i*1.5 + seed)*2;
+          ctx.fillRect(x+4, wy, s-8, 1);
+        }
+      }
+      return true;
+    }
+    return false; // fallback to procedural
+  }
+
+  // Draw a base tile then overlay (for trees, flowers on grass)
+  function drawTileLayer(ctx, x, y, s, seed, overlayType, time) {
+    var baseType = 'grass';
+    var baseSrc = TILE_SRC[baseType];
+    if (baseSrc && tileSheets[baseSrc.sheet] && tileSheets[baseSrc.sheet].complete) {
+      var list = baseSrc.tiles;
+      var idx = (seed * 7 + 13) % list.length;
+      ctx.drawImage(tileSheets[baseSrc.sheet], list[idx][0]*32, list[idx][1]*32, 32, 32, x, y, s, s);
+    } else {
+      drawGrass(ctx, x, y, s, seed);
+    }
+    drawTile(ctx, x, y, s, seed, overlayType, time);
+  }
+
   var TILE_DRAW = {
-    grass: drawGrass, path: drawPath, tree: drawTree,
-    water: drawWater, wall: drawWall, flower: drawFlower, sand: drawSand
+    grass: function(ctx, x, y, s, seed, time) {
+      if (!drawTile(ctx, x, y, s, seed, 'grass', time)) drawGrass(ctx, x, y, s, seed);
+    },
+    path: function(ctx, x, y, s, seed, time) {
+      if (!drawTile(ctx, x, y, s, seed, 'path', time)) drawPath(ctx, x, y, s, seed);
+    },
+    tree: function(ctx, x, y, s, seed, time) {
+      if (tileSheets.trees && tileSheets.trees.complete) {
+        drawTileLayer(ctx, x, y, s, seed, 'tree', time);
+      } else {
+        drawTree(ctx, x, y, s, seed);
+      }
+    },
+    water: function(ctx, x, y, s, seed, time) {
+      if (!drawTile(ctx, x, y, s, seed, 'water', time)) drawWater(ctx, x, y, s, seed, time);
+    },
+    wall: function(ctx, x, y, s, seed, time) {
+      if (!drawTile(ctx, x, y, s, seed, 'wall', time)) drawWall(ctx, x, y, s, seed);
+    },
+    flower: function(ctx, x, y, s, seed, time) {
+      if (tileSheets.details && tileSheets.details.complete) {
+        drawTileLayer(ctx, x, y, s, seed, 'flower', time);
+      } else {
+        drawFlower(ctx, x, y, s, seed);
+      }
+    },
+    sand: function(ctx, x, y, s, seed, time) {
+      if (!drawTile(ctx, x, y, s, seed, 'sand', time)) drawSand(ctx, x, y, s, seed);
+    }
   };
   var TILE_SOLID = { tree:true, water:true, wall:true };
 
@@ -3954,8 +4040,8 @@
       for (var x = startX; x < endX && x < w; x++) {
         if (y < 0 || x < 0) continue;
         var tt = (mapTiles[y] && mapTiles[y][x]) ? mapTiles[y][x] : 'grass';
-        var drawFn = TILE_DRAW[tt] || drawGrass;
-        drawFn(ctx, x*TILE, y*TILE, TILE, x*7+y*13);
+        var drawFn = TILE_DRAW[tt] || TILE_DRAW.grass;
+        drawFn(ctx, x*TILE, y*TILE, TILE, x*7+y*13, time);
       }
     }
 
