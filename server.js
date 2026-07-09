@@ -1339,15 +1339,38 @@ io.on('connection', (socket) => {
   socket.on('map:join', ({ char }) => {
     const u = users[socket.id];
     if (!u) return;
-    var x, y, attempts = 0;
-    do {
-      x = Math.floor(Math.random() * MAP_W);
-      y = Math.floor(Math.random() * MAP_H);
-      attempts++;
-    } while (Object.values(mapPlayers).some(p => p.x === x && p.y === y) && attempts < 100);
-    mapPlayers[socket.id] = { x, y, char: char || 'hero', nick: u.nick, avatar: u.avatar };
+    // Fixed spawn al centro mappa
+    var spawnX = Math.floor(MAP_W / 2), spawnY = Math.floor(MAP_H / 2);
+    if (Object.values(mapPlayers).some(p => p.x === spawnX && p.y === spawnY)) {
+      var offsets = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[-1,-1],[1,-1],[-1,1]];
+      var found = false;
+      for (var o of offsets) {
+        var nx = spawnX + o[0], ny = spawnY + o[1];
+        if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H &&
+            !Object.values(mapPlayers).some(p => p.x === nx && p.y === ny)) {
+          spawnX = nx; spawnY = ny; found = true; break;
+        }
+      }
+      if (!found) {
+        var attempts = 0;
+        do { spawnX = Math.floor(Math.random() * MAP_W); spawnY = Math.floor(Math.random() * MAP_H); attempts++; }
+        while (Object.values(mapPlayers).some(p => p.x === spawnX && p.y === spawnY) && attempts < 100);
+      }
+    }
+    mapPlayers[socket.id] = { x: spawnX, y: spawnY, char: char || 'hero', nick: u.nick, avatar: u.avatar };
     socket.emit('map:init', { w: MAP_W, h: MAP_H, players: mapPlayers, myId: socket.id, chars: MAP_CHARS, wildPokes: mapWildPokes });
     socket.broadcast.emit('map:playerJoin', { id: socket.id, ...mapPlayers[socket.id] });
+    // Invito in lobby per tutti (escluso chi entra)
+    socket.broadcast.emit('chat message', {
+      id: ++msgCounter,
+      nick: '🗺️ Overworld',
+      avatar: '🌍',
+      msg: `vuoi unirti anche tu all overworld con ${u.nick}?`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      system: true,
+      inviteMap: { nick: u.nick },
+      reactions: {},
+    });
   });
 
   socket.on('map:move', ({ x, y }) => {

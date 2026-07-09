@@ -3489,7 +3489,19 @@
     div.className = 'msg' + (data.system ? ' system' : '');
     div.setAttribute('data-id', data.id);
     if (data.system) {
-      div.textContent = data.msg;
+      if (data.inviteMap) {
+        div.innerHTML = '<div style="background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:8px;padding:6px 8px;margin:4px 0;font-size:0.8rem;"><div style="color:#ffd700;font-weight:600;margin-bottom:4px;">🗺️ '+data.inviteMap.nick+' è entrato nell\'Overworld!</div><div style="color:#ccc;margin-bottom:6px;">Vuoi unirti anche tu?</div><div style="display:flex;gap:6px;"><button class="invite-yes" style="flex:1;background:#22c55e;border:none;color:#fff;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;font-size:0.75rem;">✅ Sì</button><button class="invite-no" style="flex:1;background:#666;border:none;color:#fff;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;font-size:0.75rem;">❌ No</button></div></div>';
+        div.querySelector('.invite-yes').addEventListener('click', function() {
+          document.getElementById('owPicker').classList.remove('active');
+          document.getElementById('mapOverlay').classList.add('active');
+          setTimeout(function() { initCanvas(); showMapCharSelect(); }, 100);
+        });
+        div.querySelector('.invite-no').addEventListener('click', function() {
+          div.style.display = 'none';
+        });
+      } else {
+        div.textContent = data.msg;
+      }
     } else {
       div.innerHTML = `
         <div class="msg-head">
