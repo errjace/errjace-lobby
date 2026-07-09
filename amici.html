@@ -1101,6 +1101,40 @@
   .battle-log .log-ne { color:#ef4444; }
   .battle-log .log-pe { color:#a78bfa; }
   .battle-log .log-ko { color:#fbbf24;font-weight:600; }
+  /* BATTLE ANIMATIONS */
+  .bfx { position:absolute;inset:0;pointer-events:none;z-index:10;overflow:hidden; }
+  .bfx-projectile { position:absolute;width:30px;height:30px;border-radius:50%;opacity:0;animation:bfxShot 0.5s ease-out forwards; }
+  .bfx-projectile.bfx-fire { background:radial-gradient(circle,#ff6b35,#ff0000);box-shadow:0 0 20px #ff4500,0 0 40px #ff0000; }
+  .bfx-projectile.bfx-water { background:radial-gradient(circle,#60a5fa,#2563eb);box-shadow:0 0 20px #3b82f6,0 0 40px #1d4ed8; }
+  .bfx-projectile.bfx-electric { background:radial-gradient(circle,#fde047,#eab308);box-shadow:0 0 20px #facc15,0 0 40px #eab308;width:40px;height:40px;border-radius:30% 70% 50% 50%; }
+  .bfx-projectile.bfx-grass { background:radial-gradient(circle,#4ade80,#16a34a);box-shadow:0 0 20px #22c55e,0 0 40px #15803d; }
+  .bfx-projectile.bfx-ice { background:radial-gradient(circle,#67e8f9,#06b6d4);box-shadow:0 0 20px #22d3ee,0 0 40px #0891b2; }
+  .bfx-projectile.bfx-fighting { background:radial-gradient(circle,#f87171,#dc2626);box-shadow:0 0 20px #ef4444,0 0 40px #b91c1c; }
+  .bfx-projectile.bfx-poison { background:radial-gradient(circle,#c084fc,#9333ea);box-shadow:0 0 20px #a855f7,0 0 40px #7e22ce; }
+  .bfx-projectile.bfx-ground { background:radial-gradient(circle,#d97706,#92400e);box-shadow:0 0 20px #b45309,0 0 30px #78350f; }
+  .bfx-projectile.bfx-flying { background:radial-gradient(circle,#a78bfa,#7c3aed);box-shadow:0 0 20px #8b5cf6,0 0 40px #6d28d9; }
+  .bfx-projectile.bfx-psychic { background:radial-gradient(circle,#f472b6,#db2777);box-shadow:0 0 20px #ec4899,0 0 40px #be185d; }
+  .bfx-projectile.bfx-bug { background:radial-gradient(circle,#a3e635,#65a30d);box-shadow:0 0 20px #84cc16,0 0 30px #4d7c0f; }
+  .bfx-projectile.bfx-rock { background:radial-gradient(circle,#a8a29e,#57534e);box-shadow:0 0 15px #78716c; }
+  .bfx-projectile.bfx-ghost { background:radial-gradient(circle,#a78bfa,#4c1d95);box-shadow:0 0 25px #7c3aed,0 0 50px #5b21b6; }
+  .bfx-projectile.bfx-dragon { background:radial-gradient(circle,#fb923c,#7e22ce);box-shadow:0 0 25px #ea580c,0 0 50px #9333ea; }
+  .bfx-projectile.bfx-dark { background:radial-gradient(circle,#57534e,#1c1917);box-shadow:0 0 20px #44403c; }
+  .bfx-projectile.bfx-steel { background:radial-gradient(circle,#d4d4d8,#52525b);box-shadow:0 0 20px #a1a1aa,0 0 30px #71717a; }
+  .bfx-projectile.bfx-fairy { background:radial-gradient(circle,#f9a8d4,#ec4899);box-shadow:0 0 20px #f472b6,0 0 40px #db2777; }
+  .bfx-projectile.bfx-hit { animation:bfxHit 0.4s ease-out forwards; }
+  @keyframes bfxShot { 0%{opacity:1;transform:translate(0,0) scale(0.5)} 40%{opacity:1;transform:translate(var(--bfx-tx,120px),var(--bfx-ty,-40px)) scale(1.2)} 100%{opacity:0;transform:translate(var(--bfx-tx,120px),var(--bfx-ty,-40px)) scale(0.3)} }
+  @keyframes bfxHit { 0%{opacity:1;transform:scale(1.5)} 50%{opacity:0.8;transform:scale(2.5)} 100%{opacity:0;transform:scale(0)} }
+  .bfx-explosion { position:absolute;width:60px;height:60px;border-radius:50%;opacity:0;animation:bfxExplode 0.5s ease-out forwards; }
+  .bfx-explosion.bfx-fire { background:radial-gradient(circle,rgba(255,107,53,0.6),transparent);box-shadow:0 0 60px #ff4500; }
+  .bfx-explosion.bfx-water { background:radial-gradient(circle,rgba(96,165,250,0.6),transparent);box-shadow:0 0 60px #3b82f6; }
+  .bfx-explosion.bfx-electric { background:radial-gradient(circle,rgba(253,224,71,0.6),transparent);box-shadow:0 0 60px #facc15; }
+  .bfx-explosion.bfx-grass { background:radial-gradient(circle,rgba(74,222,128,0.6),transparent);box-shadow:0 0 60px #22c55e; }
+  .bfx-explosion { background:radial-gradient(circle,rgba(255,255,255,0.5),transparent);box-shadow:0 0 60px rgba(255,255,255,0.3); }
+  @keyframes bfxExplode { 0%{opacity:1;transform:scale(0.3)} 50%{opacity:0.8;transform:scale(2)} 100%{opacity:0;transform:scale(2.5)} }
+  .bfx-shake { animation:bfxShake 0.3s ease-in-out; }
+  @keyframes bfxShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+  .bfx-flash { animation:bfxFlash 0.3s ease-out; }
+  @keyframes bfxFlash { 0%{filter:brightness(2)} 100%{filter:brightness(1)} }
   @media(max-width:600px){ #opponentSprite,#playerSprite { width:100px!important;height:100px!important; } #opponentSprite img,#playerSprite img { max-width:100px!important;max-height:100px!important; } .battle-arena { min-height:140px!important; } .battle-container { max-width:100%!important;height:95vh!important;padding:0.25rem!important; } .move-btn { font-size:0.6rem!important;padding:0.3rem 0.4rem!important; } }
   .casino-bal { font-size: 0.85rem; color: #ffd700; margin-bottom: 0.5rem; background: rgba(255,215,0,0.05); padding: 0.3rem; border-radius: 6px; border: 1px solid rgba(255,215,0,0.1); }
   .slot-machine { background: linear-gradient(135deg, #1a0a2e, #2d1b4e); border: 2px solid #ffd700; border-radius: 12px; padding: 1rem; margin: 0.5rem auto; max-width: 280px; }
@@ -1539,6 +1573,7 @@
       <div id="opponentSprite" style="width:140px;height:140px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px;">
         <img src="" style="max-width:140px;max-height:140px;image-rendering:pixelated;">
       </div>
+      <div class="bfx" id="battleFx"></div>
       <!-- Battle log (overlaid in arena) -->
       <div class="battle-log" id="battleLog" style="text-align:center;font-size:0.6rem;padding:0.2rem 0.5rem;max-height:70px;overflow-y:auto;width:100%;color:rgba(255,255,255,0.6);">
         <div style="color:rgba(255,255,255,0.15);">⚔️ La battaglia ha inizio!</div>
@@ -2139,6 +2174,62 @@
   // ===== BATTLE POKEMON =====
   var battleData = null;
   var myBattleIdx = -1;
+  var prevLogLen = 0;
+  // Move animations
+  function getMoveAnimType(logEntry) {
+    var m = logEntry.match(/usa\s+(\w+)\s*!/);
+    if (!m) return null;
+    var moveName = m[1];
+    // Check all team moves for the type
+    if (!battleData) return null;
+    for (var i = 0; i < 2; i++) {
+      var p = battleData.players[i];
+      if (!p) continue;
+      for (var j = 0; j < p.team.length; j++) {
+        var pk = p.team[j];
+        if (pk.moves) {
+          for (var k = 0; k < pk.moves.length; k++) {
+            if (pk.moves[k].n === moveName) return pk.moves[k].t;
+          }
+        }
+      }
+    }
+    // Fallback: infer from log - check superscript effect types
+    return 'normal';
+  }
+  function playMoveAnim(logEntry, isMe) {
+    var fx = document.getElementById('battleFx');
+    if (!fx) return;
+    var type = getMoveAnimType(logEntry);
+    if (!type) return;
+    var arena = fx.parentElement;
+    if (!arena) return;
+    // Projectile from attacker to defender
+    var proj = document.createElement('div');
+    proj.className = 'bfx-projectile bfx-' + type;
+    var fromTop = isMe ? '65%' : '10%';
+    var fromLeft = isMe ? '15%' : '65%';
+    var toTop = isMe ? '10%' : '65%';
+    var toLeft = isMe ? '65%' : '15%';
+    var tx = (isMe ? 1 : -1) * (arena.offsetWidth * 0.45);
+    var ty = (isMe ? -1 : 1) * (arena.offsetHeight * 0.25);
+    proj.style.cssText = 'left:'+fromLeft+';top:'+fromTop+';--bfx-tx:'+tx+'px;--bfx-ty:'+ty+'px;width:28px;height:28px;';
+    // Explosion at target
+    var expl = document.createElement('div');
+    expl.className = 'bfx-explosion';
+    if (type === 'fire' || type === 'water' || type === 'electric' || type === 'grass') expl.classList.add('bfx-' + type);
+    expl.style.cssText = 'left:'+toLeft+';top:'+toTop+';transform:translate(-50%,-50%);';
+    // Flash & shake the target sprite
+    var targetSprite = isMe ? document.getElementById('opponentSprite') : document.getElementById('playerSprite');
+    if (targetSprite) { targetSprite.classList.remove('bfx-shake','bfx-flash'); void targetSprite.offsetWidth; targetSprite.classList.add('bfx-shake','bfx-flash'); }
+    fx.appendChild(proj);
+    setTimeout(function() { fx.appendChild(expl); }, 300);
+    setTimeout(function() {
+      if (proj.parentNode) proj.remove();
+      if (expl.parentNode) expl.remove();
+      if (targetSprite) { targetSprite.classList.remove('bfx-shake','bfx-flash'); }
+    }, 900);
+  }
   // Click handler for challenge buttons
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('.battle-challenge-btn');
@@ -2170,12 +2261,26 @@
   socket.on('battle:start', function(data) {
     battleData = data;
     myBattleIdx = data.myIdx;
+    prevLogLen = 0;
     document.getElementById('battleOverlay').classList.add('active');
     renderBattle();
   });
   // Battle state update
   socket.on('battle:state', function(data) {
     if (!battleData) return;
+    // Detect new moves for animation
+    if (data.log && data.log.length > prevLogLen) {
+      var newLogs = data.log.slice(prevLogLen);
+      prevLogLen = data.log.length;
+      newLogs.forEach(function(entry) {
+        if (entry.indexOf('usa ') !== -1) {
+          // Determine if it's my move or opponent's
+          var me = battleData.players[myBattleIdx];
+          var isMe = entry.indexOf(me.nick) === 0;
+          playMoveAnim(entry, isMe);
+        }
+      });
+    }
     // Update teams
     data.players.forEach(function(p, pIdx) {
       if (!battleData.players[pIdx]) return;
