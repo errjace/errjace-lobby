@@ -1697,6 +1697,7 @@
         <img src="" style="max-width:140px;max-height:140px;image-rendering:pixelated;">
       </div>
       <div class="bfx" id="battleFx"></div>
+      <canvas id="battleCanvas" style="position:absolute;inset:0;z-index:12;pointer-events:none;display:block;"></canvas>
       <!-- Battle log (overlaid in arena) -->
       <div class="battle-log" id="battleLog" style="text-align:center;font-size:0.6rem;padding:0.2rem 0.5rem;max-height:70px;overflow-y:auto;width:100%;color:rgba(255,255,255,0.6);">
         <div style="color:rgba(255,255,255,0.15);">⚔️ La battaglia ha inizio!</div>
@@ -2323,12 +2324,266 @@
   var battleData = null;
   var myBattleIdx = -1;
   var prevLogLen = 0;
-  // Move animations
+  // === BATTLE ANIMATION ENGINE (canvas particelle) ===
+  var bParticles = [], bAnimId = null, bShake = 0, bCanvas = null, bCtx = null;
+
+  function bAnimConfig() {
+    var c = {
+      fire: { c1:'#ff4500',c2:'#ff6b35',c3:'#ffd700',cnt:20,proj:'ball',expl:'burst',trail:true,tremor:6 },
+      water: { c1:'#3b82f6',c2:'#60a5fa',c3:'#93c5fd',cnt:24,proj:'stream',expl:'splash',trail:true,tremor:4 },
+      electric: { c1:'#facc15',c2:'#fde047',c3:'#fff',cnt:30,proj:'bolt',expl:'spark',trail:true,tremor:8 },
+      grass: { c1:'#22c55e',c2:'#4ade80',c3:'#86efac',cnt:16,proj:'ball',expl:'burst',trail:true,tremor:4 },
+      ice: { c1:'#06b6d4',c2:'#67e8f9',c3:'#fff',cnt:18,proj:'shard',expl:'shatter',trail:true,tremor:4 },
+      fighting: { c1:'#dc2626',c2:'#f87171',cnt:14,proj:'punch',expl:'burst',trail:false,tremor:8 },
+      poison: { c1:'#9333ea',c2:'#c084fc',c3:'#d8b4fe',cnt:16,proj:'ball',expl:'burst',trail:true,tremor:3 },
+      ground: { c1:'#92400e',c2:'#d97706',cnt:20,proj:'chunk',expl:'erupt',trail:false,tremor:6 },
+      flying: { c1:'#7c3aed',c2:'#a78bfa',c3:'#fff',cnt:12,proj:'stream',expl:'burst',trail:true,tremor:3 },
+      psychic: { c1:'#db2777',c2:'#f472b6',c3:'#f9a8d4',cnt:18,proj:'wave',expl:'ring',trail:true,tremor:5 },
+      bug: { c1:'#65a30d',c2:'#a3e635',cnt:14,proj:'ball',expl:'burst',trail:true,tremor:3 },
+      rock: { c1:'#57534e',c2:'#a8a29e',cnt:20,proj:'chunk',expl:'erupt',trail:false,tremor:6 },
+      ghost: { c1:'#4c1d95',c2:'#a78bfa',c3:'#e9d5ff',cnt:14,proj:'shadow',expl:'ring',trail:true,tremor:4 },
+      dragon: { c1:'#7e22ce',c2:'#fb923c',c3:'#fde047',cnt:18,proj:'beam',expl:'burst',trail:true,tremor:7 },
+      dark: { c1:'#1c1917',c2:'#57534e',c3:'#a8a29e',cnt:12,proj:'shadow',expl:'burst',trail:false,tremor:5 },
+      steel: { c1:'#52525b',c2:'#d4d4d8',c3:'#fff',cnt:16,proj:'shard',expl:'shatter',trail:true,tremor:5 },
+      fairy: { c1:'#ec4899',c2:'#f9a8d4',c3:'#fce7f3',cnt:20,proj:'wave',expl:'ring',trail:true,tremor:3 },
+      normal: { c1:'#a1a1aa',c2:'#d4d4d8',cnt:10,proj:'ball',expl:'burst',trail:false,tremor:3 }
+    };
+    return function(t) { return c[t] || c.normal; };
+  }
+  var bAnimCfg = bAnimConfig();
+
+  function bResize() {
+    if (!bCanvas) bCanvas = document.getElementById('battleCanvas');
+    if (!bCanvas) return;
+    var arena = document.querySelector('.battle-arena');
+    if (arena) {
+      bCanvas.width = arena.offsetWidth;
+      bCanvas.height = arena.offsetHeight;
+    }
+  }
+  function bInitCanvas() {
+    bCanvas = document.getElementById('battleCanvas');
+    if (!bCanvas) return;
+    bCtx = bCanvas.getContext('2d');
+    bResize();
+  }
+  window.addEventListener('resize', bResize);
+
+  function bPart(x,y,vx,vy,life,color,size,shape) {
+    this.x=x; this.y=y; this.vx=vx; this.vy=vy;
+    this.life=life; this.max=life; this.color=color;
+    this.size=size; this.shape=shape||'circle';
+    this.g=0; this.f=.97;
+  }
+
+  function bLoop() {
+    if (!bCtx) return;
+    bCtx.clearRect(0,0,bCanvas.width,bCanvas.height);
+    // Screen shake
+    if (bShake > 0.5) {
+      var sx = (Math.random()-0.5)*bShake*2;
+      var sy = (Math.random()-0.5)*bShake*2;
+      bCanvas.style.transform='translate('+sx+'px,'+sy+'px)';
+      bShake *= 0.85;
+    } else { bCanvas.style.transform=''; bShake=0; }
+
+    for (var i=bParticles.length-1; i>=0; i--) {
+      var p=bParticles[i];
+      p.x+=p.vx; p.y+=p.vy; p.vy+=p.g;
+      p.vx*=p.f; p.vy*=p.f;
+      p.life--;
+      var a=p.life/p.max;
+      bCtx.globalAlpha=a;
+      bCtx.save();
+
+      if (p.shape==='spark') {
+        bCtx.strokeStyle=p.color;
+        bCtx.lineWidth=p.size*a;
+        bCtx.shadowBlur=12; bCtx.shadowColor=p.color;
+        bCtx.beginPath(); bCtx.moveTo(p.x,p.y);
+        bCtx.lineTo(p.x-p.vx*4,p.y-p.vy*4); bCtx.stroke();
+      } else if (p.shape==='shard') {
+        bCtx.fillStyle=p.color;
+        bCtx.shadowBlur=10; bCtx.shadowColor=p.color;
+        var s=p.size*a*0.7;
+        bCtx.beginPath();
+        bCtx.moveTo(p.x,p.y-s); bCtx.lineTo(p.x+s,p.y);
+        bCtx.lineTo(p.x,p.y+s); bCtx.lineTo(p.x-s,p.y);
+        bCtx.closePath(); bCtx.fill();
+      } else if (p.shape==='ring') {
+        bCtx.strokeStyle=p.color;
+        bCtx.lineWidth=2*a;
+        bCtx.shadowBlur=15; bCtx.shadowColor=p.color;
+        var r=p.size*(1-a+0.3);
+        bCtx.beginPath(); bCtx.arc(p.x,p.y,r,0,Math.PI*2);
+        bCtx.stroke();
+      } else {
+        bCtx.fillStyle=p.color;
+        bCtx.shadowBlur=p.size>3?15:0;
+        bCtx.shadowColor=p.color;
+        bCtx.beginPath();
+        bCtx.arc(p.x,p.y,Math.max(1,p.size*a),0,Math.PI*2);
+        bCtx.fill();
+      }
+      bCtx.restore();
+      if(p.life<=0) bParticles.splice(i,1);
+    }
+    bCtx.globalAlpha=1;
+    bAnimId = requestAnimationFrame(bLoop);
+  }
+
+  function bBlast(t,isMe) {
+    bInitCanvas();
+    if (!bCtx) return;
+    var cfg = bAnimCfg(t);
+    var arena = document.querySelector('.battle-arena');
+    if (!arena) return;
+    var w=arena.offsetWidth, h=arena.offsetHeight;
+    var sx=isMe?w*0.15:w*0.7, sy=isMe?h*0.7:h*0.15;
+    var ex=isMe?w*0.7:w*0.15, ey=isMe?h*0.15:h*0.7;
+    var dx=ex-sx, dy=ey-sy, dist=Math.sqrt(dx*dx+dy*dy);
+    var nx=dx/dist, ny=dy/dist;
+
+    // Shake / flash target sprite
+    var tgt=isMe?document.getElementById('opponentSprite'):document.getElementById('playerSprite');
+    if(tgt){tgt.classList.remove('bfx-shake','bfx-flash');void tgt.offsetWidth;tgt.classList.add('bfx-shake','bfx-flash');}
+
+    bShake = cfg.tremor || 4;
+
+    // Projectile
+    var steps = 20;
+    for (var i=0;i<=steps;i++) {
+      (function(step){
+        var delay = step*25;
+        var px=sx+nx*dist*(step/steps);
+        var py=sy+ny*dist*(step/steps);
+        // Main projectile ball
+        if (step<steps) {
+          setTimeout(function(){
+            if (cfg.proj==='bolt') {
+              // Lightning bolt effect
+              var bpx=sx+nx*dist*(step/steps);
+              var bpy=sy+ny*dist*(step/steps);
+              for (var z=0;z<4;z++){
+                var offX=(Math.random()-0.5)*20;
+                var offY=(Math.random()-0.5)*20;
+                bParticles.push(new bPart(
+                  bpx+offX,bpy+offY,
+                  (Math.random()-0.5)*2,(Math.random()-0.5)*2,
+                  8,Math.random()>0.5?cfg.c2:'#fff',3+Math.random()*4,'spark'
+                ));
+              }
+            } else {
+              bParticles.push(new bPart(px,py,0,0,12,cfg.c1,12+Math.random()*6));
+              bParticles.push(new bPart(px,py,0,0,8,cfg.c2||cfg.c1,6+Math.random()*4));
+              // Glow
+              bParticles.push(new bPart(px,py,0,0,6,'rgba(255,255,255,0.4)',20));
+            }
+            // Trail particles
+            if (cfg.trail && step>0 && step<steps) {
+              for (var t=0;t<2;t++){
+                bParticles.push(new bPart(
+                  px+(Math.random()-0.5)*5,py+(Math.random()-0.5)*5,
+                  (Math.random()-0.5)*1.5-ny*0.5,
+                  (Math.random()-0.5)*1.5+nx*0.5,
+                  10+Math.random()*6,'rgba(255,255,255,0.3)',2+Math.random()*3
+                ));
+              }
+            }
+          },delay);
+        }
+      })(i);
+    }
+
+    // Impact explosion
+    var impactDelay = steps*25+50;
+    setTimeout(function(){
+      // Big flash
+      bParticles.push(new bPart(ex,ey,0,0,15,cfg.c1,50));
+      bParticles.push(new bPart(ex,ey,0,0,10,cfg.c2||cfg.c1,35));
+      bParticles.push(new bPart(ex,ey,0,0,6,'#fff',25));
+
+      if (cfg.expl==='ring') {
+        for (var r=0;r<3;r++){
+          (function(delay){
+            setTimeout(function(){
+              bParticles.push(new bPart(ex,ey,0,0,18,cfg.c2||cfg.c1,40+Math.random()*20,'ring'));
+            },delay);
+          })(r*80);
+        }
+      } else if (cfg.expl==='splash') {
+        for (var s=0;s<cfg.cnt;s++){
+          var ang=Math.random()*Math.PI*2;
+          var spd=1+Math.random()*4;
+          bParticles.push(new bPart(
+            ex+(Math.random()-0.5)*10,ey+(Math.random()-0.5)*10,
+            Math.cos(ang)*spd,Math.sin(ang)*spd,
+            15+Math.random()*15,Math.random()>0.5?cfg.c1:cfg.c2||cfg.c1,
+            2+Math.random()*4
+          ));
+        }
+      } else if (cfg.expl==='shatter') {
+        for (var sh=0;sh<12;sh++){
+          var sa=Math.random()*Math.PI*2;
+          var ss=2+Math.random()*5;
+          bParticles.push(new bPart(ex,ey,Math.cos(sa)*ss,Math.sin(sa)*ss,20+Math.random()*10,
+            Math.random()>0.5?cfg.c1:cfg.c2||cfg.c1,3+Math.random()*6,'shard'));
+        }
+      } else if (cfg.expl==='spark') {
+        for (var k=0;k<cfg.cnt;k++){
+          var ka=Math.random()*Math.PI*2;
+          var ks=2+Math.random()*8;
+          bParticles.push(new bPart(ex,ey,Math.cos(ka)*ks,Math.sin(ka)*ks,
+            8+Math.random()*8,Math.random()>0.3?cfg.c1:cfg.c3||'#fff',
+            1+Math.random()*3,'spark'));
+        }
+      } else if (cfg.expl==='erupt') {
+        for (var u=0;u<cfg.cnt;u++){
+          var ua=-Math.PI/2+((Math.random()-0.5)*Math.PI);
+          var us=1+Math.random()*4;
+          var p=new bPart(ex+(Math.random()-0.5)*20,ey+(Math.random()-0.5)*10,
+            Math.cos(ua)*us,Math.sin(ua)*us-2,20+Math.random()*15,
+            Math.random()>0.5?cfg.c1:cfg.c2||cfg.c1,2+Math.random()*5);
+          p.g=0.12;
+          bParticles.push(p);
+        }
+      } else {
+        // Default burst
+        for (var j=0;j<cfg.cnt;j++){
+          var ja=Math.random()*Math.PI*2;
+          var js=1+Math.random()*5;
+          var pj=new bPart(ex+(Math.random()-0.5)*8,ey+(Math.random()-0.5)*8,
+            Math.cos(ja)*js,Math.sin(ja)*js,
+            15+Math.random()*15,Math.random()>0.5?cfg.c1:cfg.c2||cfg.c1,
+            2+Math.random()*5);
+          if (Math.random()>0.5) pj.g=0.05;
+          bParticles.push(pj);
+        }
+      }
+
+      bShake = (cfg.tremor||4)+4;
+    },impactDelay);
+
+    // Cleanup shake/flash
+    setTimeout(function(){
+      if(tgt){tgt.classList.remove('bfx-shake','bfx-flash');}
+    },900);
+
+    // Start animation loop
+    if (!bAnimId) bLoop();
+  }
+
+  function bCleanup() {
+    bParticles = [];
+    bShake = 0;
+    if (bCanvas) { bCanvas.style.transform = ''; }
+    if (bAnimId) { cancelAnimationFrame(bAnimId); bAnimId = null; }
+  }
+
   function getMoveAnimType(logEntry) {
     var m = logEntry.match(/usa\s+(\w+)\s*!/);
     if (!m) return null;
     var moveName = m[1];
-    // Check all team moves for the type
     if (!battleData) return null;
     for (var i = 0; i < 2; i++) {
       var p = battleData.players[i];
@@ -2342,41 +2597,12 @@
         }
       }
     }
-    // Fallback: infer from log - check superscript effect types
     return 'normal';
   }
   function playMoveAnim(logEntry, isMe) {
-    var fx = document.getElementById('battleFx');
-    if (!fx) return;
     var type = getMoveAnimType(logEntry);
     if (!type) return;
-    var arena = fx.parentElement;
-    if (!arena) return;
-    // Projectile from attacker to defender
-    var proj = document.createElement('div');
-    proj.className = 'bfx-projectile bfx-' + type;
-    var fromTop = isMe ? '65%' : '10%';
-    var fromLeft = isMe ? '15%' : '65%';
-    var toTop = isMe ? '10%' : '65%';
-    var toLeft = isMe ? '65%' : '15%';
-    var tx = (isMe ? 1 : -1) * (arena.offsetWidth * 0.45);
-    var ty = (isMe ? -1 : 1) * (arena.offsetHeight * 0.25);
-    proj.style.cssText = 'left:'+fromLeft+';top:'+fromTop+';--bfx-tx:'+tx+'px;--bfx-ty:'+ty+'px;width:28px;height:28px;';
-    // Explosion at target
-    var expl = document.createElement('div');
-    expl.className = 'bfx-explosion';
-    if (type === 'fire' || type === 'water' || type === 'electric' || type === 'grass') expl.classList.add('bfx-' + type);
-    expl.style.cssText = 'left:'+toLeft+';top:'+toTop+';transform:translate(-50%,-50%);';
-    // Flash & shake the target sprite
-    var targetSprite = isMe ? document.getElementById('opponentSprite') : document.getElementById('playerSprite');
-    if (targetSprite) { targetSprite.classList.remove('bfx-shake','bfx-flash'); void targetSprite.offsetWidth; targetSprite.classList.add('bfx-shake','bfx-flash'); }
-    fx.appendChild(proj);
-    setTimeout(function() { fx.appendChild(expl); }, 300);
-    setTimeout(function() {
-      if (proj.parentNode) proj.remove();
-      if (expl.parentNode) expl.remove();
-      if (targetSprite) { targetSprite.classList.remove('bfx-shake','bfx-flash'); }
-    }, 900);
+    bBlast(type, isMe);
   }
   // Click handler for challenge buttons
   document.addEventListener('click', function(e) {
@@ -2440,6 +2666,9 @@
     myBattleIdx = data.myIdx;
     prevLogLen = 0;
     document.getElementById('battleOverlay').classList.add('active');
+    setTimeout(function(){
+      bInitCanvas();
+    },100);
     renderBattle();
   });
   // Battle state update
@@ -2480,6 +2709,7 @@
       var won = data.winner === socket.id;
       setTimeout(function() {
         document.getElementById('battleOverlay').classList.remove('active');
+        bCleanup();
         showChatMsg('Pokémon', '⚔️', won ? '🎉 Hai vinto la battaglia Pokémon! (+30 XP)' : '😞 Hai perso la battaglia Pokémon. (+10 XP)', 'system');
         battleData = null;
       }, 3000);
