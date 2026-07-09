@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 
 const app = express();
 const server = http.createServer(app);
@@ -330,24 +331,47 @@ const clawCounters = {};
 const DATA_FILE = path.join(__dirname, 'data.json');
 const dataByToken = {};
 const tokenForSocket = {};
+let useMongo = false;
 
-function loadData() {
+const UserDataSchema = new mongoose.Schema({
+  token: { type: String, unique: true },
+  nick: String, avatar: String,
+  casinoBal: Number, casinoEarnings: Number,
+  pokemon: mongoose.Schema.Types.Mixed,
+  clawCounter: Number,
+});
+const UserData = mongoose.model('UserData', UserDataSchema);
+
+async function loadData() {
+  if (useMongo) {
+    try {
+      const docs = await UserData.find({}).lean();
+      docs.forEach(d => { dataByToken[d.token] = d; delete dataByToken[d.token]._id; delete dataByToken[d.token].__v; });
+      console.log(`[DB] Caricati dati di ${Object.keys(dataByToken).length} utenti`);
+    } catch(e) { console.error('[DB] Errore caricamento:', e); }
+  }
+  // Fallback file (sincrono)
   try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-      Object.assign(dataByToken, JSON.parse(raw));
-      console.log(`[Server] Caricati dati di ${Object.keys(dataByToken).length} utenti`);
+      const fileData = JSON.parse(raw);
+      Object.keys(fileData).forEach(k => { if (!dataByToken[k]) dataByToken[k] = fileData[k]; });
     }
-  } catch(e) {
-    console.error('Errore caricamento dati:', e);
-  }
+  } catch(e) { console.error('Errore caricamento file:', e); }
 }
 
-function saveData() {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(dataByToken, null, 2));
-  } catch(e) {
-    console.error('Errore salvataggio dati:', e);
+async function saveData() {
+  if (useMongo) {
+    try {
+      const ops = Object.entries(dataByToken).map(([token, d]) => ({
+        updateOne: { filter: { token }, update: { $set: { ...d, token } }, upsert: true }
+      }));
+      if (ops.length > 0) await UserData.bulkWrite(ops);
+    } catch(e) { console.error('[DB] Errore salvataggio:', e); }
+  } else {
+    try {
+      fs.writeFileSync(DATA_FILE, JSON.stringify(dataByToken, null, 2));
+    } catch(e) { console.error('Errore salvataggio file:', e); }
   }
 }
 
@@ -363,8 +387,7 @@ function syncTokenData(socketId) {
   d.clawCounter = clawCounters[socketId] || 0;
 }
 
-loadData();
-setInterval(saveData, 30000);
+setInterval(() => saveData(), 30000);
 // =========================
 
 const EVO_THRESH = [0,30,80,150,250,400,600,900,1300,2000];
@@ -1519,14 +1542,14 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     const u = users[socket.id];
 
     // === PERSISTENZA: salva dati utente prima della disconnessione ===
     const token = tokenForSocket[socket.id];
     if (token) {
       syncTokenData(socket.id);
-      saveData();
+      await saveData();
       delete tokenForSocket[socket.id];
     }
 
@@ -1601,6 +1624,22 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server ERRJACE attivo su http://localhost:${PORT}`);
-});
+
+async function start() {
+  const MONGO_URI = process.env.MONGODB_URI;
+  if (MONGO_URI) {
+    try {
+      await mongoose.connect(MONGO_URI);
+      useMongo = true;
+      console.log('[DB] Connesso a MongoDB');
+    } catch(e) {
+      console.error('[DB] Errore MongoDB, uso file locale:', e.message);
+    }
+  }
+  await loadData();
+  server.listen(PORT, () => {
+    console.log(`Server ERRJACE attivo su http://localhost:${PORT}`);
+  });
+}
+
+start().catch(e => { console.error('Errore avvio:', e); process.exit(1); });
