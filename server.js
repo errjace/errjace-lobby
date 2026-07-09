@@ -326,6 +326,7 @@ function migratePokemonData(d) {
   if (!d.team) d.team = [];
 }
 const clawCounters = {};
+const tradeSessions = {};
 
 // === PERSISTENZA DATI ===
 const DATA_FILE = path.join(__dirname, 'data.json');
@@ -1292,43 +1293,80 @@ io.on('connection', (socket) => {
     socket.emit('pokemon:leaderboard', list);
   });
 
+  // === SCAMBIO POKEMON CON SELEZIONE ===
   socket.on('pokemon:tradeRequest', ({ to }) => {
-    if (!users[to] || !pokemonData[socket.id] || !pokemonData[to]) return;
+    if (!users[to]) return;
+    if (!pokemonData[socket.id] || !pokemonData[to]) return;
+    if ((pokemonData[socket.id].team || []).length === 0 || (pokemonData[to].team || []).length === 0) return;
     const from = users[socket.id];
-    const d1 = pokemonData[socket.id], d2 = pokemonData[to];
-    io.to(to).emit('pokemon:tradeOffer', { from: socket.id, nick: from.nick, mine: d1.currentForm, mineImg: POKE_IMG + STARTERS[d1.starter].imgs[getPokeStage(getPokemonLv(d1.xp))] + '.png', mineTeam: d1.team||[], theirs: d2.currentForm, theirsImg: POKE_IMG + STARTERS[d2.starter].imgs[getPokeStage(getPokemonLv(d2.xp))] + '.png', theirsTeam: d2.team||[] });
+    io.to(to).emit('pokemon:tradeOffer', { from: socket.id, nick: from.nick });
   });
 
   socket.on('pokemon:tradeAccept', ({ from }) => {
     if (!pokemonData[from] || !pokemonData[socket.id]) return;
-    // Swap full data including team
-    const tmpStarter = pokemonData[from].starter;
-    const tmpForm = pokemonData[from].currentForm;
-    const tmpXp = pokemonData[from].xp;
-    const tmpTeam = pokemonData[from].team;
-    pokemonData[from].starter = pokemonData[socket.id].starter;
-    pokemonData[from].currentForm = pokemonData[socket.id].currentForm;
-    pokemonData[from].xp = pokemonData[socket.id].xp;
-    pokemonData[from].team = pokemonData[socket.id].team;
-    pokemonData[socket.id].starter = tmpStarter;
-    pokemonData[socket.id].currentForm = tmpForm;
-    pokemonData[socket.id].xp = tmpXp;
-    pokemonData[socket.id].team = tmpTeam;
-    const u1 = users[from], u2 = users[socket.id];
-    if (u1 && u2) {
-      io.emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`🔄 Scambio Pokémon: ${u1.nick} e ${u2.nick} si sono scambiati i Pokémon!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
-      const df = pokemonData[from], ds = pokemonData[socket.id];
-      io.to(from).emit('pokemon:traded', { newForm: df.currentForm, newImg: POKE_IMG + STARTERS[df.starter].imgs[getPokeStage(getPokemonLv(df.xp))] + '.png' });
-      socket.emit('pokemon:traded', { newForm: ds.currentForm, newImg: POKE_IMG + STARTERS[ds.starter].imgs[getPokeStage(getPokemonLv(ds.xp))] + '.png' });
-      io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
-      saveNickData(socket.id);
-      saveNickData(from);
+    const teamA = pokemonData[from].team || [];
+    const teamB = pokemonData[socket.id].team || [];
+    if (teamA.length === 0 || teamB.length === 0) return;
+    const tradeId = from + '-' + socket.id + '-' + Date.now();
+    tradeSessions[tradeId] = {
+      players: [
+        { id: from, teamLen: teamA.length, pick: null },
+        { id: socket.id, teamLen: teamB.length, pick: null }
+      ],
+      state: 'selecting'
+    };
+    // Manda a entrambi la lista del loro team per scegliere
+    [from, socket.id].forEach(sid => {
+      const team = pokemonData[sid].team || [];
+      io.to(sid).emit('pokemon:tradeSelect', {
+        tradeId,
+        team: team.map((p, i) => ({ index: i, name: p.name, img: p.img, id: p.id })),
+        nick: users[sid === from ? socket.id : from].nick
+      });
+    });
+  });
+
+  socket.on('pokemon:tradeSelected', ({ tradeId, index }) => {
+    const session = tradeSessions[tradeId];
+    if (!session || session.state !== 'selecting') return;
+    const player = session.players.find(p => p.id === socket.id);
+    if (!player) return;
+    if (index < 0 || index >= player.teamLen) return;
+    player.pick = index;
+    // Notify partner that selection was made
+    const partner = session.players.find(p => p.id !== socket.id);
+    if (partner) io.to(partner.id).emit('pokemon:tradePartnerPicked', { tradeId });
+    // Check if both picked
+    if (session.players[0].pick !== null && session.players[1].pick !== null) {
+      session.state = 'swapping';
+      const p1 = session.players[0], p2 = session.players[1];
+      const poke1 = JSON.parse(JSON.stringify(pokemonData[p1.id].team[p1.pick]));
+      const poke2 = JSON.parse(JSON.stringify(pokemonData[p2.id].team[p2.pick]));
+      if (!poke1 || !poke2) { delete tradeSessions[tradeId]; return; }
+      pokemonData[p1.id].team[p1.pick] = poke2;
+      pokemonData[p2.id].team[p2.pick] = poke1;
+      const u1 = users[p1.id], u2 = users[p2.id];
+      if (u1 && u2) {
+        io.emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`🔄 ${u1.nick} e ${u2.nick} si sono scambiati Pokémon!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+        io.to(p1.id).emit('pokemon:traded', { team: pokemonData[p1.id].team, name: poke2.name, img: poke2.img });
+        io.to(p2.id).emit('pokemon:traded', { team: pokemonData[p2.id].team, name: poke1.name, img: poke1.img });
+        io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
+        saveNickData(p1.id);
+        saveNickData(p2.id);
+      }
+      delete tradeSessions[tradeId];
     }
   });
 
   socket.on('pokemon:tradeDecline', ({ from }) => {
     const u = users[socket.id];
     if (u && users[from]) io.to(from).emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`${u.nick} ha rifiutato lo scambio Pokémon.`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+    // Clean up any pending session
+    for (const tid in tradeSessions) {
+      if (tradeSessions[tid].players.some(p => p.id === socket.id || p.id === from)) {
+        delete tradeSessions[tid];
+      }
+    }
   });
 
   // Start quiz timer + get initial balance

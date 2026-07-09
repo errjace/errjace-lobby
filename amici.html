@@ -921,6 +921,9 @@
   .challenge-list .cl-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; border-radius: 8px; cursor: pointer; transition: background 0.15s; font-size: 0.8rem; }
   .challenge-list .cl-item:hover { background: rgba(139,92,246,0.1); }
   .challenge-list .cl-item .avatar { font-size: 1.1rem; }
+  .trade-poke-card { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px; border-radius:12px; cursor:pointer; transition:all 0.15s; border:2px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); min-width:72px; }
+  .trade-poke-card:hover { border-color:rgba(124,58,237,0.5); background:rgba(124,58,237,0.1); }
+  .trade-poke-card.selected { border-color:#7c3aed; background:rgba(124,58,237,0.2); box-shadow:0 0 20px rgba(124,58,237,0.3); }
 
   /* UNO Card Game */
   .uno-btn { width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; background: rgba(139,92,246,0.15); border: 1px solid var(--borderLight); cursor: pointer; transition: transform 0.2s, background 0.2s; }
@@ -1369,6 +1372,8 @@
       <button class="dama-btn" id="portalBtn" title="Overworld" style="font-size:0.9rem;">🌀</button>
       <button class="dama-btn" id="shopBtn" title="Negozio Leggendari" style="font-size:0.9rem;">🏪</button>
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
+      <button class="dama-btn" id="targetBtn" title="Sfida 1v1">🎯</button>
+      <button class="dama-btn" id="tradeBtn" title="Scambia Pokémon">🔄</button>
       <div class="voice-indicators" id="voiceIndicators"></div>
       <div class="theme-picker" id="themePicker">
         <div class="th-opt active" data-theme="default"><div class="th-preview"><span style="background:#0a0a12"></span><span style="background:#1a1a2e"></span><span style="background:#7c3aed"></span></div>Dark</div>
@@ -1471,7 +1476,7 @@
 <!-- Challenge User List Popup -->
 <div class="overlay" id="challengeListOverlay">
   <div class="popup" style="max-width:300px;padding:1.5rem;">
-    <h2 style="font-size:1.1rem;">♟ Sfida un utente</h2>
+    <h2 id="challengeListTitle" style="font-size:1.1rem;">♟ Sfida un utente</h2>
     <div class="challenge-list" id="challengeList"></div>
     <button class="game-btn" id="challengeListClose" style="margin-top:0.5rem;font-size:0.7rem;padding:0.35rem 0.75rem;background:rgba(255,255,255,0.1);">ANNULLA</button>
   </div>
@@ -1785,6 +1790,20 @@
     <div style="display:flex;gap:0.75rem;justify-content:center;margin-top:1rem;">
       <button id="pokeTradeAccept" style="background:#22c55e;border:none;padding:0.5rem 1.5rem;border-radius:8px;color:white;cursor:pointer;font-family:'Black Ops One',monospace;">ACCETTA</button>
       <button id="pokeTradeDecline" style="background:#ef4444;border:none;padding:0.5rem 1.5rem;border-radius:8px;color:white;cursor:pointer;font-family:'Black Ops One',monospace;">RIFIUTA</button>
+    </div>
+  </div>
+</div>
+
+<!-- Trade Pokémon Selection Picker -->
+<div class="poke-overlay" id="pokeTradeSelectOverlay">
+  <div class="poke-popup" style="text-align:center;max-width:420px;">
+    <h2>🔄 Scegli il Pokémon da scambiare</h2>
+    <p id="pokeTradeSelectInfo" style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:0.75rem;"></p>
+    <div id="pokeTradeSelectTeam" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:0.75rem;"></div>
+    <p id="pokeTradeSelectStatus" style="font-size:0.7rem;color:#fbbf24;min-height:1.2rem;"></p>
+    <div style="display:flex;gap:0.75rem;justify-content:center;margin-top:0.5rem;">
+      <button id="pokeTradeSelectConfirm" disabled style="background:linear-gradient(135deg,#7c3aed,#6d28d9);border:none;padding:0.5rem 1.5rem;border-radius:8px;color:white;cursor:pointer;font-family:'Black Ops One',monospace;font-size:0.8rem;opacity:0.4;">CONFERMA</button>
+      <button id="pokeTradeSelectCancel" style="background:rgba(255,255,255,0.1);border:none;padding:0.5rem 1.5rem;border-radius:8px;color:rgba(255,255,255,0.4);cursor:pointer;font-family:'Black Ops One',monospace;font-size:0.7rem;">ANNULLA</button>
     </div>
   </div>
 </div>
@@ -2253,10 +2272,12 @@
   let challengeFrom = null;
   let onlineUsers = [];
 
-  document.getElementById('damaBtn').addEventListener('click', function() {
+  function openChallengeList(title, emitData) {
     const overlay = document.getElementById('challengeListOverlay');
     const list = document.getElementById('challengeList');
+    const titleEl = document.getElementById('challengeListTitle');
     list.innerHTML = '';
+    titleEl.textContent = title;
     const others = onlineUsers.filter(function(u) { return u.id !== socket.id; });
     if (others.length === 0) {
       list.innerHTML = '<div style="text-align:center;padding:0.5rem;color:rgba(255,255,255,0.3);font-size:0.75rem;">Nessun altro utente online</div>';
@@ -2266,13 +2287,25 @@
         item.className = 'cl-item';
         item.innerHTML = '<span class="avatar">' + u.avatar + '</span> ' + u.nick;
         item.addEventListener('click', function() {
-          socket.emit('game challenge', { to: u.id });
+          socket.emit(emitData.event, { to: u.id });
           overlay.classList.remove('active');
         });
         list.appendChild(item);
       });
     }
     overlay.classList.add('active');
+  }
+
+  document.getElementById('damaBtn').addEventListener('click', function() {
+    openChallengeList('♟ Sfida un utente a Dama', { event: 'game challenge' });
+  });
+
+  document.getElementById('targetBtn').addEventListener('click', function() {
+    openChallengeList('🎯 Sfida un utente a Tiro al Bersaglio 1v1', { event: 'target:challenge' });
+  });
+
+  document.getElementById('tradeBtn').addEventListener('click', function() {
+    openChallengeList('🔄 Scegli con chi scambiare Pokémon', { event: 'pokemon:tradeRequest' });
   });
 
   document.getElementById('challengeListClose').addEventListener('click', function() {
@@ -5023,16 +5056,64 @@
   });
 
   var tradeFrom = null;
+  var currentTradeId = null;
+  var selectedTradeIndex = -1;
   socket.on('pokemon:tradeOffer', function(data) {
     tradeFrom = data.from;
-    var imgHtml = function(url,label) { return '<img src="'+(url||'')+'" style="width:32px;height:32px;vertical-align:middle"> ' + label; };
-    document.getElementById('pokeTradeText').innerHTML = data.nick + ' vuole scambiare<br><br>' + imgHtml(data.mineImg, data.mine) + '<br>↓<br>' + imgHtml(data.theirsImg, data.theirs) + '<br><br>con il tuo Pokémon!';
+    document.getElementById('pokeTradeText').innerHTML = data.nick + ' vuole scambiare Pokémon con te!<br><span style="font-size:0.75rem;color:rgba(255,255,255,0.4);">Ognuno sceglierà quale Pokémon scambiare.</span>';
     document.getElementById('pokeTradeOverlay').classList.add('active');
   });
 
-  socket.on('pokemon:traded', function(data) {
-    if (myPoke) { myPoke.form = data.newForm; myPoke.img = data.newImg; }
+  socket.on('pokemon:tradeSelect', function(data) {
     document.getElementById('pokeTradeOverlay').classList.remove('active');
+    currentTradeId = data.tradeId;
+    selectedTradeIndex = -1;
+    document.getElementById('pokeTradeSelectInfo').textContent = 'Stai scambiando con ' + data.nick + ' — scegli quale Pokémon offrire:';
+    var container = document.getElementById('pokeTradeSelectTeam');
+    container.innerHTML = '';
+    if (!data.team || data.team.length === 0) {
+      container.innerHTML = '<div style="color:rgba(255,255,255,0.3);padding:1rem;">Nessun Pokémon nel team!</div>';
+      return;
+    }
+    data.team.forEach(function(p) {
+      var card = document.createElement('div');
+      card.className = 'trade-poke-card';
+      card.dataset.index = p.index;
+      card.innerHTML = '<img src="'+p.img+'" style="width:40px;height:40px;"><div style="font-size:0.65rem;color:#fff;margin-top:2px;">'+p.name+'</div>';
+      if (p.index === selectedTradeIndex) card.classList.add('selected');
+      card.addEventListener('click', function() {
+        document.querySelectorAll('.trade-poke-card').forEach(function(c) { c.classList.remove('selected'); });
+        this.classList.add('selected');
+        selectedTradeIndex = parseInt(this.dataset.index);
+        document.getElementById('pokeTradeSelectConfirm').disabled = false;
+        document.getElementById('pokeTradeSelectConfirm').style.opacity = '1';
+        document.getElementById('pokeTradeSelectStatus').textContent = 'Selezionato: ' + p.name;
+      });
+      container.appendChild(card);
+    });
+    document.getElementById('pokeTradeSelectStatus').textContent = 'Clicca un Pokémon per selezionarlo';
+    document.getElementById('pokeTradeSelectOverlay').classList.add('active');
+  });
+
+  socket.on('pokemon:tradePartnerPicked', function(data) {
+    if (data.tradeId === currentTradeId) {
+      document.getElementById('pokeTradeSelectStatus').textContent = 'L\'altro giocatore ha scelto! In attesa della tua conferma...';
+    }
+  });
+
+  socket.on('pokemon:traded', function(data) {
+    document.getElementById('pokeTradeSelectOverlay').classList.remove('active');
+    document.getElementById('pokeTradeOverlay').classList.remove('active');
+    currentTradeId = null;
+    selectedTradeIndex = -1;
+    if (myPoke && myPoke.team) {
+      myPoke.team = data.team;
+    }
+    // Show brief notification
+    var notice = document.createElement('div');
+    notice.className = 'msg system';
+    notice.textContent = '🔄 Scambio completato! Hai ricevuto ' + data.name + '!';
+    document.getElementById('chatMessages').appendChild(notice);
   });
 
   // Starter picker
@@ -5048,15 +5129,6 @@
     socket.emit('pokemon:leaderboard');
   });
 
-  // Delegated trade on poke-sidebar click
-  document.getElementById('onlineList').addEventListener('click', function(e) {
-    var ps = e.target.closest('.poke-sidebar');
-    if (!ps) return;
-    var sid = ps.dataset.sid;
-    if (ps.dataset.self === '1') { document.getElementById('pokeLeaderOverlay').classList.add('active'); return; }
-    if (sid) socket.emit('pokemon:tradeRequest', { to: sid });
-  });
-
   // Close buttons
   document.getElementById('pokePickerClose').addEventListener('click', function() {
     document.getElementById('pokePicker').classList.remove('active');
@@ -5070,6 +5142,28 @@
   document.getElementById('pokeTradeDecline').addEventListener('click', function() {
     if (tradeFrom) { socket.emit('pokemon:tradeDecline', { from: tradeFrom }); tradeFrom = null; }
     document.getElementById('pokeTradeOverlay').classList.remove('active');
+  });
+  document.getElementById('pokeTradeSelectConfirm').addEventListener('click', function() {
+    if (currentTradeId && selectedTradeIndex >= 0) {
+      socket.emit('pokemon:tradeSelected', { tradeId: currentTradeId, index: selectedTradeIndex });
+      this.disabled = true;
+      this.style.opacity = '0.4';
+      document.getElementById('pokeTradeSelectStatus').textContent = 'Scelta inviata! In attesa dell\'altro giocatore...';
+      document.getElementById('pokeTradeSelectCancel').style.display = 'none';
+    }
+  });
+  document.getElementById('pokeTradeSelectCancel').addEventListener('click', function() {
+    document.getElementById('pokeTradeSelectOverlay').classList.remove('active');
+    if (tradeFrom) { socket.emit('pokemon:tradeDecline', { from: tradeFrom }); tradeFrom = null; }
+    currentTradeId = null;
+    selectedTradeIndex = -1;
+  });
+
+  // Click sulla propria poke-sidebar → leaderboard
+  document.getElementById('onlineList').addEventListener('click', function(e) {
+    var ps = e.target.closest('.poke-sidebar');
+    if (!ps) return;
+    if (ps.dataset.self === '1') { document.getElementById('pokeLeaderOverlay').classList.add('active'); }
   });
 
   // Fix mobile keyboard: scroll chat when typing
