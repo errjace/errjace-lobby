@@ -331,6 +331,8 @@ const clawCounters = {};
 const DATA_FILE = path.join(__dirname, 'data.json');
 const dataByToken = {};
 const tokenForSocket = {};
+const nickAuth = {}; // nickname → { pin, token }
+const NICKAUTH_FILE = path.join(__dirname, 'nickauth.json');
 let useMongo = false;
 
 const UserDataSchema = new mongoose.Schema({
@@ -358,6 +360,14 @@ async function loadData() {
       Object.keys(fileData).forEach(k => { if (!dataByToken[k]) dataByToken[k] = fileData[k]; });
     }
   } catch(e) { console.error('Errore caricamento file:', e); }
+  // Carica nickAuth
+  try {
+    if (fs.existsSync(NICKAUTH_FILE)) {
+      const raw = fs.readFileSync(NICKAUTH_FILE, 'utf-8');
+      const loaded = JSON.parse(raw);
+      Object.keys(loaded).forEach(k => { nickAuth[k] = loaded[k]; });
+    }
+  } catch(e) { console.error('Errore caricamento nickauth:', e); }
 }
 
 async function saveData() {
@@ -388,6 +398,10 @@ function syncTokenData(socketId) {
 }
 
 setInterval(() => saveData(), 30000);
+setInterval(() => {
+  try { fs.writeFileSync(NICKAUTH_FILE, JSON.stringify(nickAuth, null, 2)); }
+  catch(e) { console.error('Errore salvataggio nickauth:', e); }
+}, 30000);
 // =========================
 
 const EVO_THRESH = [0,30,80,150,250,400,600,900,1300,2000];
@@ -592,7 +606,24 @@ io.on('connection', (socket) => {
   const ip = socket.handshake.address;
   console.log(`[${new Date().toLocaleTimeString()}] Connesso: ${socket.id} — IP: ${ip}`);
 
-  socket.on('join lobby', ({ nick, avatar, token }) => {
+  socket.on('join lobby', ({ nick, avatar, token, pin }) => {
+    // === VERIFICA PIN (se il nickname è protetto) ===
+    const existingAuth = nickAuth[nick];
+    if (existingAuth) {
+      if (!pin || existingAuth.pin !== pin) {
+        return socket.emit('lobby:pinRequired', { msg: 'Questo nickname è protetto da PIN. Inserisci il PIN per accedere.' });
+      }
+      // PIN corretto → sincronizza i dati sul token corrente
+      const srcToken = existingAuth.token;
+      if (srcToken && srcToken !== token && dataByToken[srcToken]) {
+        const srcData = dataByToken[srcToken];
+        dataByToken[token] = { ...srcData };
+        // Aggiorna anche il vecchio token con gli stessi dati per consistenza
+        dataByToken[srcToken] = { ...srcData };
+      }
+      existingAuth.token = token;
+    }
+
     users[socket.id] = { id: socket.id, nick, avatar, ip };
     console.log(`[${new Date().toLocaleTimeString()}] ${nick} è entrato — IP: ${ip}`);
 
@@ -622,6 +653,10 @@ io.on('connection', (socket) => {
           clawCounter: 0,
         };
       }
+      // Se l'utente ha fornito un PIN e non è già registrato, crea nickAuth
+      if (pin && !existingAuth) {
+        nickAuth[nick] = { pin, token };
+      }
     }
 
     // Migrate old clawPoke format
@@ -649,6 +684,11 @@ io.on('connection', (socket) => {
     u.nick = nick.trim();
     if (pokemonData[socket.id]) pokemonData[socket.id].nick = nick;
     syncTokenData(socket.id);
+    // Trasferisci nickAuth al nuovo nickname
+    if (nickAuth[oldNick]) {
+      nickAuth[nick] = nickAuth[oldNick];
+      delete nickAuth[oldNick];
+    }
     socket.emit('nick changed', { nick: u.nick });
     io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
     io.emit('chat message', {
@@ -657,6 +697,18 @@ io.on('connection', (socket) => {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       system: true, reactions: {},
     });
+  });
+
+  socket.on('account:setPin', ({ pin }) => {
+    const u2 = users[socket.id];
+    if (!u2 || !pin || pin.length < 1) return;
+    const tok = tokenForSocket[socket.id];
+    nickAuth[u2.nick] = { pin, token: tok };
+    socket.emit('account:pinSet', { ok: true });
+  });
+
+  socket.on('account:checkPin', ({ nick }) => {
+    socket.emit('account:pinStatus', { hasPin: !!nickAuth[nick] });
   });
 
   socket.on('chat message', (msg) => {

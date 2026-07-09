@@ -1301,9 +1301,11 @@
     <h2>Benvenuto/a! 🎉</h2>
     <p>Scegli il tuo nickname e avatar</p>
     <input type="text" id="nickInput" placeholder="Il tuo nickname" maxlength="20" autocomplete="off">
+    <input type="password" id="pinInput" placeholder="PIN (opzionale per nuovi, richiesto per account esistenti)" maxlength="10" autocomplete="off" style="display:none;">
     <div class="avatar-label">Scegli il tuo profilo</div>
     <div class="avatar-grid" id="avatarGrid"></div>
     <div class="nick-error" id="nickError">Inserisci un nickname valido.</div>
+    <div class="nick-error" id="pinError" style="display:none;"></div>
     <button id="enterLobbyBtn">Entra in lobby</button>
   </div>
 </div>
@@ -1317,6 +1319,19 @@
     <div class="nick-error" id="renameError" style="display:none;">Inserisci un nickname valido.</div>
     <button id="renameConfirmBtn">Cambia</button>
     <button class="secondary-btn" id="renameCancelBtn" style="margin-top:8px;">Annulla</button>
+  </div>
+</div>
+
+<!-- Popup impostazione PIN -->
+<div class="overlay" id="pinOverlay">
+  <div class="popup">
+    <h2>Proteggi il tuo account 🔐</h2>
+    <p>Imposta un PIN per accedere a <b id="pinNickDisplay"></b> da qualsiasi dispositivo</p>
+    <input type="password" id="pinSetInput" placeholder="Inserisci un PIN" maxlength="10" autocomplete="off">
+    <input type="password" id="pinConfirmInput" placeholder="Conferma PIN" maxlength="10" autocomplete="off">
+    <div class="nick-error" id="pinSetError" style="display:none;"></div>
+    <button id="pinSetBtn">Salva PIN</button>
+    <button class="secondary-btn" id="pinCancelBtn" style="margin-top:8px;">Annulla</button>
   </div>
 </div>
 
@@ -1337,6 +1352,7 @@
     <div class="lh-right">
       <div class="online-count" id="onlineCount">👤 0 online</div>
       <button class="theme-btn" id="renameBtn" title="Cambia nickname">✏️</button>
+      <button class="theme-btn" id="pinBtn" title="Imposta/Cambia PIN" style="font-size:0.75rem;">🔐</button>
       <button class="theme-btn" id="themeBtn" title="Tema">🎨</button>
       <button class="dama-btn" id="damaBtn" title="Sfida a Dama">♟</button>
       <button class="uno-btn" id="unoBtn" title="UNO">🃏</button>
@@ -3047,6 +3063,8 @@
     }
   });
 
+  var pinRequired = false;
+
   document.getElementById('enterLobbyBtn').addEventListener('click', function() {
     const nick = document.getElementById('nickInput').value.trim();
     if (nick.length < 2) {
@@ -3054,13 +3072,57 @@
       return;
     }
     document.getElementById('nickError').style.display = 'none';
+    document.getElementById('pinError').style.display = 'none';
+    // Se il PIN è già stato richiesto, procedi col join
+    if (pinRequired) {
+      const pin = document.getElementById('pinInput').value.trim();
+      if (!pin) {
+        document.getElementById('pinError').textContent = 'Inserisci il PIN per continuare.';
+        document.getElementById('pinError').style.display = 'block';
+        return;
+      }
+      doJoinLobby(nick, pin);
+      return;
+    }
+    // Prima controlla se il nickname è protetto da PIN
+    window.pendingNick = nick;
+    window.pendingAvatar = selectedAvatar;
+    if (!socketConnected) {
+      document.getElementById('pinError').textContent = 'Connessione al server... riprova.';
+      document.getElementById('pinError').style.display = 'block';
+      return;
+    }
+    socket.emit('account:checkPin', { nick: nick });
+  });
+
+  socket.on('account:pinStatus', function(data) {
+    const nick = window.pendingNick;
+    if (data.hasPin) {
+      // PIN richiesto → mostra il campo PIN
+      pinRequired = true;
+      document.getElementById('pinInput').style.display = 'block';
+      document.getElementById('pinInput').placeholder = 'Inserisci il PIN per ' + nick;
+      document.getElementById('pinInput').focus();
+      document.getElementById('pinError').textContent = 'Questo nickname è protetto da PIN.';
+      document.getElementById('pinError').style.display = 'block';
+    } else {
+      // Nessun PIN → procedi (con PIN opzionale)
+      const pin = document.getElementById('pinInput').value.trim();
+      doJoinLobby(nick, pin || '');
+    }
+  });
+
+  function doJoinLobby(nick, pin) {
     document.getElementById('nickOverlay').classList.remove('active');
     document.getElementById('buonDivOverlay').classList.add('active');
     window.pendingNick = nick;
-    window.pendingAvatar = selectedAvatar;
-  });
+    window.pendingPin = pin;
+  }
 
   document.getElementById('nickInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('enterLobbyBtn').click();
+  });
+  document.getElementById('pinInput').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') document.getElementById('enterLobbyBtn').click();
   });
 
@@ -3072,7 +3134,21 @@
       document.getElementById('connStatus').textContent = '● Connessione...';
       document.getElementById('connStatus').className = 'conn-status disconnected';
     }
-    socket.emit('join lobby', { nick: window.pendingNick, avatar: window.pendingAvatar, token: getToken() });
+    socket.emit('join lobby', { nick: window.pendingNick, avatar: window.pendingAvatar, token: getToken(), pin: window.pendingPin || '' });
+  });
+
+  socket.on('lobby:pinRequired', function(data) {
+    // PIN errato: torna al nickOverlay
+    document.getElementById('buonDivOverlay').classList.remove('active');
+    document.getElementById('lobbyBox').style.display = 'none';
+    document.getElementById('nickOverlay').classList.add('active');
+    document.getElementById('pinInput').style.display = 'block';
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').placeholder = 'PIN errato. Riprova:';
+    document.getElementById('pinInput').focus();
+    document.getElementById('pinError').textContent = data.msg || 'PIN errato. Riprova.';
+    document.getElementById('pinError').style.display = 'block';
+    pinRequired = true;
   });
 
   // Cambio nickname
@@ -3100,6 +3176,44 @@
 
   document.getElementById('renameInput').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') document.getElementById('renameConfirmBtn').click();
+  });
+
+  // === IMPOSTAZIONE PIN ===
+  document.getElementById('pinBtn').addEventListener('click', function() {
+    document.getElementById('pinNickDisplay').textContent = window.myNick || '';
+    document.getElementById('pinSetInput').value = '';
+    document.getElementById('pinConfirmInput').value = '';
+    document.getElementById('pinSetError').style.display = 'none';
+    document.getElementById('pinOverlay').classList.add('active');
+    setTimeout(function() { document.getElementById('pinSetInput').focus(); }, 200);
+  });
+
+  document.getElementById('pinCancelBtn').addEventListener('click', function() {
+    document.getElementById('pinOverlay').classList.remove('active');
+  });
+
+  document.getElementById('pinSetBtn').addEventListener('click', function() {
+    var pin = document.getElementById('pinSetInput').value.trim();
+    var pin2 = document.getElementById('pinConfirmInput').value.trim();
+    if (pin.length < 1) {
+      document.getElementById('pinSetError').textContent = 'Inserisci un PIN.';
+      document.getElementById('pinSetError').style.display = 'block';
+      return;
+    }
+    if (pin !== pin2) {
+      document.getElementById('pinSetError').textContent = 'I PIN non coincidono.';
+      document.getElementById('pinSetError').style.display = 'block';
+      return;
+    }
+    document.getElementById('pinSetError').style.display = 'none';
+    socket.emit('account:setPin', { pin: pin });
+  });
+
+  socket.on('account:pinSet', function(data) {
+    if (data.ok) {
+      document.getElementById('pinOverlay').classList.remove('active');
+      alert('PIN impostato con successo! Ora puoi usare lo stesso nickname + PIN su qualsiasi dispositivo.');
+    }
   });
 
   // XP → level helper
@@ -3210,6 +3324,7 @@
   var TILE = 48; // pixel size per tile
   var CAM_W = 0, CAM_H = 0; // computed
   var canvas, ctx, oCanvas, oCtx, mapAnimId = null;
+  var pokeImgCache = {};
 
   document.getElementById('owMapBtn').addEventListener('click', function() {
     document.getElementById('owPicker').classList.remove('active');
@@ -3246,6 +3361,7 @@
     document.getElementById('mapCanvasWrap').style.display = 'none';
     mapData = { me: null, players: {}, char: null, wildPokes: [], _mx:0, _my:0, _tx:0, _ty:0 };
     mapTiles = null;
+    pokeImgCache = {};
   }
 
   // Character colors & icons
@@ -3563,14 +3679,18 @@
       ctx.beginPath();
       ctx.arc(px+TILE/2, py+TILE/2+floatY, 26, 0, Math.PI*2);
       ctx.fill();
-      // Sprite (bigger)
+      // Sprite (bigger) — use cached image
       var spriteSize = TILE - 4;
-      var img = new Image();
-      img.src = POKE_IMG+pk.id+'.png';
+      var img = pokeImgCache[pk.id];
+      if (!img) {
+        img = new Image();
+        img.src = POKE_IMG+pk.id+'.png';
+        pokeImgCache[pk.id] = img;
+      }
       ctx.shadowColor = 'rgba(0,0,0,0.3)';
       ctx.shadowBlur = 8;
       ctx.shadowOffsetY = 3;
-      ctx.drawImage(img, px+2, py+2+floatY, spriteSize, spriteSize);
+      if (img.complete) ctx.drawImage(img, px+2, py+2+floatY, spriteSize, spriteSize);
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
       // Name tag
@@ -3655,13 +3775,20 @@
   socket.on('map:init', function(data) {
     document.getElementById('mapCharSelect').style.display = 'none';
     document.getElementById('mapCharConfirm').style.display = 'none';
-    document.getElementById('mapCanvasWrap').style.display = 'block';
+    document.getElementById('mapCanvasWrap').style.display = 'flex';
     var wrap = document.getElementById('mapCanvasWrap');
     setTimeout(function() {
       initCanvas();
       mapData.me = data.myId;
       mapData.players = data.players;
       mapData.wildPokes = data.wildPokes || [];
+      (data.wildPokes || []).forEach(function(pk) {
+        if (!pokeImgCache[pk.id]) {
+          var im = new Image();
+          im.src = POKE_IMG+pk.id+'.png';
+          pokeImgCache[pk.id] = im;
+        }
+      });
       var myP = data.players[data.myId];
       if (myP) { mapData._tx = mapData._mx = myP.x; mapData._ty = mapData._my = myP.y; }
       mapTiles = generateMapTiles(data.w, data.h);
@@ -3690,6 +3817,13 @@
 
   socket.on('map:wildPokes', function(pokes) {
     mapData.wildPokes = pokes;
+    pokes.forEach(function(pk) {
+      if (!pokeImgCache[pk.id]) {
+        var im = new Image();
+        im.src = POKE_IMG+pk.id+'.png';
+        pokeImgCache[pk.id] = im;
+      }
+    });
   });
 
   socket.on('map:caught', function(pk) {
