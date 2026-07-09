@@ -784,6 +784,7 @@ io.on('connection', (socket) => {
       const amount = parseInt(moneyMatch[1]);
       casinoBals[socket.id] = amount;
       syncTokenData(socket.id);
+      saveData();
       socket.emit('casino:balance', amount);
       return;
     }
@@ -1131,6 +1132,7 @@ io.on('connection', (socket) => {
     const reels = spinSlots();
     const payout = calcSlot(reels, bet);
     casinoBals[socket.id] += payout;
+    syncTokenData(socket.id);
     socket.emit('casino:result', { reels: reels.map(r=>r.e), payout, balance: casinoBals[socket.id], bet });
     addPokeXP(socket.id, 1, 'slot');
     if (payout > 0) {
@@ -1154,6 +1156,8 @@ io.on('connection', (socket) => {
     if (amount < 1 || amount > bal) return;
     casinoBals[socket.id] = bal - amount;
     casinoBals[to] = getBal(to) + amount;
+    syncTokenData(socket.id);
+    syncTokenData(to);
     io.emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💰', msg:`${from.nick} ha inviato €${amount.toLocaleString()} a ${target.nick}!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
     socket.emit('send:done', { balance: casinoBals[socket.id] });
     socket.emit('casino:balance', casinoBals[socket.id]);
@@ -1193,6 +1197,7 @@ io.on('connection', (socket) => {
     if (answer === currentQuiz.a) {
       quizAnswered.add(socket.id);
       casinoBals[socket.id] = getBal(socket.id) + QUIZ_PRIZE;
+      syncTokenData(socket.id);
       addPokeXP(socket.id, 30, 'quiz');
       casinoEarnings[socket.id] = (casinoEarnings[socket.id] || 0) + QUIZ_PRIZE;
       broadcastCasinoLeaderboard();
@@ -1207,11 +1212,13 @@ io.on('connection', (socket) => {
     const bal = getBal(socket.id);
     if (bal < 2000) { socket.emit('target:error', { msg: 'Saldo insufficiente!' }); return; }
     casinoBals[socket.id] = bal - 2000;
+    syncTokenData(socket.id);
     socket.emit('casino:balance', casinoBals[socket.id]);
   });
   socket.on('target:win', ({ score }) => {
     if (score >= 5) {
       casinoBals[socket.id] = getBal(socket.id) + 10000;
+      syncTokenData(socket.id);
       addPokeXP(socket.id, 15, 'bersaglio');
       casinoEarnings[socket.id] = (casinoEarnings[socket.id] || 0) + 8000;
       broadcastCasinoLeaderboard();
@@ -1568,6 +1575,8 @@ io.on('connection', (socket) => {
     }
     casinoBals[from] = bal1 - TARGET_ENTRY;
     casinoBals[socket.id] = bal2 - TARGET_ENTRY;
+    syncTokenData(from);
+    syncTokenData(socket.id);
     const id = 'tg' + (++targetGameIdCounter);
     const game = {
       id,
@@ -1659,6 +1668,7 @@ io.on('connection', (socket) => {
     const winnerNick = winner ? game.players.find(p => p.id === winner).nick : null;
     if (winner) {
       casinoBals[winner] = getBal(winner) + TARGET_PRIZE;
+      syncTokenData(winner);
       addPokeXP(winner, 15, 'bersaglio 1v1');
       casinoEarnings[winner] = (casinoEarnings[winner] || 0) + 2000;
       broadcastCasinoLeaderboard();
@@ -1666,6 +1676,8 @@ io.on('connection', (socket) => {
       // Draw - refund
       casinoBals[p1] = getBal(p1) + TARGET_ENTRY;
       casinoBals[p2] = getBal(p2) + TARGET_ENTRY;
+      syncTokenData(p1);
+      syncTokenData(p2);
     }
     [p1, p2].forEach(sid => {
       io.to(sid).emit('casino:balance', casinoBals[sid]);
@@ -1740,6 +1752,7 @@ io.on('connection', (socket) => {
         const other = g.players[1 - pIdx];
         io.to(other.id).emit('target:end', { myScore: other.score, oppScore: g.players[pIdx].score, winner: other.id, winnerNick: other.nick, draw: false, disconnect: true });
         casinoBals[other.id] = getBal(other.id) + TARGET_PRIZE;
+        syncTokenData(other.id);
         io.to(other.id).emit('casino:balance', casinoBals[other.id]);
         delete targetGames[gid];
       }
@@ -1811,3 +1824,13 @@ async function start() {
 }
 
 start().catch(e => { console.error('Errore avvio:', e); process.exit(1); });
+
+// Salva dati su SIGTERM/SIGINT (Render free tier spin-down, Ctrl+C)
+['SIGTERM', 'SIGINT'].forEach(sig => {
+  process.on(sig, async () => {
+    console.log(`[${new Date().toLocaleTimeString()}] Ricevuto ${sig}, salvataggio dati...`);
+    for (const sid of Object.keys(users)) { syncTokenData(sid); }
+    try { await saveData(); } catch(e) { console.error('Errore salvataggio su spegnimento:', e); }
+    process.exit(0);
+  });
+});
