@@ -1251,8 +1251,208 @@ io.on('connection', (socket) => {
     setTimeout(() => { delete battles[battleId]; }, 5000);
   });
 
+  // ===== TIRO AL BERSAGLIO 1v1 =====
+  const targetChallenges = {};
+  const targetGames = {};
+  let targetGameIdCounter = 0;
+  const TARGET_ENTRY = 2000;
+  const TARGET_PRIZE = 4000;
+  const TARGET_DURATION = 12;
+
+  socket.on('target:challenge', ({ to }) => {
+    const u = users[socket.id], tu = users[to];
+    if (!u || !tu) return;
+    const bal = getBal(socket.id);
+    if (bal < TARGET_ENTRY) { socket.emit('target:error', { msg: 'Saldo insufficiente! Servono €2K' }); return; }
+    targetChallenges[to] = socket.id;
+    io.to(to).emit('target:challenge', { from: socket.id, nick: u.nick, avatar: u.avatar });
+  });
+  socket.on('target:cancel', ({ to }) => {
+    delete targetChallenges[to];
+    io.to(to).emit('target:cancel');
+  });
+  socket.on('target:decline', ({ from }) => {
+    delete targetChallenges[from];
+    const u = users[socket.id];
+    if (u && users[from]) io.to(from).emit('target:decline', { nick: u.nick });
+  });
+  socket.on('target:accept', ({ from }) => {
+    if (!users[from] || !users[socket.id]) return;
+    const bal1 = getBal(from), bal2 = getBal(socket.id);
+    if (bal1 < TARGET_ENTRY || bal2 < TARGET_ENTRY) {
+      io.to(from).emit('target:cancel');
+      socket.emit('target:cancel');
+      return;
+    }
+    casinoBals[from] = bal1 - TARGET_ENTRY;
+    casinoBals[socket.id] = bal2 - TARGET_ENTRY;
+    const id = 'tg' + (++targetGameIdCounter);
+    const game = {
+      id,
+      players: [
+        { id: from, nick: users[from].nick, score: 0 },
+        { id: socket.id, nick: users[socket.id].nick, score: 0 }
+      ],
+      state: 'countdown',
+      timeLeft: TARGET_DURATION,
+      targets: {}, // id -> { points, hitBy: null }
+      targetIds: [],
+      spawnTimer: null,
+      gameTimer: null,
+    };
+    targetGames[id] = game;
+    [from, socket.id].forEach(sid => {
+      io.to(sid).emit('target:start', {
+        gameId: id,
+        oppNick: users[sid === from ? socket.id : from].nick,
+        myScore: 0,
+        oppScore: 0,
+        timeLeft: TARGET_DURATION
+      });
+    });
+    // 3-2-1 countdown
+    let c = 3;
+    const ci = setInterval(() => {
+      c--;
+      [from, socket.id].forEach(sid => io.to(sid).emit('target:countdown', { countdown: c }));
+      if (c <= 0) {
+        clearInterval(ci);
+        game.state = 'playing';
+        [from, socket.id].forEach(sid => io.to(sid).emit('target:go'));
+        // Spawn loop
+        game.spawnTimer = setInterval(() => {
+          if (game.state !== 'playing') return;
+          const isRare = Math.random() < 0.15;
+          const isLegendary = Math.random() < 0.03;
+          const tid = id + '_t' + (++targetGameIdCounter);
+          const target = {
+            id: tid,
+            points: isLegendary ? 3 : isRare ? 2 : 1,
+            isRare, isLegendary,
+            left: Math.random() * 80 + 10,
+            top: Math.random() * 80 + 10,
+            hitBy: null,
+          };
+          game.targets[tid] = target;
+          game.targetIds.push(tid);
+          [from, socket.id].forEach(sid => {
+            io.to(sid).emit('target:spawn', {
+              id: tid,
+              points: target.points,
+              isRare: target.isRare,
+              isLegendary: target.isLegendary,
+              left: target.left,
+              top: target.top,
+            });
+          });
+          // Auto remove after duration
+          const dur = isLegendary ? 1200 : isRare ? 1500 : 1000;
+          setTimeout(() => {
+            if (game.state === 'playing' && game.targets[tid] && !game.targets[tid].hitBy) {
+              delete game.targets[tid];
+              [from, socket.id].forEach(sid => io.to(sid).emit('target:remove', { id: tid }));
+            }
+          }, dur);
+        }, 700);
+        // Game timer
+        game.gameTimer = setInterval(() => {
+          game.timeLeft--;
+          [from, socket.id].forEach(sid => io.to(sid).emit('target:tick', { timeLeft: game.timeLeft }));
+          if (game.timeLeft <= 0) {
+            endTargetGame(game, from, socket.id);
+          }
+        }, 1000);
+      }
+    }, 1000);
+  });
+
+  function endTargetGame(game, p1, p2) {
+    game.state = 'ended';
+    if (game.spawnTimer) { clearInterval(game.spawnTimer); game.spawnTimer = null; }
+    if (game.gameTimer) { clearInterval(game.gameTimer); game.gameTimer = null; }
+    const s1 = game.players[0].score, s2 = game.players[1].score;
+    let winner = null;
+    if (s1 > s2) winner = game.players[0].id;
+    else if (s2 > s1) winner = game.players[1].id;
+    const winnerNick = winner ? game.players.find(p => p.id === winner).nick : null;
+    if (winner) {
+      casinoBals[winner] = getBal(winner) + TARGET_PRIZE;
+      addPokeXP(winner, 15, 'bersaglio 1v1');
+      casinoEarnings[winner] = (casinoEarnings[winner] || 0) + 2000;
+      broadcastCasinoLeaderboard();
+    } else {
+      // Draw - refund
+      casinoBals[p1] = getBal(p1) + TARGET_ENTRY;
+      casinoBals[p2] = getBal(p2) + TARGET_ENTRY;
+    }
+    [p1, p2].forEach(sid => {
+      io.to(sid).emit('casino:balance', casinoBals[sid]);
+      io.to(sid).emit('target:end', {
+        myScore: game.players.find(p => p.id === sid).score,
+        oppScore: game.players.find(p => p.id !== sid).score,
+        winner,
+        winnerNick,
+        draw: !winner,
+      });
+    });
+    io.emit('chat message', {
+      id: ++msgCounter, nick: 'Tiro al Bersaglio', avatar: '🎯',
+      msg: winner
+        ? `🏆 ${winnerNick} ha vinto a Tiro al Bersaglio contro ${game.players.find(p => p.id !== winner).nick}! (${s1}-${s2})`
+        : `🤝 Pareggio tra ${game.players[0].nick} e ${game.players[1].nick} a Tiro al Bersaglio! (${s1}-${s2})`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), system: true, reactions: {}
+    });
+    setTimeout(() => { delete targetGames[game.id]; }, 5000);
+  }
+
+  socket.on('target:hit', ({ gameId, targetId }) => {
+    const g = targetGames[gameId];
+    if (!g || g.state !== 'playing') return;
+    const t = g.targets[targetId];
+    if (!t || t.hitBy) return;
+    t.hitBy = socket.id;
+    const p = g.players.find(p => p.id === socket.id);
+    if (!p) return;
+    p.score += t.points;
+    const opp = g.players.find(p => p.id !== socket.id);
+    [socket.id, opp.id].forEach(sid => {
+      io.to(sid).emit('target:score', {
+        scorer: socket.id,
+        score: g.players.find(p => p.id === sid).score,
+        oppScore: g.players.find(p => p.id !== sid).score,
+        targetId,
+        points: t.points,
+        left: t.left,
+        top: t.top,
+      });
+    });
+  });
+
   socket.on('disconnect', () => {
     const u = users[socket.id];
+    // Clean up target challenges
+    if (targetChallenges[socket.id]) delete targetChallenges[socket.id];
+    for (const k in targetChallenges) {
+      if (targetChallenges[k] === socket.id) {
+        io.to(k).emit('target:cancel');
+        delete targetChallenges[k];
+      }
+    }
+    // Clean up target games
+    for (const gid in targetGames) {
+      const g = targetGames[gid];
+      const pIdx = g.players.findIndex(p => p.id === socket.id);
+      if (pIdx !== -1) {
+        if (g.spawnTimer) clearInterval(g.spawnTimer);
+        if (g.gameTimer) clearInterval(g.gameTimer);
+        g.state = 'ended';
+        const other = g.players[1 - pIdx];
+        io.to(other.id).emit('target:end', { myScore: other.score, oppScore: g.players[pIdx].score, winner: other.id, winnerNick: other.nick, draw: false, disconnect: true });
+        casinoBals[other.id] = getBal(other.id) + TARGET_PRIZE;
+        io.to(other.id).emit('casino:balance', casinoBals[other.id]);
+        delete targetGames[gid];
+      }
+    }
     // Clean up battle challenges
     Object.keys(battles).forEach(bid => {
       const b = battles[bid];

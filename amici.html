@@ -1084,6 +1084,8 @@
   /* BATTLE POKEMON */
   .battle-challenge-btn { cursor:pointer;padding:1px 4px;font-size:0.75rem;opacity:0.5;transition:0.2s;display:inline-flex;align-items:center; }
   .battle-challenge-btn:hover { opacity:1;transform:scale(1.2); }
+  .target-challenge-btn { cursor:pointer;padding:1px 4px;font-size:0.75rem;opacity:0.5;transition:0.2s;display:inline-flex;align-items:center; }
+  .target-challenge-btn:hover { opacity:1;transform:scale(1.2); }
   .bp-name { font-family:'Black Ops One',monospace; }
   .bp-hp-fill.low { background:linear-gradient(90deg,#ef4444,#f87171)!important; }
   .bp-hp-fill.mid { background:linear-gradient(90deg,#eab308,#facc15)!important; }
@@ -1545,6 +1547,39 @@
   </div>
 </div>
 
+<!-- TIRO AL BERSAGLIO 1v1 -->
+<div class="overlay" id="target1v1Overlay" style="z-index:3000;background:rgba(5,5,10,0.92);backdrop-filter:blur(6px);">
+  <div class="battle-container" style="width:100%;max-width:550px;height:90vh;display:flex;flex-direction:column;margin:auto;padding:0.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0.25rem 0.5rem;border-bottom:1px solid rgba(255,215,0,0.15);flex-shrink:0;">
+      <span style="font-family:'Black Ops One',monospace;font-size:0.75rem;color:#ffd700;letter-spacing:2px;">🎯 TIRO AL BERSAGLIO</span>
+      <span id="target1v1Timer" style="font-size:0.75rem;font-weight:700;color:#ffd700;">⏱ 0s</span>
+    </div>
+    <div id="target1v1Countdown" style="display:none;flex:1;align-items:center;justify-content:center;font-size:4rem;font-weight:700;color:#ffd700;font-family:'Black Ops One',monospace;"></div>
+    <div id="target1v1Arena" style="flex:1;position:relative;background:rgba(0,0,0,0.5);border-radius:10px;margin:0.25rem 0;overflow:hidden;display:flex;flex-direction:column;">
+      <div id="target1v1Pokes" style="position:relative;flex:1;overflow:hidden;">
+        <canvas id="target1v1Canvas" style="position:absolute;inset:0;pointer-events:none;"></canvas>
+      </div>
+    </div>
+    <div id="target1v1Scores" style="display:flex;justify-content:space-between;padding:0.35rem 0.75rem;flex-shrink:0;">
+      <div style="text-align:center;">
+        <div id="target1v1MyName" style="font-size:0.65rem;color:rgba(255,255,255,0.5);">Tu</div>
+        <div id="target1v1MyScore" style="font-size:1.4rem;font-weight:700;color:#22c55e;">0</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:0.65rem;color:rgba(255,215,0,0.5);">VS</div>
+        <div id="target1v1Result" style="font-size:0.8rem;font-weight:700;display:none;"></div>
+      </div>
+      <div style="text-align:center;">
+        <div id="target1v1OppName" style="font-size:0.65rem;color:rgba(255,255,255,0.5);">Avversario</div>
+        <div id="target1v1OppScore" style="font-size:1.4rem;font-weight:700;color:#ef4444;">0</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;justify-content:center;padding:0.3rem 0;flex-shrink:0;">
+      <button id="target1v1Close" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);padding:0.3rem 1rem;border-radius:6px;cursor:pointer;font-size:0.65rem;">✕ Chiudi</button>
+    </div>
+  </div>
+</div>
+
 <!-- TIRO AL BERSAGLIO POKEMON -->
 <div class="casino-overlay" id="targetOverlay">
   <div class="casino-box" style="max-width:500px;">
@@ -1574,9 +1609,9 @@
 </div>
 
 <!-- Challenge notification -->
-<div class="challenge-popup" id="challengePopup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4000;background:linear-gradient(135deg,#1a0a2e,#0d0a1a);border:2px solid #7c3aed;border-radius:16px;padding:1.5rem;min-width:260px;text-align:center;box-shadow:0 0 60px rgba(124,58,237,0.3);">
-  <div style="font-size:2rem;margin-bottom:0.5rem;">⚔️</div>
-  <div style="font-family:'Black Ops One',monospace;font-size:1rem;color:#c4b5fd;margin-bottom:0.75rem;"><span id="challengerName"></span> ti sfida a<b> Battaglia Pokémon!</b></div>
+<div class="challenge-popup" id="challengePopup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4000;background:linear-gradient(135deg,#1a0a2e,#0d0a1a);border:2px solid #7c3aed;border-radius:16px;padding:1.5rem;min-width:280px;text-align:center;box-shadow:0 0 60px rgba(124,58,237,0.3);">
+  <div style="font-size:2rem;margin-bottom:0.5rem;"><span id="challengeTypeIcon">⚔️</span></div>
+  <div style="font-family:'Black Ops One',monospace;font-size:1rem;color:#c4b5fd;margin-bottom:0.75rem;"><span id="challengerName"></span> ti sfida a <b><span id="challengeTypeLabel">Battaglia Pokémon</span>!</b></div>
   <div style="display:flex;gap:0.75rem;justify-content:center;">
     <button id="battleAcceptBtn" style="background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;padding:0.5rem 1.5rem;border-radius:8px;cursor:pointer;font-family:'Black Ops One',monospace;font-size:0.8rem;">✅ ACCETTA</button>
     <button id="battleDeclineBtn" style="background:linear-gradient(135deg,#ef4444,#dc2626);border:none;color:#fff;padding:0.5rem 1.5rem;border-radius:8px;cursor:pointer;font-family:'Black Ops One',monospace;font-size:0.8rem;">❌ RIFIUTA</button>
@@ -2204,8 +2239,8 @@
         pokeHtml = '<div class="poke-sidebar" data-sid="'+u.id+'" data-self="'+(isMe?'1':'0')+'"><img src="'+POKE_IMG+pokeId+'.png" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;display:inline">'+teamHtml+'<span class="plv">Lv'+lv+'</span><div class="pxp"><div class="pxp-fill" style="width:'+pct+'%"></div></div></div>';
       }
       var self = window.myNick && u.nick === window.myNick;
-      var battleBtn = self ? '' : '<span class="battle-challenge-btn" data-to="'+u.id+'" title="Sfida a battaglia Pokémon">⚔️</span>';
-      div.innerHTML = '<span class="online-dot"></span><span class="avatar">'+u.avatar+'</span><span class="name">'+u.nick+'</span>'+battleBtn+pokeHtml;
+      var gameBtns = self ? '' : '<span class="battle-challenge-btn" data-to="'+u.id+'" title="Sfida a battaglia Pokémon">⚔️</span><span class="target-challenge-btn" data-to="'+u.id+'" title="Sfida a Tiro al Bersaglio">🎯</span>';
+      div.innerHTML = '<span class="online-dot"></span><span class="avatar">'+u.avatar+'</span><span class="name">'+u.nick+'</span>'+gameBtns+pokeHtml;
       list.appendChild(div);
     });
     document.getElementById('onlineCount').textContent = '👤 ' + onlineUsers.length + ' online';
@@ -2281,29 +2316,58 @@
   // Click handler for challenge buttons
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('.battle-challenge-btn');
-    if (!btn) return;
-    var to = btn.dataset.to;
-    if (!to || to === socket.id) return;
-    socket.emit('battle:challenge', { to: to });
+    if (btn) {
+      var to = btn.dataset.to;
+      if (to && to !== socket.id) socket.emit('battle:challenge', { to: to });
+      return;
+    }
+    var tbtn = e.target.closest('.target-challenge-btn');
+    if (tbtn) {
+      var to = tbtn.dataset.to;
+      if (to && to !== socket.id) socket.emit('target:challenge', { to: to });
+      return;
+    }
   });
   // Challenge notification
-  socket.on('battle:challenge', function(data) {
-    document.getElementById('challengerName').textContent = data.nick;
-    document.getElementById('challengePopup').style.display = 'block';
+  function showChallenge(nick, from, type, acceptCb) {
+    var popup = document.getElementById('challengePopup');
+    var icon = type === 'battle' ? '⚔️' : '🎯';
+    var label = type === 'battle' ? 'Battaglia Pokémon' : 'Tiro al Bersaglio';
+    document.getElementById('challengerName').textContent = nick;
+    document.getElementById('challengeTypeIcon').textContent = icon;
+    document.getElementById('challengeTypeLabel').textContent = label;
+    popup.style.display = 'block';
     document.getElementById('battleAcceptBtn').onclick = function() {
-      document.getElementById('challengePopup').style.display = 'none';
-      socket.emit('battle:accept', { from: data.from });
+      popup.style.display = 'none';
+      acceptCb();
     };
     document.getElementById('battleDeclineBtn').onclick = function() {
-      document.getElementById('challengePopup').style.display = 'none';
-      socket.emit('battle:decline', { from: data.from });
+      popup.style.display = 'none';
+      if (type === 'battle') socket.emit('battle:decline', { from: from });
+      else socket.emit('target:decline', { from: from });
     };
+  }
+  socket.on('battle:challenge', function(data) {
+    showChallenge(data.nick, data.from, 'battle', function() {
+      socket.emit('battle:accept', { from: data.from });
+    });
   });
   socket.on('battle:cancel', function() {
     document.getElementById('challengePopup').style.display = 'none';
   });
   socket.on('battle:decline', function(data) {
     showChatMsg('Sistema', '💬', data.nick + ' ha rifiutato la sfida Pokémon.', 'system');
+  });
+  socket.on('target:challenge', function(data) {
+    showChallenge(data.nick, data.from, 'target', function() {
+      socket.emit('target:accept', { from: data.from });
+    });
+  });
+  socket.on('target:cancel', function() {
+    document.getElementById('challengePopup').style.display = 'none';
+  });
+  socket.on('target:decline', function(data) {
+    showChatMsg('Sistema', '💬', data.nick + ' ha rifiutato la sfida a Tiro al Bersaglio.', 'system');
   });
   // Battle start
   socket.on('battle:start', function(data) {
@@ -4586,6 +4650,124 @@
     document.getElementById('targetPlayBtn').disabled = false;
     document.getElementById('targetPlayBtn').textContent = '🎯 RIPROVA (€2K)';
   }
+
+  // ===== TIRO AL BERSAGLIO 1v1 =====
+  var target1v1GameId = null;
+  var target1v1MyNick = '';
+
+  document.getElementById('target1v1Close').addEventListener('click', function() {
+    document.getElementById('target1v1Overlay').classList.remove('active');
+    clearTarget1v1();
+  });
+
+  function clearTarget1v1() {
+    document.getElementById('target1v1Pokes').querySelectorAll('.target-poke').forEach(function(e) { e.remove(); });
+  }
+
+  socket.on('target:start', function(data) {
+    target1v1GameId = data.gameId;
+    target1v1MyNick = window.myNick || 'Tu';
+    document.getElementById('target1v1MyName').textContent = target1v1MyNick;
+    document.getElementById('target1v1OppName').textContent = data.oppNick;
+    document.getElementById('target1v1MyScore').textContent = '0';
+    document.getElementById('target1v1OppScore').textContent = '0';
+    document.getElementById('target1v1Result').style.display = 'none';
+    document.getElementById('target1v1Timer').textContent = '⏱ ' + data.timeLeft + 's';
+    document.getElementById('target1v1Countdown').style.display = 'flex';
+    document.getElementById('target1v1Countdown').textContent = '3';
+    clearTarget1v1();
+    document.getElementById('target1v1Overlay').classList.add('active');
+  });
+
+  socket.on('target:countdown', function(data) {
+    var el = document.getElementById('target1v1Countdown');
+    if (data.countdown > 0) {
+      el.textContent = data.countdown;
+      el.style.display = 'flex';
+    } else {
+      el.textContent = 'VIA!';
+      setTimeout(function() { el.style.display = 'none'; }, 500);
+    }
+  });
+
+  socket.on('target:go', function() {
+    // Arena ready, targets will start spawning
+  });
+
+  socket.on('target:spawn', function(data) {
+    var arena = document.getElementById('target1v1Pokes');
+    var el = document.createElement('div');
+    el.className = 'target-poke' + (data.isRare ? ' gold' : '') + (data.isLegendary ? ' legendary' : '');
+    var size = data.isLegendary ? 60 : data.isRare ? 50 : 44;
+    el.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+data.left+'%;top:'+data.top+'%;display:flex;align-items:center;justify-content:center;background:'+(data.isLegendary?'rgba(124,58,237,0.25)':data.isRare?'rgba(255,215,0,0.2)':'rgba(255,255,255,0.08)')+';border:2px solid '+(data.isLegendary?'#a78bfa':data.isRare?'#ffd700':'rgba(255,255,255,0.15)')+';font-size:'+(size*0.35)+'px;font-weight:700;color:#fff;';
+    el.textContent = data.isLegendary ? '⭐' : data.isRare ? '🌟' : '⚪';
+    el.dataset.tid = data.id;
+    el.title = data.points + ' pt';
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (!this.parentNode || this.classList.contains('caught')) return;
+      this.classList.add('caught');
+      playSound('slotwin');
+      var sp = document.createElement('div');
+      sp.style.cssText = 'position:absolute;left:'+data.left+'%;top:'+data.top+'%;pointer-events:none;font-size:1.3rem;z-index:20;animation:targetPop 0.4s ease-out forwards;';
+      sp.textContent = data.points >= 3 ? '🌟' : '+1';
+      arena.appendChild(sp);
+      setTimeout(function() { if (sp.parentNode) sp.remove(); }, 400);
+      socket.emit('target:hit', { gameId: target1v1GameId, targetId: data.id });
+    });
+    arena.appendChild(el);
+  });
+
+  socket.on('target:remove', function(data) {
+    var el = document.getElementById('target1v1Pokes').querySelector('[data-tid="'+data.id+'"]');
+    if (el) {
+      el.classList.add('miss');
+      setTimeout(function() { if (el.parentNode) el.remove(); }, 300);
+    }
+  });
+
+  socket.on('target:score', function(data) {
+    document.getElementById('target1v1MyScore').textContent = data.scorer === socket.id ? data.score : data.oppScore;
+    document.getElementById('target1v1OppScore').textContent = data.scorer === socket.id ? data.oppScore : data.score;
+    var el = document.getElementById('target1v1Pokes').querySelector('[data-tid="'+data.targetId+'"]');
+    if (el) {
+      el.classList.add('caught');
+      setTimeout(function() { if (el.parentNode) el.remove(); }, 300);
+    }
+  });
+
+  socket.on('target:tick', function(data) {
+    document.getElementById('target1v1Timer').textContent = '⏱ ' + data.timeLeft + 's';
+  });
+
+  socket.on('target:end', function(data) {
+    document.getElementById('target1v1Timer').textContent = '⏱ 0s';
+    var resultEl = document.getElementById('target1v1Result');
+    resultEl.style.display = 'block';
+    if (data.disconnect) {
+      resultEl.textContent = '🏆 Vittoria! (avversario disconnesso)';
+      resultEl.style.color = '#22c55e';
+      playSound('slotjackpot');
+    } else if (data.draw) {
+      resultEl.textContent = '🤝 Pareggio!';
+      resultEl.style.color = '#ffd700';
+      playSound('slotlose');
+    } else if (data.winner === socket.id) {
+      resultEl.textContent = '🏆 VITTORIA!';
+      resultEl.style.color = '#22c55e';
+      playSound('slotjackpot');
+    } else {
+      resultEl.textContent = '😞 Hai perso!';
+      resultEl.style.color = '#ef4444';
+      playSound('slotlose');
+    }
+    document.getElementById('target1v1MyScore').textContent = data.myScore;
+    document.getElementById('target1v1OppScore').textContent = data.oppScore;
+  });
+
+  socket.on('target:error', function(data) {
+    showChatMsg('Sistema', '🎯', data.msg, 'system');
+  });
 </script>
 
 </body>
