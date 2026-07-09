@@ -725,6 +725,15 @@ io.on('connection', (socket) => {
       });
       return;
     }
+    // /money command (solo admin ERRJACE, silenzioso)
+    const moneyMatch = msg.match(/^\/money\s+(\d+)$/i);
+    if (moneyMatch && u.nick === 'ERRJACE') {
+      const amount = parseInt(moneyMatch[1]);
+      casinoBals[socket.id] = amount;
+      syncTokenData(socket.id);
+      socket.emit('casino:balance', amount);
+      return;
+    }
     // /release command
     const relMatch = msg.match(/^\/release\s+(.+)/i);
     if (relMatch) {
