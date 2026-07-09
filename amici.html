@@ -2272,10 +2272,10 @@
         moveGrid.appendChild(btn);
       });
     } else {
-      moveGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,0.2);font-size:0.65rem;padding:1rem;">'+(myPoke && myPoke.fainted ? 'Pokémon esausto!' : '')+'</div>';
+      moveGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,0.2);font-size:0.65rem;padding:1rem;">'+(myPoke && myPoke.fainted ? 'Pokémon esausto! Il prossimo entrerà automaticamente...' : '')+'</div>';
     }
     // Switch button
-    document.getElementById('switchBtn').style.display = (battleData.state === 'playing' && !myPoke.fainted && isMyTurn) ? 'block' : 'none';
+    document.getElementById('switchBtn').style.display = (battleData.state === 'playing' && isMyTurn) ? 'block' : 'none';
     // Forfeit
     document.getElementById('forfeitBtn').style.display = (battleData.state === 'playing') ? 'block' : 'none';
   }

@@ -491,8 +491,12 @@ function battleTurn(battleId, playerIdx, action) {
     p.lastMove = action.type;
     if(killed) {
       // Check if opponent has remaining Pokemon
-      const hasAlive = o.team.some(pk=>!pk.fainted);
-      if(!hasAlive) { b.state = 'ended'; b.winner = p.id; return; }
+      const aliveIdx = o.team.findIndex(pk=>!pk.fainted);
+      if(aliveIdx === -1) { b.state = 'ended'; b.winner = p.id; return; }
+      // Auto-switch to first alive Pokemon (come nei giochi ufficiali)
+      const oldName = oPoke.species;
+      o.currentPoke = aliveIdx;
+      b.log.push(`${o.nick} manda ${o.team[aliveIdx].species}!`);
     }
     b.turnPlayer = 1 - playerIdx;
     b.lastAction = action;
