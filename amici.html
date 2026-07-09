@@ -1707,7 +1707,6 @@
         width: '100%',
         playerVars: {
           autoplay: 1,
-          mute: 1,
           controls: 1,
           disablekb: 1,
           fs: 0,
@@ -2866,7 +2865,10 @@
       });
     }
     msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
+    // Auto-scroll come WhatsApp: solo se già in fondo
+    if (msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight < 100) {
+      msgs.scrollTop = msgs.scrollHeight;
+    }
     if (data.reactions) {
       Object.entries(data.reactions).forEach(([emoji, count]) => {
         if (count > 0) {
@@ -2878,6 +2880,11 @@
         }
       });
     }
+  });
+
+  // /clearchat
+  socket.on('chat:clear', function() {
+    document.getElementById('chatMessages').innerHTML = '';
   });
 
   function sendMessage() {
@@ -4191,7 +4198,9 @@
       var msgs = document.getElementById('chatMessages');
       if (lobby && lobby.style.display !== 'none' && msgs) {
         lobby.style.height = window.visualViewport.height + 'px';
-        msgs.scrollTop = msgs.scrollHeight;
+        if (msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight < 100) {
+          msgs.scrollTop = msgs.scrollHeight;
+        }
       }
     });
   }

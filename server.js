@@ -238,8 +238,8 @@ setInterval(() => { generateWildPokes(); io.emit('map:wildPokes', mapWildPokes);
 const casinoBals = {};
 const casinoEarnings = {}; // net earnings per socket
 const CASINO_START = 10000;
-const QUIZ_PRIZE = 10000;
-const QUIZ_INTERVAL = 180000;
+const QUIZ_PRIZE = 30000;
+const QUIZ_INTERVAL = 600000;
 const QUIZ_TIME = 30000;
 let quizTimer = null;
 let quizActive = false;
@@ -528,6 +528,17 @@ io.on('connection', (socket) => {
   socket.on('chat message', (msg) => {
     const u = users[socket.id];
     if (!u) return;
+    // /clearchat command
+    if (msg === '/clearchat') {
+      io.emit('chat:clear');
+      io.emit('chat message', {
+        id: ++msgCounter, nick: 'Sistema', avatar: '💬',
+        msg: `${u.nick} ha ripulito la chat!`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        system: true, reactions: {},
+      });
+      return;
+    }
     addPokeXP(socket.id, 2, 'chat');
     io.emit('chat message', {
       id: ++msgCounter,
