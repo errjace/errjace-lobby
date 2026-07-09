@@ -1697,6 +1697,16 @@
   </div>
 </div>
 
+<!-- SEND MONEY PICKER -->
+<div class="poke-overlay" id="sendPicker">
+  <div class="poke-popup" style="text-align:center;max-width:360px;">
+    <h2>💰 Invia €<span id="sendAmount">0</span></h2>
+    <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:0.75rem;">Scegli a chi inviare i soldi:</p>
+    <div id="sendUserList" style="display:flex;flex-direction:column;gap:4px;max-height:250px;overflow-y:auto;"></div>
+    <button id="sendCancel" style="margin-top:0.75rem;background:rgba(255,255,255,0.05);border:none;padding:0.4rem 1.2rem;border-radius:8px;color:rgba(255,255,255,0.4);cursor:pointer;font-size:0.7rem;">ANNULLA</button>
+  </div>
+</div>
+
 <!-- Like Toast -->
 <div class="like-toast" id="likeToast">
   <div class="lt-text">Lascia un ❤️ a <strong>ERRJACE</strong>!</div>
@@ -3039,6 +3049,14 @@
     const input = document.getElementById('chatInput');
     const msg = input.value.trim();
     if (!msg) return;
+    // /send command
+    var sendMatch = msg.match(/^\/send\s+(\d+)$/);
+    if (sendMatch) {
+      showSendPicker(parseInt(sendMatch[1]));
+      input.value = '';
+      socket.emit('typing stop');
+      return;
+    }
     socket.emit('chat message', msg);
     input.value = '';
     socket.emit('typing stop');
@@ -4297,6 +4315,48 @@
       tbody.appendChild(tr);
     });
     document.getElementById('pokeLeaderOverlay').classList.add('active');
+  });
+
+  // ===== SEND MONEY =====
+  var sendAmount = 0;
+  function showSendPicker(amount) {
+    if (amount < 1 || amount > casinoBalance) {
+      socket.emit('chat message', '💬 [Sistema] Saldo insufficiente o importo non valido!');
+      return;
+    }
+    sendAmount = amount;
+    document.getElementById('sendAmount').textContent = amount.toLocaleString();
+    var list = document.getElementById('sendUserList');
+    list.innerHTML = '';
+    onlineUsers.forEach(function(u) {
+      if (u.nick === window.myNick) return;
+      var item = document.createElement('div');
+      item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.03);border-radius:8px;cursor:pointer;transition:0.15s;border:1px solid transparent;';
+      item.innerHTML = '<span>'+u.avatar+'</span><span style="font-weight:600;font-size:0.8rem;">'+u.nick+'</span><span style="margin-left:auto;font-size:0.6rem;color:rgba(255,255,255,0.3);">💰 €'+amount.toLocaleString()+'</span>';
+      item.onmouseover = function(){this.style.background='rgba(124,58,237,0.15)';this.style.borderColor='rgba(124,58,237,0.3)';};
+      item.onmouseout = function(){this.style.background='rgba(255,255,255,0.03)';this.style.borderColor='transparent';};
+      item.onclick = function() {
+        document.getElementById('sendPicker').classList.remove('active');
+        socket.emit('send:transfer', { to: u.id, amount: sendAmount });
+      };
+      list.appendChild(item);
+    });
+    if (list.children.length === 0) {
+      list.innerHTML = '<div style="font-size:0.7rem;color:rgba(255,255,255,0.2);padding:1rem;">Nessun altro utente online</div>';
+    }
+    document.getElementById('sendPicker').classList.add('active');
+  }
+  document.getElementById('sendCancel').addEventListener('click', function() {
+    document.getElementById('sendPicker').classList.remove('active');
+  });
+  document.getElementById('sendPicker').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  // Server reply for send
+  socket.on('send:done', function(data) {
+    casinoBalance = data.balance;
+    document.getElementById('casinoBalance').textContent = data.balance.toLocaleString();
   });
 
   var tradeFrom = null;

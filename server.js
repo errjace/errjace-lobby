@@ -914,6 +914,22 @@ io.on('connection', (socket) => {
     }
   });
 
+  // SEND MONEY
+  socket.on('send:transfer', ({ to, amount }) => {
+    const from = users[socket.id];
+    const target = users[to];
+    if (!from || !target) return;
+    const bal = getBal(socket.id);
+    if (amount < 1 || amount > bal) return;
+    casinoBals[socket.id] = bal - amount;
+    casinoBals[to] = getBal(to) + amount;
+    io.emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💰', msg:`${from.nick} ha inviato €${amount.toLocaleString()} a ${target.nick}!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+    socket.emit('send:done', { balance: casinoBals[socket.id] });
+    socket.emit('casino:balance', casinoBals[socket.id]);
+    io.to(to).emit('casino:balance', casinoBals[to]);
+    broadcastCasinoLeaderboard();
+  });
+
   // QUIZ events
   socket.on('quiz:answer', ({ answer }) => {
     if (!quizActive || !currentQuiz) return;
