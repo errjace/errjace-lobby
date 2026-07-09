@@ -734,7 +734,7 @@ io.on('connection', (socket) => {
       socket.emit('casino:balance', amount);
       return;
     }
-    // /release command
+    // /release command (supporta nome o numero slot)
     const relMatch = msg.match(/^\/release\s+(.+)/i);
     if (relMatch) {
       const pd = pokemonData[socket.id];
@@ -742,9 +742,15 @@ io.on('connection', (socket) => {
         socket.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '💬', msg: 'Non hai Pokémon nel team da rilasciare!', time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} });
         return;
       }
-      const name = relMatch[1].trim();
-      const idx = pd.team.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
-      if (idx === -1) {
+      const arg = relMatch[1].trim();
+      let idx;
+      const num = parseInt(arg);
+      if (!isNaN(num) && num > 0 && num <= pd.team.length) {
+        idx = num - 1;
+      } else {
+        idx = pd.team.findIndex(p => p.name.toLowerCase() === arg.toLowerCase());
+      }
+      if (idx === -1 || idx >= pd.team.length) {
         socket.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '💬', msg: 'Pokémon non trovato! Usa /team per vedere la lista.', time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} });
         return;
       }
