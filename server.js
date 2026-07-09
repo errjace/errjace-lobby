@@ -303,7 +303,7 @@ function calcSlot(r, bet) {
   if (b.e === c.e) return bet * b.p2;
   return 0;
 }
-function getBal(id) { if (casinoBals[id] === undefined) casinoBals[id] = CASINO_START; syncTokenData(id); return casinoBals[id]; }
+function getBal(id) { if (casinoBals[id] === undefined) casinoBals[id] = CASINO_START; saveNickData(id); return casinoBals[id]; }
 function resetQuiz() { quizActive = false; currentQuiz = null; quizAnswered = new Set(); }
 function sendQuiz() {
   if (Object.keys(users).length < 1) return;
@@ -398,6 +398,26 @@ async function saveData() {
   }
 }
 
+function saveNickData(socketId) {
+  const u = users[socketId];
+  if (!u || !u.nick) return;
+  const nick = u.nick;
+  nickData[nick] = {
+    nick: u.nick,
+    avatar: u.avatar,
+    token: tokenForSocket[socketId] || '',
+    casinoBal: casinoBals[socketId] !== undefined ? casinoBals[socketId] : CASINO_START,
+    casinoEarnings: casinoEarnings[socketId] || 0,
+    pokemon: pokemonData[socketId] || null,
+    clawCounter: clawCounters[socketId] || 0,
+  };
+  try { fs.writeFileSync(NICKDATA_FILE, JSON.stringify(nickData, null, 2)); }
+  catch(e) { console.error('Errore salvataggio nickdata:', e); }
+  // Sync anche su dataByToken per MongoDB
+  const token = tokenForSocket[socketId];
+  if (token) { dataByToken[token] = { ...dataByToken[token] || {}, ...nickData[nick], token }; }
+}
+
 function syncTokenData(socketId) {
   const token = tokenForSocket[socketId];
   if (!token || !dataByToken[token]) return;
@@ -408,8 +428,9 @@ function syncTokenData(socketId) {
   if (casinoEarnings[socketId] !== undefined) d.casinoEarnings = casinoEarnings[socketId];
   d.pokemon = pokemonData[socketId] || null;
   d.clawCounter = clawCounters[socketId] || 0;
-  // Backup per nickname (usato come fallback per PIN login)
   if (d.nick) nickData[d.nick] = { ...d, token };
+  try { fs.writeFileSync(NICKDATA_FILE, JSON.stringify(nickData, null, 2)); }
+  catch(e) { console.error('Errore salvataggio nickdata:', e); }
 }
 
 setInterval(() => saveData(), 30000);
@@ -456,7 +477,7 @@ function addPokeXP(id, amt, reason) {
     io.emit('chat message',{id:++msgCounter,nick:'Pokémon',avatar:'<img src="'+POKE_IMG+STARTERS[d.starter].imgs[ns]+'.png" style="width:22px;height:22px;vertical-align:middle;">',msg:`✨ ${users[id]?.nick||'Qualcuno'} ha fatto evolvere ${oldE} → ${newE}! Liv.${nl}`,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),system:true,reactions:{}});
     io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
   }
-  syncTokenData(id);
+  saveNickData(id);
 }
 setInterval(()=>{Object.keys(pokemonData).forEach(id=>{if(users[id])addPokeXP(id,1,'online');});},60000);
 
@@ -680,37 +701,23 @@ io.on('connection', (socket) => {
     users[socket.id] = { id: socket.id, nick, avatar, ip };
     console.log(`[${new Date().toLocaleTimeString()}] ${nick} è entrato — IP: ${ip}`);
 
-    // === PERSISTENZA: ripristina o crea dati utente ===
+    // === PERSISTENZA: ripristina da nickData (by nickname, robusto contro token persi) ===
+    const nd = nickData[nick];
+    if (nd) {
+      if (nd.casinoBal != null) casinoBals[socket.id] = nd.casinoBal;
+      if (nd.casinoEarnings != null) casinoEarnings[socket.id] = nd.casinoEarnings;
+      if (nd.pokemon) { pokemonData[socket.id] = nd.pokemon; migratePokemonData(pokemonData[socket.id]); }
+      if (nd.clawCounter != null) clawCounters[socket.id] = nd.clawCounter;
+      console.log(`[Server] ${nick} riconnesso da nickData — €${nd.casinoBal}`);
+    }
+    // Aggiorna dataByToken per compatibilità MongoDB
     if (token) {
       tokenForSocket[socket.id] = token;
-      if (dataByToken[token]) {
-        // Utente esistente → ripristina dati
-        const d = dataByToken[token];
-        d.nick = nick;
-        d.avatar = avatar;
-        if (d.casinoBal != null) casinoBals[socket.id] = d.casinoBal;
-        if (d.casinoEarnings != null) casinoEarnings[socket.id] = d.casinoEarnings;
-        if (d.pokemon) {
-          pokemonData[socket.id] = d.pokemon;
-          migratePokemonData(pokemonData[socket.id]);
-        }
-        if (d.clawCounter != null) clawCounters[socket.id] = d.clawCounter;
-        console.log(`[Server] ${nick} riconnesso — dati ripristinati (€${d.casinoBal})`);
-      } else {
-        // Nuovo utente → crea record
-        dataByToken[token] = {
-          nick, avatar,
-          casinoBal: CASINO_START,
-          casinoEarnings: 0,
-          pokemon: null,
-          clawCounter: 0,
-        };
-      }
-      // Se l'utente ha fornito un PIN e non è già registrato, crea nickAuth
-      if (pin && !existingAuth) {
-        nickAuth[nick] = { pin, token };
-      }
+      if (!dataByToken[token]) dataByToken[token] = {};
+      dataByToken[token].nick = nick;
+      dataByToken[token].avatar = avatar;
     }
+    if (pin && !existingAuth) nickAuth[nick] = { pin, token: token || '' };
 
     // Migrate old clawPoke format
     if (pokemonData[socket.id]) migratePokemonData(pokemonData[socket.id]);
@@ -736,7 +743,7 @@ io.on('connection', (socket) => {
     const oldNick = u.nick;
     u.nick = nick.trim();
     if (pokemonData[socket.id]) pokemonData[socket.id].nick = nick;
-    syncTokenData(socket.id);
+    saveNickData(socket.id);
     // Trasferisci nickAuth al nuovo nickname
     if (nickAuth[oldNick]) {
       nickAuth[nick] = nickAuth[oldNick];
@@ -783,7 +790,7 @@ io.on('connection', (socket) => {
     if (moneyMatch && u.nick === 'ERRJACE') {
       const amount = parseInt(moneyMatch[1]);
       casinoBals[socket.id] = amount;
-      syncTokenData(socket.id);
+      saveNickData(socket.id);
       saveData();
       socket.emit('casino:balance', amount);
       return;
@@ -809,7 +816,7 @@ io.on('connection', (socket) => {
         return;
       }
       const released = pd.team.splice(idx, 1)[0];
-      syncTokenData(socket.id);
+      saveNickData(socket.id);
       io.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '💬', msg: `${u.nick} ha rilasciato ${released.name}!`, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} });
       io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
       return;
@@ -1132,7 +1139,7 @@ io.on('connection', (socket) => {
     const reels = spinSlots();
     const payout = calcSlot(reels, bet);
     casinoBals[socket.id] += payout;
-    syncTokenData(socket.id);
+    saveNickData(socket.id);
     socket.emit('casino:result', { reels: reels.map(r=>r.e), payout, balance: casinoBals[socket.id], bet });
     addPokeXP(socket.id, 1, 'slot');
     if (payout > 0) {
@@ -1156,8 +1163,8 @@ io.on('connection', (socket) => {
     if (amount < 1 || amount > bal) return;
     casinoBals[socket.id] = bal - amount;
     casinoBals[to] = getBal(to) + amount;
-    syncTokenData(socket.id);
-    syncTokenData(to);
+    saveNickData(socket.id);
+    saveNickData(to);
     io.emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💰', msg:`${from.nick} ha inviato €${amount.toLocaleString()} a ${target.nick}!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
     socket.emit('send:done', { balance: casinoBals[socket.id] });
     socket.emit('casino:balance', casinoBals[socket.id]);
@@ -1184,7 +1191,7 @@ io.on('connection', (socket) => {
     socket.emit('casino:balance', casinoBals[socket.id]);
     if (!pd.team) pd.team = [];
     pd.team.push({ name: poke.name, id: poke.id, img: POKE_IMG+poke.id+'.png', legendary: true });
-    syncTokenData(socket.id);
+    saveNickData(socket.id);
     socket.emit('legendary:bought', { name: poke.name });
     io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
     io.emit('chat message', { id:++msgCounter, nick:'🏪 NEGOZIO', avatar:'🏪', msg:`${u.nick} ha acquistato ${poke.name}! ✨`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
@@ -1197,7 +1204,7 @@ io.on('connection', (socket) => {
     if (answer === currentQuiz.a) {
       quizAnswered.add(socket.id);
       casinoBals[socket.id] = getBal(socket.id) + QUIZ_PRIZE;
-      syncTokenData(socket.id);
+      saveNickData(socket.id);
       addPokeXP(socket.id, 30, 'quiz');
       casinoEarnings[socket.id] = (casinoEarnings[socket.id] || 0) + QUIZ_PRIZE;
       broadcastCasinoLeaderboard();
@@ -1212,13 +1219,13 @@ io.on('connection', (socket) => {
     const bal = getBal(socket.id);
     if (bal < 2000) { socket.emit('target:error', { msg: 'Saldo insufficiente!' }); return; }
     casinoBals[socket.id] = bal - 2000;
-    syncTokenData(socket.id);
+    saveNickData(socket.id);
     socket.emit('casino:balance', casinoBals[socket.id]);
   });
   socket.on('target:win', ({ score }) => {
     if (score >= 5) {
       casinoBals[socket.id] = getBal(socket.id) + 10000;
-      syncTokenData(socket.id);
+      saveNickData(socket.id);
       addPokeXP(socket.id, 15, 'bersaglio');
       casinoEarnings[socket.id] = (casinoEarnings[socket.id] || 0) + 8000;
       broadcastCasinoLeaderboard();
@@ -1272,7 +1279,7 @@ io.on('connection', (socket) => {
     if (!STARTERS[starter] || pokemonData[socket.id]) { socket.emit('pokemon:picked',{error:'Già scelto o non valido'}); return; }
     const d = { starter, currentForm: STARTERS[starter].evos[0], xp: 0, nick: u?u.nick:'', team: [] };
     pokemonData[socket.id] = d;
-    syncTokenData(socket.id);
+    saveNickData(socket.id);
     socket.emit('pokemon:picked', { starter, form: d.currentForm, img: POKE_IMG + STARTERS[d.starter].imgs[0] + '.png', level: 1, xp: 0 });
     io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
   });
@@ -1314,8 +1321,8 @@ io.on('connection', (socket) => {
       io.to(from).emit('pokemon:traded', { newForm: df.currentForm, newImg: POKE_IMG + STARTERS[df.starter].imgs[getPokeStage(getPokemonLv(df.xp))] + '.png' });
       socket.emit('pokemon:traded', { newForm: ds.currentForm, newImg: POKE_IMG + STARTERS[ds.starter].imgs[getPokeStage(getPokemonLv(ds.xp))] + '.png' });
       io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
-      syncTokenData(socket.id);
-      syncTokenData(from);
+      saveNickData(socket.id);
+      saveNickData(from);
     }
   });
 
@@ -1575,8 +1582,8 @@ io.on('connection', (socket) => {
     }
     casinoBals[from] = bal1 - TARGET_ENTRY;
     casinoBals[socket.id] = bal2 - TARGET_ENTRY;
-    syncTokenData(from);
-    syncTokenData(socket.id);
+    saveNickData(from);
+    saveNickData(socket.id);
     const id = 'tg' + (++targetGameIdCounter);
     const game = {
       id,
@@ -1668,7 +1675,7 @@ io.on('connection', (socket) => {
     const winnerNick = winner ? game.players.find(p => p.id === winner).nick : null;
     if (winner) {
       casinoBals[winner] = getBal(winner) + TARGET_PRIZE;
-      syncTokenData(winner);
+      saveNickData(winner);
       addPokeXP(winner, 15, 'bersaglio 1v1');
       casinoEarnings[winner] = (casinoEarnings[winner] || 0) + 2000;
       broadcastCasinoLeaderboard();
@@ -1676,8 +1683,8 @@ io.on('connection', (socket) => {
       // Draw - refund
       casinoBals[p1] = getBal(p1) + TARGET_ENTRY;
       casinoBals[p2] = getBal(p2) + TARGET_ENTRY;
-      syncTokenData(p1);
-      syncTokenData(p2);
+      saveNickData(p1);
+      saveNickData(p2);
     }
     [p1, p2].forEach(sid => {
       io.to(sid).emit('casino:balance', casinoBals[sid]);
@@ -1728,7 +1735,7 @@ io.on('connection', (socket) => {
     // === PERSISTENZA: salva dati utente prima della disconnessione ===
     const token = tokenForSocket[socket.id];
     if (token) {
-      syncTokenData(socket.id);
+      saveNickData(socket.id);
       await saveData();
       delete tokenForSocket[socket.id];
     }
@@ -1752,7 +1759,7 @@ io.on('connection', (socket) => {
         const other = g.players[1 - pIdx];
         io.to(other.id).emit('target:end', { myScore: other.score, oppScore: g.players[pIdx].score, winner: other.id, winnerNick: other.nick, draw: false, disconnect: true });
         casinoBals[other.id] = getBal(other.id) + TARGET_PRIZE;
-        syncTokenData(other.id);
+        saveNickData(other.id);
         io.to(other.id).emit('casino:balance', casinoBals[other.id]);
         delete targetGames[gid];
       }
@@ -1829,7 +1836,7 @@ start().catch(e => { console.error('Errore avvio:', e); process.exit(1); });
 ['SIGTERM', 'SIGINT'].forEach(sig => {
   process.on(sig, async () => {
     console.log(`[${new Date().toLocaleTimeString()}] Ricevuto ${sig}, salvataggio dati...`);
-    for (const sid of Object.keys(users)) { syncTokenData(sid); }
+    for (const sid of Object.keys(users)) { saveNickData(sid); }
     try { await saveData(); } catch(e) { console.error('Errore salvataggio su spegnimento:', e); }
     process.exit(0);
   });
