@@ -567,6 +567,7 @@
     margin-bottom: 0.25rem;
     font-size: 0.85rem;
     transition: background 0.2s;
+    flex-wrap: wrap;
   }
   .online-user:hover { background: rgba(139,92,246,0.08); }
   .online-user .avatar { font-size: 1.2rem; }
@@ -1216,10 +1217,11 @@
   .poke-card .emoji { font-size:2.5rem;display:block;margin-bottom:0.25rem; }
   .poke-card .name { font-weight:700;font-size:0.9rem;margin-bottom:0.15rem; }
   .poke-card .evo { font-size:0.7rem;color:var(--text2,#888); }
-  .poke-sidebar { display:flex;align-items:center;gap:4px;padding:2px 6px;margin-top:2px;background:rgba(255,255,255,0.05);border-radius:6px;cursor:pointer; }
-  .poke-sidebar .plv { font-size:0.65rem;color:var(--text2,#888); }
-  .poke-sidebar .pxp { flex:1;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden; }
+  .poke-sidebar { display:flex;align-items:center;gap:4px;padding:3px 8px;margin-top:3px;background:rgba(255,255,255,0.05);border-radius:6px;cursor:pointer;flex-wrap:wrap;flex:1 1 100%; }
+  .poke-sidebar .plv { font-size:0.7rem;color:var(--text2,#888);margin-left:auto; }
+  .poke-sidebar .pxp { flex:1 1 100%;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-top:1px;min-width:100%; }
   .poke-sidebar .pxp-fill { height:100%;background:var(--accent,#7c3aed);border-radius:2px;transition:width 0.5s; }
+  .poke-sidebar .team-imgs { display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap; }
   .poke-leader { width:100%;border-collapse:collapse;font-size:0.85rem; }
   .poke-leader th,.poke-leader td { padding:0.4rem 0.5rem;text-align:left;border-bottom:1px solid rgba(255,255,255,0.05); }
   .poke-leader th { color:var(--accent,#7c3aed);font-family:'Black Ops One',monospace;font-size:0.7rem;letter-spacing:1px; }
@@ -2280,9 +2282,9 @@
         var teamHtml = '';
         if (u.pokemon.team && u.pokemon.team.length > 0) {
           u.pokemon.team.forEach(function(tp) {
-            teamHtml += '<img src="'+tp.img+'" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-left:1px;opacity:0.8;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+tp.name+'">';
+            teamHtml += '<img src="'+tp.img+'" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+tp.name+'">';
           });
-          teamHtml = '<span style="display:inline-flex;align-items:center;gap:1px;">' + teamHtml + '</span>';
+          teamHtml = '<span class="team-imgs">' + teamHtml + '</span>';
         }
         pokeHtml = '<div class="poke-sidebar" data-sid="'+u.id+'" data-self="'+(isMe?'1':'0')+'"><img src="'+POKE_IMG+pokeId+'.png" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;display:inline">'+teamHtml+'<span class="plv">Lv'+lv+'</span><div class="pxp"><div class="pxp-fill" style="width:'+pct+'%"></div></div></div>';
       }
