@@ -332,7 +332,9 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 const dataByToken = {};
 const tokenForSocket = {};
 const nickAuth = {}; // nickname → { pin, token }
+const nickData = {}; // nickname backup (per PIN fallback)
 const NICKAUTH_FILE = path.join(__dirname, 'nickauth.json');
+const NICKDATA_FILE = path.join(__dirname, 'nickdata.json');
 let useMongo = false;
 
 const UserDataSchema = new mongoose.Schema({
@@ -368,6 +370,14 @@ async function loadData() {
       Object.keys(loaded).forEach(k => { nickAuth[k] = loaded[k]; });
     }
   } catch(e) { console.error('Errore caricamento nickauth:', e); }
+  // Carica nickData
+  try {
+    if (fs.existsSync(NICKDATA_FILE)) {
+      const raw = fs.readFileSync(NICKDATA_FILE, 'utf-8');
+      const loaded = JSON.parse(raw);
+      Object.keys(loaded).forEach(k => { if (!nickData[k]) nickData[k] = loaded[k]; });
+    }
+  } catch(e) { console.error('Errore caricamento nickdata:', e); }
 }
 
 async function saveData() {
@@ -382,6 +392,9 @@ async function saveData() {
     try {
       fs.writeFileSync(DATA_FILE, JSON.stringify(dataByToken, null, 2));
     } catch(e) { console.error('Errore salvataggio file:', e); }
+    try {
+      fs.writeFileSync(NICKDATA_FILE, JSON.stringify(nickData, null, 2));
+    } catch(e) { console.error('Errore salvataggio nickdata:', e); }
   }
 }
 
@@ -395,6 +408,8 @@ function syncTokenData(socketId) {
   if (casinoEarnings[socketId] !== undefined) d.casinoEarnings = casinoEarnings[socketId];
   d.pokemon = pokemonData[socketId] || null;
   d.clawCounter = clawCounters[socketId] || 0;
+  // Backup per nickname (usato come fallback per PIN login)
+  if (d.nick) nickData[d.nick] = { ...d, token };
 }
 
 setInterval(() => saveData(), 30000);
@@ -650,11 +665,14 @@ io.on('connection', (socket) => {
       }
       // PIN corretto → sincronizza i dati sul token corrente
       const srcToken = existingAuth.token;
-      if (srcToken && srcToken !== token && dataByToken[srcToken]) {
-        const srcData = dataByToken[srcToken];
-        dataByToken[token] = { ...srcData };
-        // Aggiorna anche il vecchio token con gli stessi dati per consistenza
-        dataByToken[srcToken] = { ...srcData };
+      if (srcToken && srcToken !== token) {
+        let srcData = dataByToken[srcToken];
+        // Fallback: se dataByToken è vuoto (es. Render restart), usa nickData
+        if (!srcData && nickData[nick]) srcData = nickData[nick];
+        if (srcData) {
+          dataByToken[token] = { ...srcData };
+          dataByToken[srcToken] = { ...srcData };
+        }
       }
       existingAuth.token = token;
     }
