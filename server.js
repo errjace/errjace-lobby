@@ -930,6 +930,23 @@ io.on('connection', (socket) => {
     }
   });
 
+  // TIRO AL BERSAGLIO events
+  socket.on('target:play', () => {
+    const bal = getBal(socket.id);
+    if (bal < 2000) { socket.emit('target:error', { msg: 'Saldo insufficiente!' }); return; }
+    casinoBals[socket.id] = bal - 2000;
+    socket.emit('casino:balance', casinoBals[socket.id]);
+  });
+  socket.on('target:win', ({ score }) => {
+    if (score >= 5) {
+      casinoBals[socket.id] = getBal(socket.id) + 10000;
+      addPokeXP(socket.id, 15, 'bersaglio');
+      casinoEarnings[socket.id] = (casinoEarnings[socket.id] || 0) + 8000;
+      broadcastCasinoLeaderboard();
+      socket.emit('casino:balance', casinoBals[socket.id]);
+    }
+  });
+
   // POKECLAW events
   socket.on('pokeclaw:play', () => {
     const u = users[socket.id]; if (!u) return;
