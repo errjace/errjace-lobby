@@ -4492,6 +4492,23 @@
     document.getElementById('targetPlayBtn').disabled = true;
     document.getElementById('targetPlayBtn').textContent = '🎯 IN CORSO...';
     document.getElementById('targetError').textContent = '';
+    var arena = document.getElementById('targetPokes');
+    targetScore = 0;
+    targetTime = 10;
+    document.getElementById('targetScore').textContent = '0';
+    document.getElementById('targetTimer').textContent = '10';
+    targetTimer = setInterval(function() {
+      targetTime--;
+      document.getElementById('targetTimer').textContent = targetTime;
+      if (targetTime <= 0) {
+        endTargetGame();
+      }
+    }, 1000);
+    targetSpawner = setInterval(function() {
+      if (!targetPlaying) return;
+      spawnTargetPoke(arena);
+    }, 650);
+    spawnTargetPoke(arena);
     socket.emit('target:play');
   });
 
@@ -4500,31 +4517,6 @@
     targetPlaying = false;
     document.getElementById('targetPlayBtn').disabled = false;
     document.getElementById('targetPlayBtn').textContent = '🎯 GIOCA (€2K)';
-  });
-
-  var arena = document.getElementById('targetPokes');
-    targetScore = 0;
-    targetTime = 10;
-    document.getElementById('targetScore').textContent = '0';
-    document.getElementById('targetTimer').textContent = '10';
-
-    // Timer countdown
-    targetTimer = setInterval(function() {
-      targetTime--;
-      document.getElementById('targetTimer').textContent = targetTime;
-      if (targetTime <= 0) {
-        endTargetGame();
-      }
-    }, 1000);
-
-    // Spawn Pokemon
-    targetSpawner = setInterval(function() {
-      if (!targetPlaying) return;
-      spawnTargetPoke(arena);
-    }, 650);
-
-    // First spawn immediately
-    spawnTargetPoke(arena);
   });
 
   function spawnTargetPoke(arena) {
