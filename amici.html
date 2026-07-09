@@ -2110,10 +2110,15 @@
         var isMe = window.myNick && u.nick === window.myNick;
         var pokeName = u.pokemon.currentForm.replace(/[^\w\s]/g,'').trim();
         var pokeId = POKE_IDS[pokeName] || 4;
-        if (isMe && !myPoke) myPoke = { starter: u.pokemon.starter, form: u.pokemon.currentForm, img: POKE_IMG+pokeId+'.png', xp: xp, caught: u.pokemon.clawPoke || null };
-        var clawHtml = '';
-        if (u.pokemon.clawPoke) clawHtml = '<img src="'+u.pokemon.clawPoke.img+'" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-left:2px;opacity:0.8;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+u.pokemon.clawPoke.name+'">';
-        pokeHtml = '<div class="poke-sidebar" data-sid="'+u.id+'" data-self="'+(isMe?'1':'0')+'"><img src="'+POKE_IMG+pokeId+'.png" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;display:inline">'+clawHtml+'<span class="plv">Lv'+lv+'</span><div class="pxp"><div class="pxp-fill" style="width:'+pct+'%"></div></div></div>';
+        if (isMe && !myPoke) myPoke = { starter: u.pokemon.starter, form: u.pokemon.currentForm, img: POKE_IMG+pokeId+'.png', xp: xp, team: u.pokemon.team || [] };
+        var teamHtml = '';
+        if (u.pokemon.team && u.pokemon.team.length > 0) {
+          u.pokemon.team.forEach(function(tp) {
+            teamHtml += '<img src="'+tp.img+'" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-left:1px;opacity:0.8;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+tp.name+'">';
+          });
+          teamHtml = '<span style="display:inline-flex;align-items:center;gap:1px;">' + teamHtml + '</span>';
+        }
+        pokeHtml = '<div class="poke-sidebar" data-sid="'+u.id+'" data-self="'+(isMe?'1':'0')+'"><img src="'+POKE_IMG+pokeId+'.png" style="width:20px;height:20px;image-rendering:pixelated;vertical-align:middle;display:inline">'+teamHtml+'<span class="plv">Lv'+lv+'</span><div class="pxp"><div class="pxp-fill" style="width:'+pct+'%"></div></div></div>';
       }
       var self = window.myNick && u.nick === window.myNick;
       var battleBtn = self ? '' : '<span class="battle-challenge-btn" data-to="'+u.id+'" title="Sfida a battaglia Pokémon">⚔️</span>';
@@ -3476,15 +3481,17 @@
     starterCard.onmouseout = function(){this.style.background='rgba(255,255,255,0.05)';};
     starterCard.onclick = function(){ picker.style.display='none'; sendPokeCard(myPoke.form, myPoke.xp, lv, myPoke.img, false); };
     picker.appendChild(starterCard);
-    // Claw-caught
-    if (myPoke.caught) {
-      var clawCard = document.createElement('div');
-      clawCard.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.05);border-radius:8px;cursor:pointer;transition:0.2s;flex:1;min-width:120px;border:1px solid #ffd70044;';
-      clawCard.innerHTML = '<img src="'+myPoke.caught.img+'" style="width:40px;height:40px;image-rendering:pixelated"> <div><div style="font-weight:700;font-size:0.85rem;">'+myPoke.caught.name+'</div><div style="font-size:0.7rem;color:#ffd700;">🏆 Catturato</div></div>';
-      clawCard.onmouseover = function(){this.style.background='rgba(255,215,0,0.15)';};
-      clawCard.onmouseout = function(){this.style.background='rgba(255,255,255,0.05)';};
-      clawCard.onclick = function(){ picker.style.display='none'; sendPokeCard(myPoke.caught.name, null, null, myPoke.caught.img, myPoke.caught.legendary); };
-      picker.appendChild(clawCard);
+    // Team
+    if (myPoke.team && myPoke.team.length > 0) {
+      myPoke.team.forEach(function(tp) {
+        var card = document.createElement('div');
+        card.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.05);border-radius:8px;cursor:pointer;transition:0.2s;flex:1;min-width:120px;border:1px solid #ffd70044;';
+        card.innerHTML = '<img src="'+tp.img+'" style="width:40px;height:40px;image-rendering:pixelated"> <div><div style="font-weight:700;font-size:0.85rem;">'+tp.name+'</div><div style="font-size:0.7rem;color:#ffd700;">🏆 Team ('+(myPoke.team.indexOf(tp)+1)+'/5)</div></div>';
+        card.onmouseover = function(){this.style.background='rgba(255,215,0,0.15)';};
+        card.onmouseout = function(){this.style.background='rgba(255,255,255,0.05)';};
+        card.onclick = function(){ picker.style.display='none'; sendPokeCard(tp.name, null, null, tp.img, tp.legendary); };
+        picker.appendChild(card);
+      });
     }
     picker.style.display = 'flex';
     e.stopPropagation();
@@ -4067,7 +4074,10 @@
     casinoBalance = data.balance;
     document.getElementById('casinoBalance').textContent = data.balance.toLocaleString();
     document.getElementById('clawBalance').textContent = data.balance.toLocaleString();
-    if (myPoke) myPoke.caught = { name: data.caught.name, id: data.caught.id, img: data.caught.img, legendary: data.caught.legendary };
+    if (myPoke) {
+      if (!myPoke.team) myPoke.team = [];
+      myPoke.team.push({ name: data.caught.name, id: data.caught.id, img: data.caught.img, legendary: data.caught.legendary });
+    }
 
     // Show sprites in balls
     clawBalls.forEach(function(b, i) {
@@ -4123,7 +4133,7 @@
   });
   socket.on('pokemon:picked', function(data) {
     if (data.error) return;
-    myPoke = { starter: data.starter, form: data.form, img: data.img, level: data.level, xp: data.xp, caught: null };
+    myPoke = { starter: data.starter, form: data.form, img: data.img, level: data.level, xp: data.xp, team: [] };
     document.getElementById('pokePicker').classList.remove('active');
   });
 
@@ -4134,8 +4144,13 @@
       var tr = document.createElement('tr');
       var rnk = i + 1;
       var clawLb = '';
-      if (p.clawPoke) clawLb = ' <img src="'+p.clawPoke.img+'" style="width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;opacity:0.7;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+p.clawPoke.name+'">';
-      tr.innerHTML = '<td class="rank rank-' + rnk + '">#' + rnk + '</td><td>' + p.nick + '</td><td><img src="' + (p.img||'') + '" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle"> ' + p.form + clawLb + '</td><td class="xp-num">' + p.xp + '</td><td>Lv' + p.level + '</td>';
+      if (p.team && p.team.length > 0) {
+        p.team.forEach(function(tp) {
+          clawLb += ' <img src="'+tp.img+'" style="width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;opacity:0.7;border-radius:50%;border:1px solid #ffd700;" title="Catturato: '+tp.name+'">';
+        });
+        clawLb = '<span style="display:inline-flex;align-items:center;">' + clawLb + '</span>';
+      }
+      tr.innerHTML = '<td class="rank rank-' + rnk + '">#' + rnk + '</td><td>' + p.nick + '</td><td><img src="' + (p.img||'') + '" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle"> ' + p.form + ' ' + clawLb + '</td><td class="xp-num">' + p.xp + '</td><td>Lv' + p.level + '</td>';
       tbody.appendChild(tr);
     });
     document.getElementById('pokeLeaderOverlay').classList.add('active');

@@ -314,6 +314,15 @@ function startQuiz() { if (quizTimer) clearInterval(quizTimer); quizTimer = setI
 
 // POKEMON System
 const pokemonData = {};
+// Migrate old clawPoke to team array
+function migratePokemonData(d) {
+  if (!d) return;
+  if (d.clawPoke && !d.team) {
+    d.team = [d.clawPoke];
+    delete d.clawPoke;
+  }
+  if (!d.team) d.team = [];
+}
 const clawCounters = {};
 const EVO_THRESH = [0,30,80,150,250,400,600,900,1300,2000];
 const POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
@@ -340,6 +349,7 @@ function getPokemonLv(xp) { for(let i=EVO_THRESH.length-1;i>=0;i--) if(xp>=EVO_T
 function getPokeStage(lv) { return lv>=6?2:lv>=3?1:0; }
 function addPokeXP(id, amt, reason) {
   const d=pokemonData[id]; if(!d)return;
+  migratePokemonData(d);
   const ol=getPokemonLv(d.xp), os=getPokeStage(ol);
   d.xp+=amt;
   const nl=getPokemonLv(d.xp), ns=getPokeStage(nl);
@@ -511,6 +521,8 @@ io.on('connection', (socket) => {
       var oldId = Object.keys(pokemonData).find(id => id !== socket.id && pokemonData[id].nick === nick);
       if (oldId) { pokemonData[socket.id] = pokemonData[oldId]; delete pokemonData[oldId]; }
     }
+    // Migrate old clawPoke format
+    if (pokemonData[socket.id]) migratePokemonData(pokemonData[socket.id]);
     socket.emit('pokemon:status', { hasPokemon: !!pokemonData[socket.id] });
     io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
     io.emit('queue update', queue);
@@ -537,6 +549,34 @@ io.on('connection', (socket) => {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         system: true, reactions: {},
       });
+      return;
+    }
+    // /release command
+    const relMatch = msg.match(/^\/release\s+(.+)/i);
+    if (relMatch) {
+      const pd = pokemonData[socket.id];
+      if (!pd || !pd.team || pd.team.length === 0) {
+        socket.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '💬', msg: 'Non hai Pokémon nel team da rilasciare!', time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} });
+        return;
+      }
+      const name = relMatch[1].trim();
+      const idx = pd.team.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+      if (idx === -1) {
+        socket.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '💬', msg: 'Pokémon non trovato! Usa /team per vedere la lista.', time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} });
+        return;
+      }
+      const released = pd.team.splice(idx, 1)[0];
+      io.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '💬', msg: `${u.nick} ha rilasciato ${released.name}!`, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} });
+      io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
+      return;
+    }
+    // /team command
+    if (msg === '/team') {
+      const pd = pokemonData[socket.id];
+      if (!pd || !pd.team) { socket.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '💬', msg: 'Non hai ancora un Pokémon!', time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} }); return; }
+      let list = pd.team.map((p,i) => `#${i+1} ${p.name}${p.legendary?' 🌟':''}`).join(', ');
+      let total = `Starter: ${pd.currentForm} | Team (${pd.team.length}/5): ${list || 'vuoto'}`;
+      socket.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '💬', msg: `📋 ${total}`, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} });
       return;
     }
     addPokeXP(socket.id, 2, 'chat');
@@ -883,6 +923,12 @@ io.on('connection', (socket) => {
     const u = users[socket.id]; if (!u) return;
     const bal = getBal(socket.id);
     if (bal < CLAW_COST) { socket.emit('pokeclaw:result', { error: 'Ops! soldi terminati xD' }); return; }
+    // Check team size before deducting
+    const pokeData = pokemonData[socket.id];
+    if(pokeData && pokeData.team && pokeData.team.length >= 5) {
+      socket.emit('pokeclaw:result', { error: 'Hai già 5 Pokémon nel team! Rilasciane uno con /release <nome>' });
+      return;
+    }
     casinoBals[socket.id] = bal - CLAW_COST;
     if (!clawCounters[socket.id]) clawCounters[socket.id] = 0;
     clawCounters[socket.id]++;
@@ -900,9 +946,11 @@ io.on('connection', (socket) => {
       hit=sel[Math.floor(Math.random()*sel.length)];
       if(hit.t===2) delete clawCounters[socket.id];
     }
-    var pokeData = pokemonData[socket.id];
-    if(pokeData) pokeData.clawPoke = { name: hit.n, id: hit.i, img: POKE_IMG+hit.i+'.png', legendary: hit.t===2 };
-    socket.emit('pokeclaw:result',{pokemon:sel.map(p=>({name:p.n,id:p.i})),caught:{name:hit.n,id:hit.i,legendary:hit.t===2,img:POKE_IMG+hit.i+'.png'},balance:casinoBals[socket.id]});
+    if(pokeData) {
+      if(!pokeData.team) pokeData.team = [];
+      pokeData.team.push({ name: hit.n, id: hit.i, img: POKE_IMG+hit.i+'.png', legendary: hit.t===2 });
+    }
+    socket.emit('pokeclaw:result',{pokemon:sel.map(p=>({name:p.n,id:p.i})),caught:{name:hit.n,id:hit.i,legendary:hit.t===2,img:POKE_IMG+hit.i+'.png'},team:pokeData?pokeData.team:[],balance:casinoBals[socket.id]});
     addPokeXP(socket.id, 10, 'pokéclaw'); // broadcasts users online
     if(hit.t===2){
       io.emit('chat message',{id:++msgCounter,nick:'🌟 LEGGENDARIO!',avatar:'<img src="'+POKE_IMG+hit.i+'.png" style="width:22px;height:22px;image-rendering:pixelated;vertical-align:middle">',msg:`✨✨ ${u.nick.toUpperCase()} HA TROVATO ${hit.n.toUpperCase()}! ✨✨`,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),system:true,reactions:{}});
@@ -914,7 +962,7 @@ io.on('connection', (socket) => {
   socket.on('pokemon:pick', ({ starter }) => {
     const u = users[socket.id];
     if (!STARTERS[starter] || pokemonData[socket.id]) { socket.emit('pokemon:picked',{error:'Già scelto o non valido'}); return; }
-    const d = { starter, currentForm: STARTERS[starter].evos[0], xp: 0, nick: u?u.nick:'', clawPoke: null };
+    const d = { starter, currentForm: STARTERS[starter].evos[0], xp: 0, nick: u?u.nick:'', team: [] };
     pokemonData[socket.id] = d;
     socket.emit('pokemon:picked', { starter, form: d.currentForm, img: POKE_IMG + STARTERS[d.starter].imgs[0] + '.png', level: 1, xp: 0 });
     io.emit('users online', Object.values(users).map(u => ({...u, pokemon: pokemonData[u.id] || null })));
@@ -923,7 +971,7 @@ io.on('connection', (socket) => {
   socket.on('pokemon:leaderboard', () => {
     const list = Object.entries(pokemonData).filter(([id]) => users[id]).map(([id, d]) => {
       const lv = getPokemonLv(d.xp);
-      return { nick: users[id].nick, avatar: users[id].avatar, starter: d.starter, form: d.currentForm, img: POKE_IMG + STARTERS[d.starter].imgs[getPokeStage(lv)] + '.png', xp: d.xp, level: lv, clawPoke: d.clawPoke };
+      return { nick: users[id].nick, avatar: users[id].avatar, starter: d.starter, form: d.currentForm, img: POKE_IMG + STARTERS[d.starter].imgs[getPokeStage(lv)] + '.png', xp: d.xp, level: lv, team: d.team };
     }).sort((a,b) => b.xp - a.xp).slice(0, 20);
     socket.emit('pokemon:leaderboard', list);
   });
@@ -932,14 +980,24 @@ io.on('connection', (socket) => {
     if (!users[to] || !pokemonData[socket.id] || !pokemonData[to]) return;
     const from = users[socket.id];
     const d1 = pokemonData[socket.id], d2 = pokemonData[to];
-    io.to(to).emit('pokemon:tradeOffer', { from: socket.id, nick: from.nick, mine: d1.currentForm, mineImg: POKE_IMG + STARTERS[d1.starter].imgs[getPokeStage(getPokemonLv(d1.xp))] + '.png', theirs: d2.currentForm, theirsImg: POKE_IMG + STARTERS[d2.starter].imgs[getPokeStage(getPokemonLv(d2.xp))] + '.png' });
+    io.to(to).emit('pokemon:tradeOffer', { from: socket.id, nick: from.nick, mine: d1.currentForm, mineImg: POKE_IMG + STARTERS[d1.starter].imgs[getPokeStage(getPokemonLv(d1.xp))] + '.png', mineTeam: d1.team||[], theirs: d2.currentForm, theirsImg: POKE_IMG + STARTERS[d2.starter].imgs[getPokeStage(getPokemonLv(d2.xp))] + '.png', theirsTeam: d2.team||[] });
   });
 
   socket.on('pokemon:tradeAccept', ({ from }) => {
     if (!pokemonData[from] || !pokemonData[socket.id]) return;
-    const tmp = pokemonData[from];
-    pokemonData[from] = { ...pokemonData[socket.id], currentForm: pokemonData[socket.id].currentForm };
-    pokemonData[socket.id] = { ...tmp, currentForm: tmp.currentForm };
+    // Swap full data including team
+    const tmpStarter = pokemonData[from].starter;
+    const tmpForm = pokemonData[from].currentForm;
+    const tmpXp = pokemonData[from].xp;
+    const tmpTeam = pokemonData[from].team;
+    pokemonData[from].starter = pokemonData[socket.id].starter;
+    pokemonData[from].currentForm = pokemonData[socket.id].currentForm;
+    pokemonData[from].xp = pokemonData[socket.id].xp;
+    pokemonData[from].team = pokemonData[socket.id].team;
+    pokemonData[socket.id].starter = tmpStarter;
+    pokemonData[socket.id].currentForm = tmpForm;
+    pokemonData[socket.id].xp = tmpXp;
+    pokemonData[socket.id].team = tmpTeam;
     const u1 = users[from], u2 = users[socket.id];
     if (u1 && u2) {
       io.emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💬', msg:`🔄 Scambio Pokémon: ${u1.nick} e ${u2.nick} si sono scambiati i Pokémon!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
@@ -1041,19 +1099,20 @@ io.on('connection', (socket) => {
     const id = 'b' + (++battleIdCounter);
     const mkTeam = (sid) => {
       const pd = pokemonData[sid];
+      if (pd) migratePokemonData(pd);
       const lv = getPokemonLv(pd.xp);
       const stage = getPokeStage(lv);
       const s = STARTERS[pd.starter];
       const starter = generatePokeStats(pd.currentForm, POKE_IMG + s.imgs[stage] + '.png', POKE_TYPES[s.imgs[stage]]||['normal'], stage, false);
       starter.xpLv = lv;
       const team = [starter];
-      if (pd.clawPoke) {
-        const cp = pd.clawPoke;
-        const ccPoke = CLAW_POOL.find(c => c.n === cp.name);
-        const cTypes = POKE_TYPES[cp.id] || ['normal'];
-        const claw = generatePokeStats(cp.name, POKE_IMG + cp.id + '.png', cTypes, cp.legendary?3:1, !!cp.legendary);
-        claw.xpLv = '-';
-        team.push(claw);
+      if (pd.team && pd.team.length > 0) {
+        pd.team.forEach(cp => {
+          const cTypes = POKE_TYPES[cp.id] || ['normal'];
+          const claw = generatePokeStats(cp.name, POKE_IMG + cp.id + '.png', cTypes, cp.legendary?3:1, !!cp.legendary);
+          claw.xpLv = '-';
+          team.push(claw);
+        });
       }
       return team;
     };
