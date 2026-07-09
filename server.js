@@ -210,16 +210,16 @@ const mapWildPokes = [];
 function generateWildPokes() {
   mapWildPokes.length = 0;
   const pool = [
-    { id: 25, name: 'Pikachu' }, { id: 1, name: 'Bulbasaur' },
-    { id: 4, name: 'Charmander' }, { id: 7, name: 'Squirtle' },
-    { id: 133, name: 'Eevee' }, { id: 39, name: 'Jigglypuff' },
-    { id: 54, name: 'Psyduck' }, { id: 92, name: 'Gastly' },
-    { id: 147, name: 'Dratini' }, { id: 74, name: 'Geodude' },
-    { id: 16, name: 'Pidgey' }, { id: 19, name: 'Rattata' },
-    { id: 41, name: 'Zubat' }, { id: 63, name: 'Abra' },
-    { id: 66, name: 'Machop' }, { id: 72, name: 'Tentacool' },
-    { id: 79, name: 'Slowpoke' }, { id: 88, name: 'Grimer' },
-    { id: 96, name: 'Drowzee' }, { id: 118, name: 'Goldeen' },
+    { id: 17, name: 'Pidgeotto' }, { id: 20, name: 'Raticate' },
+    { id: 22, name: 'Fearow' }, { id: 24, name: 'Arbok' },
+    { id: 28, name: 'Sandslash' }, { id: 42, name: 'Golbat' },
+    { id: 44, name: 'Gloom' }, { id: 61, name: 'Poliwhirl' },
+    { id: 75, name: 'Graveler' }, { id: 93, name: 'Haunter' },
+    { id: 45, name: 'Vileplume' }, { id: 65, name: 'Alakazam' },
+    { id: 68, name: 'Machamp' }, { id: 76, name: 'Golem' },
+    { id: 94, name: 'Gengar' }, { id: 82, name: 'Magneton' },
+    { id: 80, name: 'Slowbro' }, { id: 78, name: 'Rapidash' },
+    { id: 119, name: 'Seaking' }, { id: 87, name: 'Dewgong' },
   ];
   for (let i = 0; i < 20; i++) {
     const pk = pool[Math.floor(Math.random() * pool.length)];
@@ -328,13 +328,14 @@ const EVO_THRESH = [0,30,80,150,250,400,600,900,1300,2000];
 const POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
 const CLAW_COST = 5000;
 const CLAW_POOL = [
-  {n:'Pidgey',i:16,t:0},{n:'Rattata',i:19,t:0},{n:'Weedle',i:13,t:0},{n:'Caterpie',i:10,t:0},
-  {n:'Zubat',i:41,t:0},{n:'Geodude',i:74,t:0},{n:'Magikarp',i:129,t:0},{n:'Oddish',i:43,t:0},
-  {n:'Spearow',i:21,t:0},{n:'Ekans',i:23,t:0},{n:'Sandshrew',i:27,t:0},{n:'Nidoran♀',i:29,t:0},
-  {n:'Poliwag',i:60,t:0},{n:'Bellsprout',i:69,t:0},{n:'Tentacool',i:72,t:0},{n:'Doduo',i:84,t:0},
-  {n:'Pikachu',i:25,t:1},{n:'Eevee',i:133,t:1},{n:'Charmander',i:4,t:1},{n:'Squirtle',i:7,t:1},
-  {n:'Bulbasaur',i:1,t:1},{n:'Dratini',i:147,t:1},{n:'Larvitar',i:246,t:1},{n:'Riolu',i:447,t:1},
-  {n:'Gastly',i:92,t:1},{n:'Scyther',i:123,t:1},{n:'Lapras',i:131,t:1},{n:'Snorlax',i:143,t:1},
+  {n:'Pidgeotto',i:17,t:0},{n:'Raticate',i:20,t:0},{n:'Fearow',i:22,t:0},{n:'Arbok',i:24,t:0},
+  {n:'Sandslash',i:28,t:0},{n:'Golbat',i:42,t:0},{n:'Gloom',i:44,t:0},{n:'Poliwhirl',i:61,t:0},
+  {n:'Weepinbell',i:70,t:0},{n:'Graveler',i:75,t:0},{n:'Doduo',i:84,t:0},{n:'Dewgong',i:87,t:0},
+  {n:'Haunter',i:93,t:0},{n:'Hypno',i:97,t:0},{n:'Seadra',i:117,t:0},{n:'Seaking',i:119,t:0},
+  {n:'Pikachu',i:25,t:1},{n:'Raichu',i:26,t:1},{n:'Ninetales',i:38,t:1},{n:'Wigglytuff',i:40,t:1},
+  {n:'Vileplume',i:45,t:1},{n:'Politoed',i:186,t:1},{n:'Machoke',i:67,t:1},{n:'Kadabra',i:64,t:1},
+  {n:'Rapidash',i:78,t:1},{n:'Slowbro',i:80,t:1},{n:'Magneton',i:82,t:1},{n:'Dragonair',i:148,t:1},
+  {n:'Alakazam',i:65,t:1},{n:'Gengar',i:94,t:1},{n:'Machamp',i:68,t:1},{n:'Golem',i:76,t:1},
   {n:'Mewtwo',i:150,t:2},{n:'Rayquaza',i:384,t:2},{n:'Dialga',i:483,t:2},{n:'Palkia',i:484,t:2},
   {n:'Giratina',i:487,t:2},{n:'Arceus',i:493,t:2},{n:'Zekrom',i:644,t:2},{n:'Reshiram',i:643,t:2},
   {n:'Kyogre',i:382,t:2},{n:'Groudon',i:383,t:2},{n:'Lugia',i:249,t:2},{n:'Ho-Oh',i:250,t:2},
@@ -391,14 +392,21 @@ function getEffectiveness(atkType, defTypes) {
 const POKE_TYPES = {
   4:['fire'],5:['fire'],6:['fire','flying'],778:['ghost','fairy'],447:['fighting'],448:['fighting','steel'],
   220:['ice','ground'],221:['ice','ground'],473:['ice','ground'],
-  16:['normal','flying'],19:['normal'],13:['bug','poison'],10:['bug'],41:['poison','flying'],74:['rock','ground'],
-  129:['water'],43:['grass','poison'],21:['normal','flying'],23:['poison'],27:['ground'],29:['poison'],
-  60:['water'],69:['grass','poison'],72:['water','poison'],84:['normal','flying'],
-  25:['electric'],133:['normal'],1:['grass','poison'],7:['water'],147:['dragon'],246:['rock','ground'],
-  92:['ghost','poison'],123:['bug','flying'],131:['water','ice'],143:['normal'],
-  150:['psychic'],384:['dragon','flying'],483:['steel','dragon'],484:['water','dragon'],
+  16:['normal','flying'],17:['normal','flying'],18:['normal','flying'],19:['normal'],20:['normal'],
+  21:['normal','flying'],22:['normal','flying'],23:['poison'],24:['poison'],
+  25:['electric'],26:['electric'],27:['ground'],28:['ground'],29:['poison'],
+  38:['fire'],40:['normal','fairy'],41:['poison','flying'],42:['poison','flying'],
+  43:['grass','poison'],44:['grass','poison'],45:['grass','poison'],
+  60:['water'],61:['water'],64:['psychic'],65:['psychic'],66:['fighting'],67:['fighting'],68:['fighting'],
+  69:['grass','poison'],70:['grass','poison'],72:['water','poison'],
+  74:['rock','ground'],75:['rock','ground'],76:['rock','ground'],
+  78:['fire'],80:['water','psychic'],82:['electric','steel'],84:['normal','flying'],
+  87:['water','ice'],92:['ghost','poison'],93:['ghost','poison'],94:['ghost','poison'],
+  97:['psychic'],117:['water'],119:['water'],123:['bug','flying'],
+  129:['water'],131:['water','ice'],133:['normal'],143:['normal'],147:['dragon'],148:['dragon'],
+  150:['psychic'],186:['water'],246:['rock','ground'],249:['psychic','flying'],250:['fire','flying'],
+  382:['water'],383:['ground'],384:['dragon','flying'],483:['steel','dragon'],484:['water','dragon'],
   487:['ghost','dragon'],493:['normal'],644:['dragon','electric'],643:['dragon','fire'],
-  382:['water'],383:['ground'],249:['psychic','flying'],250:['fire','flying']
 };
 const MOVE_POOL = {
   normal:[{n:'Ultraballata',p:40,acc:100,cat:'physical'},{n:'Taglio',p:50,acc:95,cat:'physical'},{n:'Rapata',p:80,acc:100,cat:'physical'},{n:'Colpo',p:70,acc:100,cat:'physical'}],
@@ -1068,14 +1076,14 @@ io.on('connection', (socket) => {
     // Respawn after 30s
     setTimeout(() => {
       const pool = [
-        { id: 25, name: 'Pikachu' }, { id: 1, name: 'Bulbasaur' },
-        { id: 4, name: 'Charmander' }, { id: 7, name: 'Squirtle' },
-        { id: 133, name: 'Eevee' }, { id: 39, name: 'Jigglypuff' },
-        { id: 54, name: 'Psyduck' }, { id: 92, name: 'Gastly' },
-        { id: 147, name: 'Dratini' }, { id: 74, name: 'Geodude' },
-        { id: 16, name: 'Pidgey' }, { id: 19, name: 'Rattata' },
-        { id: 41, name: 'Zubat' }, { id: 63, name: 'Abra' },
-        { id: 66, name: 'Machop' }, { id: 72, name: 'Tentacool' },
+        { id: 28, name: 'Sandslash' }, { id: 42, name: 'Golbat' },
+        { id: 44, name: 'Gloom' }, { id: 45, name: 'Vileplume' },
+        { id: 61, name: 'Poliwhirl' }, { id: 75, name: 'Graveler' },
+        { id: 78, name: 'Rapidash' }, { id: 80, name: 'Slowbro' },
+        { id: 82, name: 'Magneton' }, { id: 87, name: 'Dewgong' },
+        { id: 93, name: 'Haunter' }, { id: 97, name: 'Hypno' },
+        { id: 117, name: 'Seadra' }, { id: 119, name: 'Seaking' },
+        { id: 22, name: 'Fearow' }, { id: 17, name: 'Pidgeotto' },
       ];
       const np = pool[Math.floor(Math.random() * pool.length)];
       mapWildPokes.push({ id: np.id, name: np.name, x: Math.floor(Math.random()*MAP_W), y: Math.floor(Math.random()*MAP_H), spawnTime: Date.now() });
