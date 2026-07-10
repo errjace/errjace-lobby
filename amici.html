@@ -2332,7 +2332,7 @@
         var isMe = window.myNick && u.nick === window.myNick;
         var pokeName = u.pokemon.currentForm.replace(/[^\w\s]/g,'').trim();
         var pokeId = POKE_IDS[pokeName] || 4;
-        if (isMe && !myPoke) myPoke = { starter: u.pokemon.starter, form: u.pokemon.currentForm, img: POKE_IMG+pokeId+'.png', xp: xp, team: u.pokemon.team || [] };
+        if (isMe) myPoke = { starter: u.pokemon.starter, form: u.pokemon.currentForm, img: POKE_IMG+pokeId+'.png', xp: xp, team: u.pokemon.team || [] };
         var teamHtml = '';
         if (u.pokemon.team && u.pokemon.team.length > 0) {
           u.pokemon.team.forEach(function(tp) {
