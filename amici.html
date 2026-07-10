@@ -1519,22 +1519,18 @@
       <div id="mapCharGrid" style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;"></div>
       <button id="mapCharConfirm" class="game-btn" style="font-size:0.8rem;display:none;">CONFERMA</button>
     </div>
-    <div id="mapCanvasWrap" style="display:none;flex:1;position:relative;overflow:hidden;background:#c8e0c0;border-radius:8px;border:2px solid #22c55e44;cursor:crosshair;">
-      <div style="position:absolute;inset:0;perspective:800px;transform-origin:center 40%;">
-        <canvas id="mapCanvas" style="width:100%;height:100%;transform:rotateX(8deg);transform-origin:center 40%;image-rendering:pixelated;"></canvas>
-      </div>
+    <div id="mapCanvasWrap" style="display:none;flex:1;position:relative;overflow:hidden;background:#1a2a1a;border-radius:8px;border:2px solid #22c55e44;cursor:crosshair;">
+      <canvas id="mapCanvas" style="width:100%;height:100%;image-rendering:pixelated;"></canvas>
       <canvas id="mapOverlayCanvas" style="position:absolute;inset:0;pointer-events:none;z-index:5;"></canvas>
-      <div class="map-dpad" id="mapDpad" style="position:absolute;bottom:0.5rem;right:0.5rem;z-index:20;display:grid;grid-template-columns:40px 40px 40px;grid-template-rows:40px 40px 40px;gap:2px;">
-        <div style="grid-column:2;grid-row:1;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;user-select:none;touch-action:manipulation;" data-dir="up">▲</div>
-        <div style="grid-column:1;grid-row:2;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;user-select:none;touch-action:manipulation;" data-dir="left">◀</div>
-        <div style="grid-column:3;grid-row:2;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;user-select:none;touch-action:manipulation;" data-dir="right">▶</div>
-        <div style="grid-column:2;grid-row:3;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;user-select:none;touch-action:manipulation;" data-dir="down">▼</div>
+      <!-- Virtual joystick -->
+      <div id="mapJoystick" style="position:absolute;bottom:1rem;right:1rem;z-index:20;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.15);touch-action:none;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <div id="mapJoystickPuck" style="width:32px;height:32px;border-radius:50%;background:rgba(124,58,237,0.5);border:2px solid rgba(124,58,237,0.7);pointer-events:none;transition:none;"></div>
       </div>
       <div id="mapPokemon" style="position:absolute;bottom:0.5rem;left:0.5rem;background:rgba(0,0,0,0.8);border:2px solid #ffd700;border-radius:10px;padding:0.3rem 0.7rem;display:none;align-items:center;gap:0.5rem;font-size:0.75rem;z-index:10;">
         <span id="mapPokeName"></span>
         <button id="mapPokeCatch" style="background:#22c55e;border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:4px;cursor:pointer;font-size:0.65rem;">CATTURA</button>
       </div>
-      <div id="mapOverlayUi" style="position:absolute;top:0.5rem;left:0.5rem;font-size:0.65rem;color:rgba(255,255,255,0.6);text-shadow:0 1px 3px rgba(0,0,0,0.8);z-index:2;pointer-events:none;">↑↓←→ per muoverti</div>
+      <div id="mapOverlayUi" style="position:absolute;top:0.5rem;left:0.5rem;font-size:0.65rem;color:rgba(255,255,255,0.4);text-shadow:0 1px 3px rgba(0,0,0,0.8);z-index:2;pointer-events:none;">WASD/frecce o joystick per muoverti</div>
     </div>
   </div>
 </div>
@@ -4266,14 +4262,60 @@
   });
 
   // === MAP TOUCH / D-PAD ===
-  document.getElementById('mapDpad').addEventListener('click', function(e) {
-    var dir = e.target.closest('[data-dir]');
-    if (!dir) return;
-    var keyMap = { up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight' };
-    var key = keyMap[dir.dataset.dir];
-    if (!key) return;
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true }));
-  });
+  // Virtual joystick
+  (function() {
+    var stick = document.getElementById('mapJoystick');
+    var puck = document.getElementById('mapJoystickPuck');
+    if (!stick) return;
+    var radius = 37, active = false;
+    var lastDir = null, moveInterval = null;
+    var cx, cy;
+
+    function getCenter() {
+      var r = stick.getBoundingClientRect();
+      cx = r.left + r.width/2; cy = r.top + r.height/2;
+    }
+
+    function reset() {
+      puck.style.transform = 'translate(0,0)';
+      active = false; lastDir = null;
+      if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
+    }
+
+    function moveDir(dir) {
+      if (dir !== lastDir) { lastDir = dir; return; }
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: dir, bubbles: true }));
+    }
+
+    function handleMove(clX, clY) {
+      getCenter();
+      var dx = clX - cx, dy = clY - cy;
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      var clamped = Math.min(dist, radius);
+      var angle = Math.atan2(dy, dx);
+      var px = Math.cos(angle) * clamped;
+      var py = Math.sin(angle) * clamped;
+      puck.style.transform = 'translate('+px+'px,'+py+'px)';
+      // Determine cardinal direction
+      var threshold = 12;
+      if (dist > threshold) {
+        var dir;
+        if (Math.abs(dx) > Math.abs(dy)) dir = dx > 0 ? 'ArrowRight' : 'ArrowLeft';
+        else dir = dy > 0 ? 'ArrowDown' : 'ArrowUp';
+        moveDir(dir);
+      } else {
+        lastDir = null;
+      }
+    }
+
+    stick.addEventListener('mousedown', function(e) { active = true; handleMove(e.clientX, e.clientY); });
+    document.addEventListener('mousemove', function(e) { if (active) handleMove(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', reset);
+    stick.addEventListener('touchstart', function(e) { e.preventDefault(); active = true; handleMove(e.touches[0].clientX, e.touches[0].clientY); });
+    stick.addEventListener('touchmove', function(e) { e.preventDefault(); if (active) handleMove(e.touches[0].clientX, e.touches[0].clientY); });
+    stick.addEventListener('touchend', reset);
+    stick.addEventListener('touchcancel', reset);
+  })();
   // Also swipe on canvas
   (function() {
     var canvas = document.getElementById('mapCanvas');
