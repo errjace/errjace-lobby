@@ -2469,7 +2469,7 @@
 
   function bBlast(t,isMe) {
     bInitCanvas();
-    if (!bCtx) return;
+    if (!bCtx) { console.log('[BATTLE_ANIM] no canvas context'); return; }
     var cfg = bAnimCfg(t);
     var arena = document.querySelector('.battle-arena');
     if (!arena) return;
@@ -2627,7 +2627,7 @@
         var pk = p.team[j];
         if (pk.moves) {
           for (var k = 0; k < pk.moves.length; k++) {
-            if (pk.moves[k].n === moveName) return pk.moves[k].t;
+            if (pk.moves[k].n === moveName) return pk.moves[k].t || 'normal';
           }
         }
       }
@@ -2636,8 +2636,7 @@
   }
   function playMoveAnim(logEntry, isMe) {
     var type = getMoveAnimType(logEntry);
-    if (!type) return;
-    bBlast(type, isMe);
+    bBlast(type || 'normal', isMe);
   }
   // Click handler for challenge buttons
   document.addEventListener('click', function(e) {
@@ -2704,6 +2703,8 @@
     setTimeout(function(){
       bInitCanvas();
     },100);
+    // Also ensure bInitCanvas runs immediately for bBlast
+    bInitCanvas();
     renderBattle();
   });
   // Battle state update
@@ -2717,7 +2718,9 @@
         if (entry.indexOf('usa ') !== -1) {
           // Determine if it's my move or opponent's
           var me = battleData.players[myBattleIdx];
+          if (!me) return;
           var isMe = entry.indexOf(me.nick) === 0;
+          console.log('[BATTLE_ANIM] trigger:', entry, 'isMe:', isMe, 'prevLogLen:', prevLogLen);
           playMoveAnim(entry, isMe);
         }
       });
