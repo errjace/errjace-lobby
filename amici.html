@@ -4854,9 +4854,7 @@
         if (quizAnswered) return;
         quizAnswered = true;
         socket.emit('quiz:answer', { answer: idx });
-        // Disable all
         optsEl.querySelectorAll('.q-opt').forEach(function(b) { b.disabled = true; });
-        this.classList.add('wrong');
       });
       optsEl.appendChild(btn);
     });
@@ -4873,21 +4871,43 @@
     }, 1000);
   });
 
+  function quizLock() {
+    document.querySelectorAll('#qOptions .q-opt').forEach(function(b) { b.disabled = true; });
+  }
   socket.on('quiz:correct', function(data) {
+    quizLock();
+    document.querySelectorAll('#qOptions .q-opt').forEach(function(b) { b.classList.add('correct'); });
     document.getElementById('qResult').textContent = '✅ ' + data.nick + ' ha risposto correttamente! €' + data.prize;
     document.getElementById('qResult').style.color = '#22c55e';
     document.getElementById('qHint').textContent = 'La risposta era corretta! +€' + data.prize;
-    document.querySelectorAll('#qOptions .q-opt').forEach(function(b) { b.disabled = true; });
-    document.querySelectorAll('#qOptions .q-opt').forEach(function(b) { b.classList.add('correct'); });
     setTimeout(function() { document.getElementById('quizOverlay').classList.remove('active'); }, 2000);
   });
 
+  socket.on('quiz:wrong', function() {
+    quizLock();
+    document.getElementById('qResult').textContent = '❌ Risposta sbagliata!';
+    document.getElementById('qResult').style.color = '#ef4444';
+    document.getElementById('qHint').textContent = 'Riprova alla prossima domanda!';
+  });
+
+  socket.on('quiz:expired', function() {
+    quizLock();
+    document.getElementById('qResult').textContent = '⏰ Tempo scaduto!';
+    document.getElementById('qResult').style.color = 'rgba(255,255,255,0.3)';
+    document.getElementById('qHint').textContent = 'La prossima domanda tra 3 minuti!';
+  });
+
+  socket.on('quiz:already', function() {
+    document.getElementById('qResult').textContent = '⚠️ Hai già risposto!';
+    document.getElementById('qResult').style.color = '#fbbf24';
+  });
+
   socket.on('quiz:timeout', function() {
+    quizLock();
     document.getElementById('qTimer').textContent = '⏱ Tempo scaduto!';
     document.getElementById('qResult').textContent = '⏰ Nessuno ha risposto!';
     document.getElementById('qResult').style.color = 'rgba(255,255,255,0.3)';
     document.getElementById('qHint').textContent = 'La prossima domanda tra 3 minuti!';
-    document.querySelectorAll('#qOptions .q-opt').forEach(function(b) { b.disabled = true; });
     setTimeout(function() { document.getElementById('quizOverlay').classList.remove('active'); }, 3000);
   });
 

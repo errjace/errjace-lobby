@@ -242,7 +242,7 @@ const casinoEarnings = {}; // net earnings per socket
 const CASINO_START = 10000;
 const QUIZ_PRIZE = 30000;
 const QUIZ_INTERVAL = 600000;
-const QUIZ_TIME = 30000;
+const QUIZ_TIME = 10000;
 let quizTimer = null;
 let quizActive = false;
 let currentQuiz = null;
@@ -309,7 +309,7 @@ function sendQuiz() {
   if (Object.keys(users).length < 1) return;
   const q = QUIZ_QUESTIONS[Math.floor(Math.random() * QUIZ_QUESTIONS.length)];
   currentQuiz = q; quizActive = true; quizAnswered = new Set();
-  io.emit('quiz:question', { question: q.q, options: q.o, prize: QUIZ_PRIZE, timeLeft: 30 });
+  io.emit('quiz:question', { question: q.q, options: q.o, prize: QUIZ_PRIZE, timeLeft: 10 });
   setTimeout(() => { if (quizActive) { io.emit('quiz:timeout'); resetQuiz(); } }, QUIZ_TIME);
 }
 function startQuiz() { if (quizTimer) clearInterval(quizTimer); quizTimer = setInterval(sendQuiz, QUIZ_INTERVAL); }
@@ -1200,10 +1200,10 @@ io.on('connection', (socket) => {
 
   // QUIZ events
   socket.on('quiz:answer', ({ answer }) => {
-    if (!quizActive || !currentQuiz) return;
-    if (quizAnswered.has(socket.id)) return;
+    if (!currentQuiz) { socket.emit('quiz:expired'); return; }
+    if (quizAnswered.has(socket.id)) { socket.emit('quiz:already'); return; }
+    quizAnswered.add(socket.id);
     if (answer === currentQuiz.a) {
-      quizAnswered.add(socket.id);
       casinoBals[socket.id] = getBal(socket.id) + QUIZ_PRIZE;
       saveNickData(socket.id);
       addPokeXP(socket.id, 30, 'quiz');
@@ -1212,6 +1212,8 @@ io.on('connection', (socket) => {
       const u = users[socket.id];
       socket.emit('casino:balance', casinoBals[socket.id]);
       io.emit('quiz:correct', { nick: u ? u.nick : 'Qualcuno', prize: QUIZ_PRIZE });
+    } else {
+      socket.emit('quiz:wrong');
     }
   });
 
