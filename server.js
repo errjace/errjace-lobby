@@ -2214,10 +2214,11 @@ io.on('connection', (socket) => {
     p.score += t.points;
     const opp = g.players.find(p => p.id !== socket.id);
     [socket.id, opp.id].forEach(sid => {
+      const ms = g.players.find(p => p.id === sid).score;
+      const os = g.players.find(p => p.id !== sid).score;
       io.to(sid).emit('target:score', {
-        scorer: socket.id,
-        score: g.players.find(p => p.id === sid).score,
-        oppScore: g.players.find(p => p.id !== sid).score,
+        myScore: ms,
+        oppScore: os,
         targetId,
         points: t.points,
         left: t.left,

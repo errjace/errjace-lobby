@@ -5702,8 +5702,8 @@
   });
 
   socket.on('target:score', function(data) {
-    document.getElementById('target1v1MyScore').textContent = data.scorer === socket.id ? data.score : data.oppScore;
-    document.getElementById('target1v1OppScore').textContent = data.scorer === socket.id ? data.oppScore : data.score;
+    document.getElementById('target1v1MyScore').textContent = data.myScore;
+    document.getElementById('target1v1OppScore').textContent = data.oppScore;
     var el = document.getElementById('target1v1Pokes').querySelector('[data-tid="'+data.targetId+'"]');
     if (el) {
       el.classList.add('caught');
