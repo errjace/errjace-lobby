@@ -5771,8 +5771,12 @@
     b3d.scene.background = new THREE.Color(0x0a0a1a);
     var w = container.offsetWidth || 400;
     var h = container.offsetHeight || 300;
-    b3d.camera = new THREE.PerspectiveCamera(40, w/h, 0.1, 50);
-    b3d.camera.position.set(0, 1.8, 4.5);
+    var aspect = w / h;
+    // Portrait: wider FOV and camera pulled back so sprites fit
+    var fov = aspect < 0.8 ? 60 : aspect < 1.2 ? 50 : 40;
+    var camZ = aspect < 0.8 ? 5.5 : aspect < 1.2 ? 5.0 : 4.5;
+    b3d.camera = new THREE.PerspectiveCamera(fov, w/h, 0.1, 50);
+    b3d.camera.position.set(0, 1.2, camZ);
     b3d.camera.lookAt(0, 0, 0);
     b3d.renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
     b3d.renderer.setSize(w, h);
@@ -5797,16 +5801,30 @@
     b3dAnimate();
   }
 
+  function b3dGetXPos(side) {
+    var container = document.getElementById('battle3d');
+    var cw = container ? container.offsetWidth : 400;
+    var ch = container ? container.offsetHeight : 300;
+    var aspect = cw / ch;
+    // Portrait (mobile): bring sprites much closer together
+    if (aspect < 0.8) return side==='player' ? -0.7 : 0.7;
+    // Landscape
+    if (aspect < 1.2) return side==='player' ? -1.1 : 1.1;
+    return side==='player' ? -1.6 : 1.6;
+  }
   function b3dLoadPoke(side, imgUrl, cb) {
     if (!b3d.ready) return;
     var loader = new THREE.TextureLoader();
     loader.load(imgUrl, function(tex) {
       var asp = tex.image.width / tex.image.height;
-      var w2 = 1.6, h2 = w2 / asp;
-      if (h2 > 2.2) { h2 = 2.2; w2 = h2 * asp; }
+      var container = document.getElementById('battle3d');
+      var ch = container ? container.offsetHeight : 300;
+      var maxH = ch / 300 * 1.8;
+      var w2 = 1.2, h2 = w2 / asp;
+      if (h2 > maxH) { h2 = maxH; w2 = h2 * asp; }
       var mat = new THREE.MeshBasicMaterial({ map:tex, transparent:true, side:THREE.DoubleSide, depthWrite:false });
       var mesh = new THREE.Mesh(new THREE.PlaneGeometry(w2, h2), mat);
-      var xPos = side==='player' ? -1.6 : 1.6;
+      var xPos = b3dGetXPos(side);
       mesh.position.set(xPos, h2/2 - 0.3, 0);
       // Glow behind
       var gm = new THREE.MeshBasicMaterial({ color:0x7c3aed, transparent:true, opacity:0.12, side:THREE.BackSide });
@@ -5859,11 +5877,13 @@
     var nx = dx/dist, ny = dy/dist;
     var C = { fire:0xff4500,water:0x3b82f6,electric:0xfacc15,grass:0x22c55e,ice:0x67e8f9,fighting:0xdc2626,poison:0x9333ea,ground:0xd97706,flying:0x8b5cf6,psychic:0xec4899,bug:0x65a30d,rock:0x78716c,ghost:0x8b5cf6,dragon:0x7e22ce,dark:0x292524,steel:0xa1a1aa,fairy:0xf472b6,normal:0xd4d4d8 };
     var c = C[type] || 0xffffff;
+    var S = 2.2; // speed multiplier: higher = slower animations
 
     function addP(mesh, vx, vy, vz, gy, life, maxLife) {
       b3d.scene.add(mesh);
-      b3d.particles.push({ mesh:mesh, vx:vx, vy:vy, vz:vz||0, gy:gy||-0.02, life:life, maxLife:maxLife||life });
+      b3d.particles.push({ mesh:mesh, vx:vx/S, vy:vy/S, vz:vz||0, gy:(gy||-0.02)/S, life:Math.round(life*S), maxLife:Math.round((maxLife||life)*S) });
     }
+    function wait(ms, cb) { setTimeout(cb, Math.round(ms * S)); }
     function sph(sz, col, px, py, pz) {
       var g = new THREE.SphereGeometry(sz, 5);
       var m = new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:0.9 });
@@ -5890,7 +5910,7 @@
       // Rising flame columns + embers
       for (var i=0;i<3;i++){
         (function(col){
-          setTimeout(function(){
+          wait(col*120, function(){
             for (var r=0;r<12;r++){
               var t=r/11;
               var px=sx+dx*t+(Math.random()-0.5)*0.15;
@@ -5901,7 +5921,7 @@
               var p=sph(sz,col2,px,py,pz);
               addP(p, (Math.random()-0.5)*0.02, 0.04+Math.random()*0.06, (Math.random()-0.5)*0.02, 0.008, 18+Math.random()*10);
             }
-          }, col*120);
+          });
         })(i);
       }
       // Ember particles rising from ground along path
@@ -5919,7 +5939,7 @@
       // Water stream: arc of droplets + splash
       for (var i=0;i<3;i++){
         (function(lane){
-          setTimeout(function(){
+          wait(lane*80, function(){
             for (var r=0;r<15;r++){
               var t=r/14;
               var arc = Math.sin(t*Math.PI)*0.25;
@@ -5931,7 +5951,7 @@
               var p=sph(sz,col2,px,py,pz);
               addP(p, (Math.random()-0.5)*0.01, -0.01+Math.random()*0.02, (Math.random()-0.5)*0.01, -0.015, 16+Math.random()*8);
             }
-          }, lane*80);
+          });
         })(i);
       }
       // Splash at impact
@@ -5947,7 +5967,7 @@
       // Jagged lightning bolt segments
       for (var seg=0;seg<8;seg++){
         (function(s){
-          setTimeout(function(){
+          wait(s*40, function(){
             var t0=s/7, t1=(s+1)/8;
             var px0=sx+dx*t0, py0=sy+dy*t0;
             var px1=sx+dx*t1, py1=sy+dy*t1;
@@ -5962,7 +5982,7 @@
               var p=sph(sz,col2,px,py,pz);
               addP(p, (Math.random()-0.5)*0.01, (Math.random()-0.5)*0.01, (Math.random()-0.5)*0.02, 0, 8+Math.random()*6);
             }
-          }, s*40);
+          });
         })(seg);
       }
       // Static crackle sparks
@@ -6020,14 +6040,14 @@
       // Vine whip trailing
       for (var v=0;v<6;v++){
         (function(){
-          setTimeout(function(){
+          wait(v*60, function(){
             for (var k=0;k<4;k++){
               var t=v/6+k*0.02;
               var px=sx+dx*t, py=sy+dy*t+Math.sin(t*10)*0.08;
               var p=sph(0.03,0x15803d,px,py,(Math.random()-0.5)*0.1);
               addP(p, nx*0.03, ny*0.03, 0, -0.01, 12+Math.random()*6);
             }
-          }, v*60);
+          });
         })();
       }
     } else if (type==='fighting') {
@@ -6123,7 +6143,7 @@
       // Swirling rings expanding outward
       for (var r=0;r<4;r++){
         (function(ring){
-          setTimeout(function(){
+          wait(ring*100, function(){
             for (var s=0;s<10;s++){
               var ang=s/10*Math.PI*2;
               var rad=0.1+ring*0.08;
@@ -6135,7 +6155,7 @@
               var p=sph(sz,col2,px,py,pz);
               addP(p, Math.cos(ang)*0.02, Math.sin(ang)*0.02, 0, 0, 16+Math.random()*8);
             }
-          }, ring*100);
+          });
         })(r);
       }
       // Mind warp distortion spheres
@@ -6196,7 +6216,7 @@
       // Multi-colored beam + flame trail
       for (var i=0;i<4;i++){
         (function(lane){
-          setTimeout(function(){
+          wait(lane*70, function(){
             for (var r=0;r<14;r++){
               var t=r/13;
               var spread=(Math.random()-0.5)*0.12;
@@ -6208,7 +6228,7 @@
               var p=sph(sz,col2,px,py,pz);
               addP(p, (Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02+0.01, (Math.random()-0.5)*0.02, 0.003, 16+Math.random()*10);
             }
-          }, lane*70);
+          });
         })(i);
       }
     } else if (type==='dark') {
@@ -6287,24 +6307,24 @@
     }
 
     // Common impact + knockback
-    setTimeout(function(){
+    wait(300+Math.random()*80, function(){
       if (tgt.mesh.material) { tgt.mesh.material.color.setHex(0xffffff); }
       var kb = isMe ? 0.3 : -0.3;
       tgt.mesh.position.x += kb;
       tgt.glow.position.x = tgt.mesh.position.x;
       bShake = 8;
-      setTimeout(function(){
+      wait(250, function(){
         if (tgt.mesh.material) tgt.mesh.material.color.setHex(0xffffff);
         tgt.mesh.position.x -= kb;
         tgt.glow.position.x = tgt.mesh.position.x;
-      }, 250);
-    }, 300+Math.random()*80);
+      });
+    });
 
-    setTimeout(function(){
+    wait(450, function(){
       atk.mesh.position.x = origX;
       atk.mesh.position.y = origY;
       atk.glow.position.copy(atk.mesh.position);
-    }, 450);
+    });
   }
 
   function b3dUpdateTextures() {
