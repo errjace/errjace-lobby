@@ -5849,78 +5849,462 @@
     if (!atk || !tgt) return;
     var origX = atk.origX, origY = atk.origY;
     var dir = isMe ? 1 : -1;
-    // Lunge forward
     atk.mesh.position.x = origX + dir*0.7;
     atk.mesh.position.y = origY + 0.15;
     atk.glow.position.copy(atk.mesh.position);
-    // Particle burst from attacker to target
-    var colors = { fire:0xff4500,water:0x3b82f6,electric:0xfacc15,grass:0x22c55e,ice:0x67e8f9,fighting:0xdc2626,poison:0x9333ea,ground:0xd97706,flying:0x8b5cf6,psychic:0xec4899,bug:0x65a30d,rock:0x78716c,ghost:0x8b5cf6,dragon:0x7e22ce,dark:0x292524,steel:0xa1a1aa,fairy:0xf472b6,normal:0xd4d4d8 };
-    var c = colors[type] || 0xffffff;
-    var sx = atk.mesh.position.x, sy = atk.mesh.position.y, sz = 0;
-    var ex = tgt.mesh.position.x, ey = tgt.mesh.position.y, ez = 0;
-    var count = { fire:35,water:25,electric:40,ice:20,fighting:20,poison:18,ground:22,flying:18,psychic:22,bug:16,rock:20,ghost:16,dragon:28,dark:14,steel:18,fairy:24,normal:12,grass:22 };
-    var n = count[type] || 18;
-    // Create gradient beam/sparks
-    for (var i=0;i<n;i++) {
-      (function(idx){
-        var delay = 50 + idx*25 + Math.random()*80;
-        setTimeout(function(){
-          var px = sx + (ex-sx)*(0.1+Math.random()*0.8);
-          var py = sy + (ey-sy)*(0.1+Math.random()*0.8) + (Math.random()-0.5)*0.3;
-          var pz = (Math.random()-0.5)*0.4;
-          var size = 0.08 + Math.random()*0.15;
-          // Different shapes per type
-          var geo = type==='ice'||type==='steel' ? new THREE.BoxGeometry(size,size*1.5,size*0.5) : new THREE.SphereGeometry(size, 4);
-          var col = idx % 3 === 0 ? 0xffffff : (idx % 2 === 0 ? c : (c+0x444444)&0xffffff);
-          var mat = new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:0.9 });
-          var mesh = new THREE.Mesh(geo, mat);
-          mesh.position.set(px, py, pz);
-          b3d.scene.add(mesh);
-          var vx = (ex-px)*(0.03+Math.random()*0.04) + (Math.random()-0.5)*0.05;
-          var vy = (ey-py)*(0.03+Math.random()*0.04) + 0.05 + Math.random()*0.1;
-          var vz = (Math.random()-0.5)*0.05;
-          if (type==='electric') { vx*=1.4; vy*=0.6; }
-          if (type==='water') { vy = (ey-py)*0.02 + Math.random()*0.05; }
-          if (type==='fire') { vy += 0.05; }
-          if (type==='ground'||type==='rock') { vy = -Math.abs(vy)*0.5; }
-          b3d.particles.push({ mesh:mesh, vx:vx, vy:vy, vz:vz, gy:type==='fire'?0.005:type==='electric'?0:-0.015, life:15+Math.random()*12, maxLife:25 });
-        }, delay);
-      })(i);
+    var sx = atk.mesh.position.x, sy = atk.mesh.position.y;
+    var ex = tgt.mesh.position.x, ey = tgt.mesh.position.y;
+    var dx = ex-sx, dy = ey-sy;
+    var dist = Math.sqrt(dx*dx+dy*dy);
+    var nx = dx/dist, ny = dy/dist;
+    var C = { fire:0xff4500,water:0x3b82f6,electric:0xfacc15,grass:0x22c55e,ice:0x67e8f9,fighting:0xdc2626,poison:0x9333ea,ground:0xd97706,flying:0x8b5cf6,psychic:0xec4899,bug:0x65a30d,rock:0x78716c,ghost:0x8b5cf6,dragon:0x7e22ce,dark:0x292524,steel:0xa1a1aa,fairy:0xf472b6,normal:0xd4d4d8 };
+    var c = C[type] || 0xffffff;
+
+    function addP(mesh, vx, vy, vz, gy, life, maxLife) {
+      b3d.scene.add(mesh);
+      b3d.particles.push({ mesh:mesh, vx:vx, vy:vy, vz:vz||0, gy:gy||-0.02, life:life, maxLife:maxLife||life });
     }
-    // Impact explosion at target
+    function sph(sz, col, px, py, pz) {
+      var g = new THREE.SphereGeometry(sz, 5);
+      var m = new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:0.9 });
+      var mesh = new THREE.Mesh(g, m);
+      mesh.position.set(px||0, py||0, pz||0);
+      return mesh;
+    }
+    function box(sz, col, px, py, pz) {
+      var g = new THREE.BoxGeometry(sz, sz*1.8, sz*0.4);
+      var m = new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:0.9 });
+      var mesh = new THREE.Mesh(g, m);
+      mesh.position.set(px||0, py||0, pz||0);
+      return mesh;
+    }
+    function cone(r, h, col, px, py, pz) {
+      var g = new THREE.ConeGeometry(r, h, 5);
+      var m = new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:0.9 });
+      var mesh = new THREE.Mesh(g, m);
+      mesh.position.set(px||0, py||0, pz||0);
+      return mesh;
+    }
+
+    if (type==='fire') {
+      // Rising flame columns + embers
+      for (var i=0;i<3;i++){
+        (function(col){
+          setTimeout(function(){
+            for (var r=0;r<12;r++){
+              var t=r/11;
+              var px=sx+dx*t+(Math.random()-0.5)*0.15;
+              var py=sy+dy*t-0.1;
+              var pz=(Math.random()-0.5)*0.3;
+              var sz=0.06+Math.random()*0.12;
+              var col2=r%3===0?0xfbbf24:(r%2===0?0xff6b35:0xdc2626);
+              var p=sph(sz,col2,px,py,pz);
+              addP(p, (Math.random()-0.5)*0.02, 0.04+Math.random()*0.06, (Math.random()-0.5)*0.02, 0.008, 18+Math.random()*10);
+            }
+          }, col*120);
+        })(i);
+      }
+      // Ember particles rising from ground along path
+      for (var e=0;e<20;e++){
+        (function(){
+          var t=Math.random();
+          var px=sx+dx*t+(Math.random()-0.5)*0.3;
+          var py=sy+dy*t-0.3+Math.random()*0.1;
+          var sz=0.02+Math.random()*0.04;
+          var p=sph(sz,Math.random()>0.5?0xfbbf24:0xff4500,px,py,(Math.random()-0.5)*0.4);
+          addP(p, (Math.random()-0.5)*0.01, 0.02+Math.random()*0.03, (Math.random()-0.5)*0.01, 0.006, 22+Math.random()*15);
+        })();
+      }
+    } else if (type==='water') {
+      // Water stream: arc of droplets + splash
+      for (var i=0;i<3;i++){
+        (function(lane){
+          setTimeout(function(){
+            for (var r=0;r<15;r++){
+              var t=r/14;
+              var arc = Math.sin(t*Math.PI)*0.25;
+              var px=sx+dx*t;
+              var py=sy+dy*t-arc;
+              var pz=(Math.random()-0.5)*0.15;
+              var sz=0.04+Math.random()*0.08;
+              var col2=r%3===0?0x93c5fd:(r%2===0?0x3b82f6:0x2563eb);
+              var p=sph(sz,col2,px,py,pz);
+              addP(p, (Math.random()-0.5)*0.01, -0.01+Math.random()*0.02, (Math.random()-0.5)*0.01, -0.015, 16+Math.random()*8);
+            }
+          }, lane*80);
+        })(i);
+      }
+      // Splash at impact
+      for (var s=0;s<12;s++){
+        (function(){
+          var ang=-Math.PI/2+((Math.random()-0.5)*Math.PI*0.8);
+          var spd=0.03+Math.random()*0.06;
+          var p=sph(0.03+Math.random()*0.05,Math.random()>0.5?0x60a5fa:0x93c5fd,ex+(Math.random()-0.5)*0.1,ey,0);
+          addP(p, Math.cos(ang)*spd, Math.abs(Math.sin(ang))*spd+0.02, (Math.random()-0.5)*0.03, -0.025, 14+Math.random()*8);
+        })();
+      }
+    } else if (type==='electric') {
+      // Jagged lightning bolt segments
+      for (var seg=0;seg<8;seg++){
+        (function(s){
+          setTimeout(function(){
+            var t0=s/7, t1=(s+1)/8;
+            var px0=sx+dx*t0, py0=sy+dy*t0;
+            var px1=sx+dx*t1, py1=sy+dy*t1;
+            var zigzag=(Math.random()-0.5)*0.3;
+            for (var k=0;k<5;k++){
+              var kt=k/4;
+              var px=px0+(px1-px0)*kt+zigzag*(Math.random()-0.5);
+              var py=py0+(py1-py0)*kt+(Math.random()-0.5)*0.08;
+              var pz=(Math.random()-0.5)*0.15;
+              var sz=0.03+Math.random()*0.06;
+              var col2=k%2===0?0xfde047:0xfacc15;
+              var p=sph(sz,col2,px,py,pz);
+              addP(p, (Math.random()-0.5)*0.01, (Math.random()-0.5)*0.01, (Math.random()-0.5)*0.02, 0, 8+Math.random()*6);
+            }
+          }, s*40);
+        })(seg);
+      }
+      // Static crackle sparks
+      for (var e=0;e<15;e++){
+        (function(){
+          var t=Math.random();
+          var px=sx+dx*t+(Math.random()-0.5)*0.2;
+          var py=sy+dy*t+(Math.random()-0.5)*0.2;
+          var sz=0.02+Math.random()*0.04;
+          var p=sph(sz,Math.random()>0.5?0xfde047:0xffffff,px,py,(Math.random()-0.5)*0.3);
+          addP(p, (Math.random()-0.5)*0.15, (Math.random()-0.5)*0.15, (Math.random()-0.5)*0.1, 0, 5+Math.random()*5);
+        })();
+      }
+    } else if (type==='ice') {
+      // Crystal shards flying outward
+      for (var i=0;i<25;i++){
+        (function(){
+          var t=Math.random();
+          var px=sx+dx*t+(Math.random()-0.5)*0.2;
+          var py=sy+dy*t+(Math.random()-0.5)*0.2;
+          var pz=(Math.random()-0.5)*0.3;
+          var sz=0.04+Math.random()*0.09;
+          var p=box(sz,Math.random()>0.5?0x67e8f9:0xffffff,px,py,pz);
+          p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+          addP(p, (Math.random()-0.5)*0.04, (Math.random()-0.5)*0.04+0.02, (Math.random()-0.5)*0.04, -0.018, 20+Math.random()*12);
+        })();
+      }
+      // Frost cloud
+      for (var f=0;f<8;f++){
+        (function(){
+          var px=ex+(Math.random()-0.5)*0.3;
+          var py=ey-0.2+(Math.random()-0.5)*0.2;
+          var sz=0.15+Math.random()*0.2;
+          var p=sph(sz,0xe0f2fe,px,py,(Math.random()-0.5)*0.2);
+          p.material.opacity=0.3;
+          addP(p, (Math.random()-0.5)*0.01, 0.005+Math.random()*0.01, (Math.random()-0.5)*0.01, 0.002, 25+Math.random()*10);
+        })();
+      }
+    } else if (type==='grass') {
+      // Leaf blades spiraling
+      for (var i=0;i<22;i++){
+        (function(){
+          var t=Math.random();
+          var angle=t*Math.PI*3+Math.random()*0.5;
+          var radius=0.05+Math.random()*0.15;
+          var px=sx+dx*t+Math.cos(angle)*radius;
+          var py=sy+dy*t+Math.sin(angle)*radius;
+          var pz=(Math.random()-0.5)*0.2;
+          var sz=0.03+Math.random()*0.06;
+          var col2=i%3===0?0x86efac:(i%2===0?0x22c55e:0x16a34a);
+          var p=box(sz,col2,px,py,pz);
+          addP(p, nx*0.02+(Math.random()-0.5)*0.02, ny*0.02+Math.random()*0.02, (Math.random()-0.5)*0.02, -0.012, 18+Math.random()*10);
+        })();
+      }
+      // Vine whip trailing
+      for (var v=0;v<6;v++){
+        (function(){
+          setTimeout(function(){
+            for (var k=0;k<4;k++){
+              var t=v/6+k*0.02;
+              var px=sx+dx*t, py=sy+dy*t+Math.sin(t*10)*0.08;
+              var p=sph(0.03,0x15803d,px,py,(Math.random()-0.5)*0.1);
+              addP(p, nx*0.03, ny*0.03, 0, -0.01, 12+Math.random()*6);
+            }
+          }, v*60);
+        })();
+      }
+    } else if (type==='fighting') {
+      // Impact fist: radial punch lines
+      for (var i=0;i<20;i++){
+        (function(){
+          var ang=Math.random()*Math.PI*2;
+          var spd=0.04+Math.random()*0.08;
+          var sz=0.04+Math.random()*0.07;
+          var p=sph(sz,Math.random()>0.5?0xdc2626:0xfca5a5,ex+(Math.random()-0.5)*0.1,ey+(Math.random()-0.5)*0.1,(Math.random()-0.5)*0.15);
+          addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.03, -0.01, 10+Math.random()*8);
+        })();
+      }
+      // Speed lines from attacker
+      for (var l=0;l<8;l++){
+        (function(){
+          var ang=Math.atan2(ny,nx)+(Math.random()-0.5)*0.3;
+          var px=sx+nx*0.3+Math.cos(ang)*0.05;
+          var py=sy+ny*0.3+Math.sin(ang)*0.05;
+          var sz=0.02+Math.random()*0.03;
+          var p=sph(sz,0xef4444,px,py,0);
+          addP(p, Math.cos(ang)*0.12, Math.sin(ang)*0.12, 0, 0, 8+Math.random()*5);
+        })();
+      }
+    } else if (type==='poison') {
+      // Toxic bubbles rising
+      for (var i=0;i<20;i++){
+        (function(){
+          var t=Math.random();
+          var px=sx+dx*t+(Math.random()-0.5)*0.25;
+          var py=sy+dy*t-0.15;
+          var pz=(Math.random()-0.5)*0.25;
+          var sz=0.03+Math.random()*0.08;
+          var col2=i%3===0?0xc084fc:(i%2===0?0x9333ea:0x7e22ce);
+          var p=sph(sz,col2,px,py,pz);
+          addP(p, (Math.random()-0.5)*0.02, 0.02+Math.random()*0.04, (Math.random()-0.5)*0.02, 0.005, 18+Math.random()*12);
+        })();
+      }
+      // Toxic drip particles
+      for (var d=0;d<8;d++){
+        (function(){
+          var px=ex+(Math.random()-0.5)*0.3;
+          var py=ey+0.2+Math.random()*0.2;
+          var p=sph(0.04+Math.random()*0.04,0x9333ea,px,py,0);
+          addP(p, (Math.random()-0.5)*0.01, -0.03-Math.random()*0.02, (Math.random()-0.5)*0.01, -0.008, 20+Math.random()*10);
+        })();
+      }
+    } else if (type==='ground') {
+      // Rising debris columns
+      for (var i=0;i<25;i++){
+        (function(){
+          var px=ex+(Math.random()-0.5)*0.4;
+          var py=ey-0.3;
+          var pz=(Math.random()-0.5)*0.3;
+          var sz=0.04+Math.random()*0.1;
+          var col2=i%3===0?0xd97706:(i%2===0?0x92400e:0xb45309);
+          var p=i%4===0?box(sz,col2,px,py,pz):sph(sz,col2,px,py,pz);
+          addP(p, (Math.random()-0.5)*0.03, 0.03+Math.random()*0.06, (Math.random()-0.5)*0.03, -0.02, 20+Math.random()*12);
+        })();
+      }
+      // Shockwave ring on ground
+      for (var r=0;r<3;r++){
+        (function(){
+          var sz=0.08+r*0.05;
+          var p=sph(sz,0xfde68a,ex,ey-0.3,0);
+          p.material.opacity=0.5;
+          addP(p, 0, 0, 0, 0, 20);
+        })();
+      }
+    } else if (type==='flying') {
+      // Wind gust streaks
+      for (var i=0;i<18;i++){
+        (function(){
+          var t=Math.random();
+          var px=sx+dx*t+(Math.random()-0.5)*0.15;
+          var py=sy+dy*t+(Math.random()-0.5)*0.15;
+          var pz=(Math.random()-0.5)*0.2;
+          var sz=0.02+Math.random()*0.04;
+          var p=box(sz,Math.random()>0.5?0xa78bfa:0xc4b5fd,px,py,pz);
+          addP(p, nx*0.06+(Math.random()-0.5)*0.03, ny*0.06+(Math.random()-0.5)*0.03, (Math.random()-0.5)*0.02, -0.005, 14+Math.random()*8);
+        })();
+      }
+      // Feather particles
+      for (var f=0;f<8;f++){
+        (function(){
+          var px=sx+dx*0.5+(Math.random()-0.5)*0.4;
+          var py=sy+dy*0.5+(Math.random()-0.5)*0.4;
+          var p=box(0.03,0xe9d5ff,px,py,(Math.random()-0.5)*0.3);
+          addP(p, (Math.random()-0.5)*0.04, 0.01+Math.random()*0.02, (Math.random()-0.5)*0.03, -0.008, 22+Math.random()*10);
+        })();
+      }
+    } else if (type==='psychic') {
+      // Swirling rings expanding outward
+      for (var r=0;r<4;r++){
+        (function(ring){
+          setTimeout(function(){
+            for (var s=0;s<10;s++){
+              var ang=s/10*Math.PI*2;
+              var rad=0.1+ring*0.08;
+              var px=ex+Math.cos(ang)*rad;
+              var py=ey+Math.sin(ang)*rad;
+              var pz=(Math.random()-0.5)*0.1;
+              var sz=0.03+Math.random()*0.04;
+              var col2=s%2===0?0xf472b6:0xfce7f3;
+              var p=sph(sz,col2,px,py,pz);
+              addP(p, Math.cos(ang)*0.02, Math.sin(ang)*0.02, 0, 0, 16+Math.random()*8);
+            }
+          }, ring*100);
+        })(r);
+      }
+      // Mind warp distortion spheres
+      for (var m=0;m<6;m++){
+        (function(){
+          var ang=Math.random()*Math.PI*2;
+          var px=ex+Math.cos(ang)*0.15;
+          var py=ey+Math.sin(ang)*0.15;
+          var sz=0.08+Math.random()*0.12;
+          var p=sph(sz,0xec4899,px,py,0);
+          p.material.opacity=0.3;
+          addP(p, Math.cos(ang)*0.01, Math.sin(ang)*0.01, 0, 0, 22+Math.random()*8);
+        })();
+      }
+    } else if (type==='bug') {
+      // Swarm of tiny fast bugs
+      for (var i=0;i<30;i++){
+        (function(){
+          var px=sx+(Math.random()-0.5)*0.3;
+          var py=sy+(Math.random()-0.5)*0.3;
+          var pz=(Math.random()-0.5)*0.2;
+          var sz=0.02+Math.random()*0.03;
+          var col2=i%3===0?0xa3e635:(i%2===0?0x84cc16:0x65a30d);
+          var p=sph(sz,col2,px,py,pz);
+          addP(p, (nx*0.05+(Math.random()-0.5)*0.08), (ny*0.05+(Math.random()-0.5)*0.08), (Math.random()-0.5)*0.06, 0.003, 12+Math.random()*10);
+        })();
+      }
+    } else if (type==='rock') {
+      // Chunky debris falling
+      for (var i=0;i<22;i++){
+        (function(){
+          var px=ex+(Math.random()-0.5)*0.5;
+          var py=ey+0.3+Math.random()*0.3;
+          var pz=(Math.random()-0.5)*0.3;
+          var sz=0.05+Math.random()*0.12;
+          var col2=i%3===0?0xa8a29e:(i%2===0?0x57534e:0x78716c);
+          var p=box(sz,col2,px,py,pz);
+          p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+          addP(p, (Math.random()-0.5)*0.04, -0.06-Math.random()*0.04, (Math.random()-0.5)*0.04, -0.025, 22+Math.random()*10);
+        })();
+      }
+    } else if (type==='ghost') {
+      // Ethereal wisps fading
+      for (var i=0;i<16;i++){
+        (function(){
+          var t=Math.random();
+          var px=sx+dx*t+(Math.random()-0.5)*0.3;
+          var py=sy+dy*t+(Math.random()-0.5)*0.3;
+          var pz=(Math.random()-0.5)*0.2;
+          var sz=0.06+Math.random()*0.15;
+          var col2=i%2===0?0xa78bfa:0xe9d5ff;
+          var p=sph(sz,col2,px,py,pz);
+          p.material.opacity=0.4;
+          addP(p, (Math.random()-0.5)*0.02, 0.01+Math.random()*0.02, (Math.random()-0.5)*0.02, 0.003, 22+Math.random()*14);
+        })();
+      }
+    } else if (type==='dragon') {
+      // Multi-colored beam + flame trail
+      for (var i=0;i<4;i++){
+        (function(lane){
+          setTimeout(function(){
+            for (var r=0;r<14;r++){
+              var t=r/13;
+              var spread=(Math.random()-0.5)*0.12;
+              var px=sx+dx*t+spread;
+              var py=sy+dy*t+spread;
+              var pz=(Math.random()-0.5)*0.2;
+              var sz=0.05+Math.random()*0.1;
+              var col2=r%3===0?0xfde047:(r%3===1?0xfb923c:0x7e22ce);
+              var p=sph(sz,col2,px,py,pz);
+              addP(p, (Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02+0.01, (Math.random()-0.5)*0.02, 0.003, 16+Math.random()*10);
+            }
+          }, lane*70);
+        })(i);
+      }
+    } else if (type==='dark') {
+      // Shadow tendrils reaching
+      for (var i=0;i<18;i++){
+        (function(){
+          var t=Math.random();
+          var px=sx+dx*t+(Math.random()-0.5)*0.15;
+          var py=sy+dy*t+(Math.random()-0.5)*0.15;
+          var pz=(Math.random()-0.5)*0.2;
+          var sz=0.05+Math.random()*0.1;
+          var col2=i%2===0?0x292524:0x44403c;
+          var p=sph(sz,col2,px,py,pz);
+          p.material.opacity=0.7;
+          addP(p, (Math.random()-0.5)*0.015, (Math.random()-0.5)*0.015, (Math.random()-0.5)*0.015, -0.005, 20+Math.random()*12);
+        })();
+      }
+      // Dark aura burst at impact
+      for (var d=0;d<8;d++){
+        (function(){
+          var ang=Math.random()*Math.PI*2;
+          var sz=0.08+Math.random()*0.12;
+          var p=sph(sz,0x1c1917,ex+Math.cos(ang)*0.1,ey+Math.sin(ang)*0.1,0);
+          p.material.opacity=0.6;
+          addP(p, Math.cos(ang)*0.02, Math.sin(ang)*0.02, 0, 0, 18+Math.random()*8);
+        })();
+      }
+    } else if (type==='steel') {
+      // Metallic shards clanging
+      for (var i=0;i<22;i++){
+        (function(){
+          var ang=Math.random()*Math.PI*2;
+          var spd=0.04+Math.random()*0.08;
+          var sz=0.03+Math.random()*0.07;
+          var col2=i%3===0?0xd4d4d8:(i%2===0?0xa1a1aa:0x71717a);
+          var p=box(sz,col2,ex+(Math.random()-0.5)*0.15,ey+(Math.random()-0.5)*0.15,(Math.random()-0.5)*0.15);
+          p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+          addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd+0.02, (Math.random()-0.5)*0.03, -0.02, 16+Math.random()*10);
+        })();
+      }
+    } else if (type==='fairy') {
+      // Sparkle stars + heart shapes
+      for (var i=0;i<24;i++){
+        (function(){
+          var t=Math.random();
+          var px=sx+dx*t+(Math.random()-0.5)*0.25;
+          var py=sy+dy*t+(Math.random()-0.5)*0.25;
+          var pz=(Math.random()-0.5)*0.2;
+          var sz=0.02+Math.random()*0.05;
+          var col2=i%3===0?0xf9a8d4:(i%2===0?0xf472b6:0xfce7f3);
+          var p=sph(sz,col2,px,py,pz);
+          addP(p, (Math.random()-0.5)*0.03, 0.01+Math.random()*0.03, (Math.random()-0.5)*0.03, 0.004, 20+Math.random()*12);
+        })();
+      }
+      // Pink aura rings
+      for (var r=0;r<3;r++){
+        (function(){
+          var sz=0.06+r*0.06;
+          var p=sph(sz,0xf472b6,ex,ey,0);
+          p.material.opacity=0.4;
+          addP(p, 0, 0, 0, 0, 22);
+        })();
+      }
+    } else {
+      // Normal: simple impact burst
+      for (var i=0;i<14;i++){
+        (function(){
+          var ang=Math.random()*Math.PI*2;
+          var spd=0.03+Math.random()*0.06;
+          var sz=0.03+Math.random()*0.06;
+          var col2=i%2===0?0xd4d4d8:0xa1a1aa;
+          var p=sph(sz,col2,ex+(Math.random()-0.5)*0.1,ey+(Math.random()-0.5)*0.1,(Math.random()-0.5)*0.1);
+          addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.02, -0.015, 14+Math.random()*8);
+        })();
+      }
+    }
+
+    // Common impact + knockback
     setTimeout(function(){
-      // Flash target
       if (tgt.mesh.material) { tgt.mesh.material.color.setHex(0xffffff); }
-      // Knockback
       var kb = isMe ? 0.3 : -0.3;
       tgt.mesh.position.x += kb;
       tgt.glow.position.x = tgt.mesh.position.x;
-      // Explosion particles
-      for (var j=0;j<20;j++){
-        (function(){
-          var ang = Math.random()*Math.PI*2;
-          var spd = 0.05+Math.random()*0.1;
-          var sz = 0.05+Math.random()*0.1;
-          var geo2 = new THREE.SphereGeometry(sz, 4);
-          var mat2 = new THREE.MeshBasicMaterial({ color:c, transparent:true, opacity:0.8 });
-          var m2 = new THREE.Mesh(geo2, mat2);
-          m2.position.set(ex+(Math.random()-0.5)*0.2, ey+(Math.random()-0.5)*0.2, (Math.random()-0.5)*0.2);
-          b3d.scene.add(m2);
-          b3d.particles.push({ mesh:m2, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd+0.03, vz:(Math.random()-0.5)*0.05, gy:-0.01, life:12+Math.random()*8, maxLife:20 });
-        })();
-      }
+      bShake = 8;
       setTimeout(function(){
         if (tgt.mesh.material) tgt.mesh.material.color.setHex(0xffffff);
         tgt.mesh.position.x -= kb;
         tgt.glow.position.x = tgt.mesh.position.x;
       }, 250);
-    }, 350+Math.random()*100);
-    // Return attacker to position
+    }, 300+Math.random()*80);
+
     setTimeout(function(){
       atk.mesh.position.x = origX;
       atk.mesh.position.y = origY;
       atk.glow.position.copy(atk.mesh.position);
-    }, 500);
+    }, 450);
   }
 
   function b3dUpdateTextures() {
