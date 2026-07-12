@@ -2003,6 +2003,8 @@ io.on('connection', (socket) => {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), system: true, reactions: {}
       });
       setTimeout(() => { delete battles[battleId]; }, 5000);
+    } else if (b.isBot && b.turnPlayer === 1) {
+      setTimeout(() => botAutoPlay(battleId), 1200);
     }
   });
   socket.on('battle:switch', ({ battleId, index }) => {
@@ -2018,12 +2020,16 @@ io.on('connection', (socket) => {
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner
       });
     });
+    if (b.isBot && b.turnPlayer === 1) {
+      setTimeout(() => botAutoPlay(battleId), 1200);
+    }
   });
 
   socket.on('battle:forfeit', ({ battleId }) => {
     const b = battles[battleId]; if(!b || b.state !== 'playing') return;
     b.state = 'ended'; b.winner = b.players.find(p => p.id !== socket.id).id;
-    b.players.forEach((p, i) => {
+    b.players.forEach((p) => {
+      if (p.id.startsWith('bot_')) return; // skip bot socket
       io.to(p.id).emit('battle:state', {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
           team: p2.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
@@ -2032,18 +2038,152 @@ io.on('connection', (socket) => {
       });
     });
     const loserData = pokemonData[socket.id];
-    const winner = b.winner;
-    const winnerData = pokemonData[winner];
-    if (winnerData) addPokeXP(winner, 15, 'battle forfeit win');
-    if (loserData) addPokeXP(socket.id, 5, 'battle forfeit loss');
-    io.emit('chat message', {
-      id: ++msgCounter, nick: 'Pokémon', avatar: '⚔️',
-      msg: `🏆 ${b.players.find(p => p.id === winner).nick} ha vinto la battaglia Pokémon contro ${b.players.find(p => p.id !== winner).nick}!`,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), system: true, reactions: {}
-    });
+    if (loserData) addPokeXP(socket.id, b.isBot ? 5 : 5, 'battle forfeit loss');
+    if (b.isBot) {
+      // Bot battle forfeit — just tell the player
+      io.to(socket.id).emit('chat message', {
+        id: ++msgCounter, nick: 'Pokémon', avatar: '🤖',
+        msg: `😔 Ti sei arreso dall'allenamento. (+5 XP)`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), system: true, reactions: {}
+      });
+    } else {
+      const winner = b.winner;
+      const winnerData = pokemonData[winner];
+      if (winnerData) addPokeXP(winner, 15, 'battle forfeit win');
+      io.emit('chat message', {
+        id: ++msgCounter, nick: 'Pokémon', avatar: '⚔️',
+        msg: `🏆 ${b.players.find(p => p.id === winner).nick} ha vinto la battaglia Pokémon contro ${b.players.find(p => p.id !== winner).nick}!`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), system: true, reactions: {}
+      });
+    }
     setTimeout(() => { delete battles[battleId]; }, 5000);
   });
 
+  // ===== BOT TRAINER (Allenamento 1v1) =====
+  const BOT_NAMES = ['Prof. Oak','Gary','Red','Blue','Misty','Brock','Lt. Surge','Erika','Koga','Sabrina','Blaine','Giovanni','Lorelei','Bruno','Agatha','Lance'];
+  const BOT_POOL = [
+    {n:'Pikachu',i:25,types:['electric']},{n:'Charizard',i:6,types:['fire','flying']},
+    {n:'Blastoise',i:9,types:['water']},{n:'Venusaur',i:3,types:['grass','poison']},
+    {n:'Gengar',i:94,types:['ghost','poison']},{n:'Machamp',i:68,types:['fighting']},
+    {n:'Alakazam',i:65,types:['psychic']},{n:'Golem',i:76,types:['rock','ground']},
+    {n:'Dragonite',i:149,types:['dragon','flying']},{n:'Gyarados',i:130,types:['water','flying']},
+    {n:'Snorlax',i:143,types:['normal']},{n:'Arcanine',i:59,types:['fire']},
+    {n:'Lapras',i:131,types:['water','ice']},{n:'Rhydon',i:112,types:['ground','rock']},
+    {n:'Jolteon',i:135,types:['electric']},{n:'Vaporeon',i:134,types:['water']},
+    {n:'Flareon',i:136,types:['fire']},{n:'Haunter',i:93,types:['ghost','poison']},
+    {n:'Kadabra',i:64,types:['psychic']},{n:'Machoke',i:67,types:['fighting']},
+    {n:'Poliwrath',i:62,types:['water','fighting']},{n:'Nidoking',i:34,types:['poison','ground']},
+    {n:'Nidoqueen',i:31,types:['poison','ground']},{n:'Cloyster',i:91,types:['water','ice']},
+    {n:'Electabuzz',i:125,types:['electric']},{n:'Magmar',i:126,types:['fire']},
+    {n:'Scyther',i:123,types:['bug','flying']},{n:'Magneton',i:82,types:['electric','steel']},
+    {n:'Kingler',i:99,types:['water']},{n:'Marowak',i:105,types:['ground']}
+  ];
+  function botAutoPlay(battleId) {
+    const b = battles[battleId];
+    if (!b || b.state !== 'playing' || !b.isBot) return;
+    const botIdx = 1;
+    if (b.turnPlayer !== botIdx) return;
+    const bot = b.players[botIdx];
+    const poke = bot.team[bot.currentPoke];
+    if (!poke || poke.fainted) return;
+    // Pick a random move with PP > 0
+    const valid = poke.moves.map((m,i) => ({m,i})).filter(x => x.m.pp > 0);
+    let pick;
+    if (valid.length > 0) {
+      pick = valid[Math.floor(Math.random() * valid.length)];
+    } else {
+      // All PP depleted — use first move anyway (Struggle)
+      pick = { m: poke.moves[0], i: 0 };
+      pick.m.pp = 1;
+    }
+    battleTurn(battleId, botIdx, { type:'move', index: pick.i });
+    // Send state to the real player only
+    const realPlayer = b.players[0];
+    io.to(realPlayer.id).emit('battle:state', {
+      players: b.players.map(p => ({ id:p.id, nick:p.nick, currentPoke:p.currentPoke,
+        team: p.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
+      })),
+      turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner
+    });
+    if (b.state === 'ended') {
+      const won = b.winner === realPlayer.id;
+      if (pokemonData[realPlayer.id]) addPokeXP(realPlayer.id, won ? 30 : 10, won ? 'bot battle win' : 'bot battle loss');
+      io.to(realPlayer.id).emit('chat message', {
+        id: ++msgCounter, nick: 'Pokémon', avatar: '🤖',
+        msg: won ? '🏆 Hai vinto l\'allenamento contro '+bot.nick+'! (+30 XP)' : '😞 Hai perso l\'allenamento contro '+bot.nick+'. (+10 XP)',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), system: true, reactions: {}
+      });
+      setTimeout(() => { delete battles[battleId]; }, 5000);
+    } else if (b.turnPlayer === botIdx) {
+      // Bot goes again (e.g. after a switch)
+      setTimeout(() => botAutoPlay(battleId), 1200);
+    }
+  }
+  socket.on('battle:botChallenge', () => {
+    const u = users[socket.id];
+    if (!u || !pokemonData[socket.id]) return;
+    const pd = pokemonData[socket.id];
+    migratePokemonData(pd);
+    const lv = getPokemonLv(pd.xp);
+    const stage = getPokeStage(lv);
+    // Build player team (same as normal battle)
+    const mkTeam = (sid) => {
+      const pd2 = pokemonData[sid];
+      if (pd2) migratePokemonData(pd2);
+      const lv2 = getPokemonLv(pd2.xp);
+      const stage2 = getPokeStage(lv2);
+      const s = STARTERS[pd2.starter];
+      const starter = generatePokeStats(pd2.currentForm, POKE_IMG + s.imgs[stage2] + '.png', POKE_TYPES[s.imgs[stage2]]||['normal'], stage2, false);
+      starter.xpLv = lv2;
+      const team = [starter];
+      if (pd2.team && pd2.team.length > 0) {
+        pd2.team.forEach(cp => {
+          const cTypes = POKE_TYPES[cp.id] || ['normal'];
+          const claw = generatePokeStats(cp.name, POKE_IMG + cp.id + '.png', cTypes, cp.legendary?3:1, !!cp.legendary);
+          claw.xpLv = '-';
+          team.push(claw);
+        });
+      }
+      return team;
+    };
+    // Build bot team — 1-3 random Pokemon
+    const botTeamSize = 1 + Math.floor(Math.random() * 2);
+    const botTeam = [];
+    const usedIdx = new Set();
+    for (let i = 0; i < botTeamSize; i++) {
+      let pi;
+      do { pi = Math.floor(Math.random() * BOT_POOL.length); } while (usedIdx.has(pi) && usedIdx.size < BOT_POOL.length);
+      usedIdx.add(pi);
+      const bp = BOT_POOL[pi];
+      const botStage = Math.min(stage, bp.n === 'Pikachu' || bp.n === 'Haunter' || bp.n === 'Kadabra' || bp.n === 'Machoke' || bp.n === 'Kingler' ? 1 : 2);
+      const pk = generatePokeStats(bp.n, POKE_IMG + bp.i + '.png', bp.types, botStage, false);
+      pk.xpLv = '-';
+      botTeam.push(pk);
+    }
+    const botName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+    const id = 'b' + (++battleIdCounter);
+    const b = {
+      id, isBot: true,
+      turnPlayer: Math.random() < 0.5 ? 0 : 1,
+      players: [
+        { id: socket.id, nick: u.nick, team: mkTeam(socket.id), currentPoke: 0 },
+        { id: 'bot_' + id, nick: '🤖 ' + botName, team: botTeam, currentPoke: 0 }
+      ],
+      state: 'playing', log: [], winner: null
+    };
+    b.log.push('Allenamento: ' + botName + ' ti sfida!');
+    battles[id] = b;
+    // Send to real player only
+    io.to(socket.id).emit('battle:start', {
+      battleId: id, myIdx: 0, isBot: true,
+      players: b.players.map(p => ({ id: p.id, nick: p.nick, team: p.team.map(pk => ({ species:pk.species, img:pk.img, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves })), currentPoke: p.currentPoke })),
+      turnPlayer: b.turnPlayer, log: b.log, state: 'playing'
+    });
+    // If bot goes first, auto-play
+    if (b.turnPlayer === 1) {
+      setTimeout(() => botAutoPlay(id), 1200);
+    }
+  });
   // ===== TIRO AL BERSAGLIO 1v1 =====
   const targetChallenges = {};
   const targetGames = {};

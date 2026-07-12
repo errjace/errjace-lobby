@@ -1497,6 +1497,7 @@
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <button class="dama-btn" id="targetBtn" title="Sfida 1v1">🎯</button>
       <button class="dama-btn" id="tradeBtn" title="Scambia Pokémon">🔄</button>
+      <button class="dama-btn" id="botBattleBtn" title="Allenamento Bot 1v1">🤖</button>
       <div class="voice-indicators" id="voiceIndicators"></div>
       <div class="theme-picker" id="themePicker">
         <div class="th-opt active" data-theme="default"><div class="th-preview"><span style="background:#0a0a12"></span><span style="background:#1a1a2e"></span><span style="background:#7c3aed"></span></div>Dark</div>
@@ -2428,6 +2429,13 @@
     openChallengeList('🔄 Scegli con chi scambiare Pokémon', { event: 'pokemon:tradeRequest' });
   });
 
+  // Bot Training Button
+  document.getElementById('botBattleBtn').addEventListener('click', function() {
+    if (!myPokemonData) { showChatMsg('Pokémon', '🤖', 'Devi prima scegliere il tuo Pokémon starter!', 'system'); return; }
+    if (battleData) { showChatMsg('Pokémon', '🤖', 'Sei già in una battaglia!', 'system'); return; }
+    socket.emit('battle:botChallenge');
+  });
+
   document.getElementById('challengeListClose').addEventListener('click', function() {
     document.getElementById('challengeListOverlay').classList.remove('active');
   });
@@ -2979,11 +2987,16 @@
     renderBattle();
     if (data.state === 'ended') {
       var won = data.winner === socket.id;
+      var isBot = battleData && battleData.isBot;
       setTimeout(function() {
         document.getElementById('battleOverlay').classList.remove('active');
         bCleanup();
         b3dCleanup();
-        showChatMsg('Pokémon', '⚔️', won ? '🎉 Hai vinto la battaglia Pokémon! (+30 XP)' : '😞 Hai perso la battaglia Pokémon. (+10 XP)', 'system');
+        if (isBot) {
+          showChatMsg('Pokémon', '🤖', won ? '🎉 Hai vinto l\'allenamento! (+30 XP)' : '😞 Hai perso l\'allenamento. (+10 XP)', 'system');
+        } else {
+          showChatMsg('Pokémon', '⚔️', won ? '🎉 Hai vinto la battaglia Pokémon! (+30 XP)' : '😞 Hai perso la battaglia Pokémon. (+10 XP)', 'system');
+        }
         battleData = null;
       }, 3000);
     }
@@ -3034,7 +3047,13 @@
       document.getElementById('playerHpText').textContent = 'ESAUSTO';
     }
     // Turn indicator
-    document.getElementById('battleTurnIndicator').textContent = isMyTurn ? '🎯 È il tuo turno!' : '⏳ Turno avversario...';
+    if (isMyTurn) {
+      document.getElementById('battleTurnIndicator').textContent = '🎯 È il tuo turno!';
+    } else if (battleData.isBot) {
+      document.getElementById('battleTurnIndicator').textContent = '🤖 Il bot sta pensando...';
+    } else {
+      document.getElementById('battleTurnIndicator').textContent = '⏳ Turno avversario...';
+    }
     // Battle log (last 5 entries)
     var logEl = document.getElementById('battleLog');
     if (battleData.log && battleData.log.length > 0) {
