@@ -5774,8 +5774,8 @@
     var w = container.offsetWidth || 400;
     var h = container.offsetHeight || 300;
     var aspect = w / h;
-    var fov = aspect < 0.8 ? 60 : aspect < 1.2 ? 50 : 40;
-    var camZ = aspect < 0.8 ? 5.5 : aspect < 1.2 ? 5.0 : 4.5;
+    var fov = aspect < 0.8 ? 65 : aspect < 1.2 ? 55 : 50;
+    var camZ = aspect < 0.8 ? 5.0 : aspect < 1.2 ? 5.0 : 5.5;
     b3d.camera = new THREE.PerspectiveCamera(fov, w/h, 0.1, 50);
     b3d.camera.position.set(0, 1.2, camZ);
     b3d.camera.lookAt(0, 0, 0);
@@ -5783,22 +5783,22 @@
     b3d.renderer.setSize(w, h);
     b3d.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     b3d.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    b3d.renderer.toneMappingExposure = 1.2;
+    b3d.renderer.toneMappingExposure = 0.95;
     container.appendChild(b3d.renderer.domElement);
-    // Lights
-    b3d.scene.add(new THREE.AmbientLight(0x606080, 0.8));
-    var dl = new THREE.DirectionalLight(0xffffff, 1.0); dl.position.set(3,5,4);
+    // Lights — neutral, preserve original Pokemon colors
+    b3d.scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+    var dl = new THREE.DirectionalLight(0xfff5e6, 0.9); dl.position.set(2,4,3);
     b3d.scene.add(dl);
-    var fl = new THREE.PointLight(0x7c3aed, 0.3, 10); fl.position.set(0,-1,2);
+    var fl = new THREE.PointLight(0x4a4a6a, 0.15, 10); fl.position.set(0,-1,2);
     b3d.scene.add(fl);
     // Ground glow
-    var bg = new THREE.Mesh(new THREE.RingGeometry(0.8, 2.5, 32), new THREE.MeshBasicMaterial({ color:0x1e1b4b, transparent:true, opacity:0.3, side:THREE.DoubleSide }));
+    var bg = new THREE.Mesh(new THREE.RingGeometry(1.2, 3.5, 32), new THREE.MeshBasicMaterial({ color:0x1a1a2e, transparent:true, opacity:0.25, side:THREE.DoubleSide }));
     bg.rotation.x = -Math.PI/2; bg.position.y = -1.6;
     b3d.scene.add(bg);
     // Ambient smoke wisps
     for (var s=0;s<6;s++) {
-      var sm = new THREE.Mesh(new THREE.SphereGeometry(0.3+Math.random()*0.4, 6), new THREE.MeshBasicMaterial({ color:0x7c3aed, transparent:true, opacity:0.05 }));
-      sm.position.set((Math.random()-0.5)*5, -1+Math.random()*2, (Math.random()-0.5)*3);
+      var sm = new THREE.Mesh(new THREE.SphereGeometry(0.3+Math.random()*0.4, 6), new THREE.MeshBasicMaterial({ color:0x3a3a5e, transparent:true, opacity:0.04 }));
+      sm.position.set((Math.random()-0.5)*7, -1+Math.random()*2, (Math.random()-0.5)*3);
       sm.userData = { vy:0.003+Math.random()*0.005, vx:(Math.random()-0.5)*0.003 };
       b3d.scene.add(sm);
     }
@@ -5828,9 +5828,9 @@
     var cw = container ? container.offsetWidth : 400;
     var ch = container ? container.offsetHeight : 300;
     var aspect = cw / ch;
-    if (aspect < 0.8) return side==='player' ? -0.7 : 0.7;
-    if (aspect < 1.2) return side==='player' ? -1.1 : 1.1;
-    return side==='player' ? -1.6 : 1.6;
+    if (aspect < 0.8) return side==='player' ? -1.2 : 1.2;
+    if (aspect < 1.2) return side==='player' ? -1.8 : 1.8;
+    return side==='player' ? -2.4 : 2.4;
   }
 
   function extractDexId(imgUrl) {
