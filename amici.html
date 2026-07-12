@@ -5763,7 +5763,7 @@
   });
 
   /* ============= 3D BATTLE RENDERER (Three.js) ============= */
-  var b3d = { scene:null, camera:null, renderer:null, player:null, opp:null, particles:[], ready:false, gltfLoader:null, dracoLoader:null };
+  var b3d = { scene:null, camera:null, renderer:null, player:null, opp:null, particles:[], ready:false, gltfLoader:null, dracoLoader:null, camDefault:null, camGoal:null, camLookGoal:null, shake:0, flashEl:null };
 
   function b3dInit() {
     var container = document.getElementById('battle3d');
@@ -5811,6 +5811,14 @@
       b3d.gltfLoader = new THREE.GLTFLoader();
       if (b3d.dracoLoader) b3d.gltfLoader.setDRACOLoader(b3d.dracoLoader);
     }
+    b3d.camDefault = { x:0, y:1.2, z:camZ, fov:fov };
+    b3d.camGoal = null; b3d.camLookGoal = null; b3d.shake = 0;
+    // Flash overlay for impact screen flash
+    var flash = document.createElement('div');
+    flash.id = 'battle3dFlash';
+    flash.style.cssText = 'position:absolute;inset:0;z-index:12;pointer-events:none;opacity:0;transition:opacity 0.08s ease-out;';
+    container.appendChild(flash);
+    b3d.flashEl = flash;
     b3d.ready = true;
     b3dAnimate();
   }
@@ -5940,6 +5948,34 @@
         if (dl3.life<=0) { b3d.scene.remove(dl3.light); dl3.light.dispose(); b3d.dynLights.splice(dl2,1); }
       }
     }
+    // Camera lerp toward goal
+    var cam2 = b3d.camera;
+    if (b3d.camGoal) {
+      var tg = b3d.camGoal;
+      cam2.position.x += (tg.x - cam2.position.x) * 0.12;
+      cam2.position.y += (tg.y - cam2.position.y) * 0.12;
+      cam2.position.z += (tg.z - cam2.position.z) * 0.12;
+      cam2.fov += (tg.fov - cam2.fov) * 0.12;
+      cam2.updateProjectionMatrix();
+    } else if (b3d.camDefault) {
+      var dc = b3d.camDefault;
+      cam2.position.x += (dc.x - cam2.position.x) * 0.06;
+      cam2.position.y += (dc.y - cam2.position.y) * 0.06;
+      cam2.position.z += (dc.z - cam2.position.z) * 0.06;
+      cam2.fov += (dc.fov - cam2.fov) * 0.06;
+      cam2.updateProjectionMatrix();
+    }
+    if (b3d.camLookGoal) {
+      cam2.lookAt(b3d.camLookGoal);
+    } else {
+      cam2.lookAt(0, 0, 0);
+    }
+    // Camera shake
+    if (b3d.shake > 0.5) {
+      cam2.position.x += (Math.random()-0.5)*b3d.shake*0.015;
+      cam2.position.y += (Math.random()-0.5)*b3d.shake*0.015;
+      b3d.shake *= 0.87;
+    } else { b3d.shake = 0; }
     b3d.renderer.render(b3d.scene, b3d.camera);
   }
   function b3dAttack(type, isMe, damage) {
@@ -5957,6 +5993,9 @@
     var ex = tgt.mesh.position.x, ey = tgt.mesh.position.y;
     var dx = ex-sx, dy = ey-sy, dist = Math.sqrt(dx*dx+dy*dy);
     var nx = dx/dist, ny = dy/dist;
+    var meleeTypes = ['fighting','normal','rock','ground','steel','bug'];
+    var isMelee = meleeTypes.indexOf(type) !== -1;
+    var camDef = b3d.camDefault || { x:0, y:1.2, z:4.5, fov:40 };
 
     function addP(mesh, vx, vy, vz, gy, life, maxLife, noScale) {
       b3d.scene.add(mesh);
@@ -5968,8 +6007,8 @@
       b3d.scene.add(l);
       b3d.dynLights.push({ light:l, life:Math.round(life*S), maxLife:Math.round(life*S), maxIntensity:intensity });
     }
-    function sph(sz, col, px, py, pz) {
-      var g = new THREE.SphereGeometry(sz, 5);
+    function sph(sz, col, px, py, pz, segs) {
+      var g = new THREE.SphereGeometry(sz, segs||6);
       var m = new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:0.9 });
       var mesh = new THREE.Mesh(g, m);
       mesh.position.set(px||0, py||0, pz||0);
@@ -5982,329 +6021,438 @@
       mesh.position.set(px||0, py||0, pz||0);
       return mesh;
     }
-
-    // === PHASE 1: Attacker lunge + charge light ===
-    atk.mesh.position.x = origX + dir*0.7;
-    atk.mesh.position.y = origY + 0.15;
-    atk.glow.position.copy(atk.mesh.position);
-    addDynLight(c, 2.0, 8, sx, sy+0.5, 1, 15);
-
-    // === PHASE 2: Type-specific cinematic attack ===
-    var beamTypes = ['fire','water','electric','ice','dragon','psychic','grass','fairy'];
-    var isBeam = beamTypes.indexOf(type) !== -1;
-
-    if (isBeam) {
-      // Cinematic beam/laser from attacker to target
-      var beamSegs = 30;
-      for (var i=0;i<=beamSegs;i++) {
-        (function(step){
-          setTimeout(function(){
-            var t = step/beamSegs;
-            var px = sx + dx*t;
-            var py = sy + dy*t;
-            var pz = (Math.random()-0.5)*0.08;
-            // Core bright particle
-            var sz = 0.06 + Math.sin(t*Math.PI)*0.1;
-            var col2 = step%3===0 ? 0xffffff : c;
-            var p = sph(sz, col2, px, py, pz);
-            addP(p, 0, 0, 0, 0, 6, 6, true);
-            // Outer glow
-            if (step%2===0) {
-              var g2 = sph(sz*2.5, c, px, py, pz);
-              g2.material.opacity = 0.25;
-              addP(g2, 0, 0, 0, 0, 5, 5, true);
-            }
-            // Trail wisps
-            if (step>2 && step%3===0) {
-              for (var w=0;w<2;w++) {
-                var wp = sph(0.03, c, px+(Math.random()-0.5)*0.12, py+(Math.random()-0.5)*0.12, pz);
-                addP(wp, (Math.random()-0.5)*0.03, (Math.random()-0.5)*0.03, (Math.random()-0.5)*0.02, -0.005, 10, 10);
-              }
-            }
-          }, Math.round(step * 25 * S));
-        })(i);
-      }
-      // Moving dynamic light along beam
-      for (var gl=0;gl<8;gl++) {
-        (function(){
-          setTimeout(function(){
-            var t2 = Math.random();
-            addDynLight(c, 1.5, 4, sx+dx*t2, sy+dy*t2+0.3, 0.5, 10);
-          }, Math.round(gl*60*S));
-        })();
-      }
-    } else {
-      // Melee/physical: radial burst at target
-      for (var i=0;i<30;i++){
-        (function(){
-          var ang=Math.random()*Math.PI*2;
-          var spd=0.05+Math.random()*0.1;
-          var sz=0.04+Math.random()*0.08;
-          var p=sph(sz,Math.random()>0.5?c:0xffffff,ex+(Math.random()-0.5)*0.15,ey+(Math.random()-0.5)*0.15,(Math.random()-0.5)*0.2);
-          addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.04, -0.01, 14, 14);
-        })();
-      }
-      // Shockwave rings
-      for (var r=0;r<3;r++){
-        (function(){
-          setTimeout(function(){
-            var sz2=0.08+r*0.06;
-            var p2=sph(sz2,c,ex,ey,0);
-            p2.material.opacity=0.4;
-            addP(p2, 0, 0, 0, 0, 16, 16, true);
-          }, Math.round(r*80*S));
-        })();
-      }
-      addDynLight(c, 3.0, 10, ex, ey+0.3, 0.5, 12);
+    function flashScreen(hexColor) {
+      var el = b3d.flashEl;
+      if (!el) return;
+      var r = (hexColor>>16)&255, g = (hexColor>>8)&255, b = hexColor&255;
+      el.style.background = 'rgba('+r+','+g+','+b+',0.5)';
+      el.style.opacity = '1';
+      setTimeout(function(){ el.style.opacity = '0'; }, 120);
+    }
+    function disposeMesh(m) {
+      if (!m) return;
+      b3d.scene.remove(m);
+      if (m.geometry) m.geometry.dispose();
+      if (m.material) { if (m.material.map) m.material.map.dispose(); m.material.dispose(); }
     }
 
-    // === PHASE 3: Type-specific extra effects ===
-    if (type==='fire') {
-      // Rising flames from ground
-      for (var f=0;f<15;f++){
-        (function(){
-          var fx=sx+dx*Math.random()+(Math.random()-0.5)*0.3;
-          var fy=sy+dy*Math.random()-0.2;
-          var sz=0.05+Math.random()*0.1;
-          var col2=f%3===0?0xfbbf24:(f%2===0?0xff6b35:0xdc2626);
-          var p=sph(sz,col2,fx,fy,(Math.random()-0.5)*0.2);
-          addP(p, (Math.random()-0.5)*0.02, 0.05+Math.random()*0.05, (Math.random()-0.5)*0.02, 0.01, 25, 25);
-        })();
-      }
-      addDynLight(0xff4500, 4.0, 12, ex, ey, 1, 18);
-    } else if (type==='water') {
-      // Water splash at impact
-      for (var s=0;s<18;s++){
-        (function(){
-          var ang=-Math.PI/2+((Math.random()-0.5)*Math.PI);
-          var spd=0.04+Math.random()*0.07;
-          var p=sph(0.04+Math.random()*0.06,Math.random()>0.5?0x60a5fa:0x93c5fd,ex+(Math.random()-0.5)*0.1,ey,0);
-          addP(p, Math.cos(ang)*spd, Math.abs(Math.sin(ang))*spd+0.03, (Math.random()-0.5)*0.04, -0.02, 18, 18);
-        })();
-      }
-      addDynLight(0x3b82f6, 3.0, 10, ex, ey, 0.5, 15);
-    } else if (type==='electric') {
-      // Lightning arcs
-      for (var a=0;a<20;a++){
-        (function(){
-          var ang=Math.random()*Math.PI*2;
-          var spd=0.1+Math.random()*0.15;
-          var p=sph(0.03,Math.random()>0.5?0xfde047:0xffffff,ex+(Math.random()-0.5)*0.2,ey+(Math.random()-0.5)*0.2,(Math.random()-0.5)*0.15);
-          addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.05, 0, 8, 8);
-        })();
-      }
-      addDynLight(0xfacc15, 5.0, 15, ex, ey, 1, 10);
-      addDynLight(0xffffff, 3.0, 8, ex, ey+0.5, 0, 6);
-    } else if (type==='ice') {
-      // Crystal shards
-      for (var i=0;i<20;i++){
-        (function(){
-          var ang=Math.random()*Math.PI*2;
-          var spd=0.04+Math.random()*0.08;
-          var sz=0.04+Math.random()*0.08;
-          var p=box(sz,Math.random()>0.5?0x67e8f9:0xffffff,ex+(Math.random()-0.5)*0.2,ey+(Math.random()-0.5)*0.2,(Math.random()-0.5)*0.2);
-          p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
-          addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd+0.02, (Math.random()-0.5)*0.04, -0.015, 22, 22);
-        })();
-      }
-      // Frost cloud
-      for (var f2=0;f2<6;f2++){
-        (function(){
-          var p2=sph(0.2+Math.random()*0.15,0xe0f2fe,ex+(Math.random()-0.5)*0.3,ey-0.1,(Math.random()-0.5)*0.2);
-          p2.material.opacity=0.2;
-          addP(p2, (Math.random()-0.5)*0.01, 0.01, (Math.random()-0.5)*0.01, 0.003, 28, 28);
-        })();
-      }
-      addDynLight(0x67e8f9, 3.5, 10, ex, ey, 0.5, 20);
-    } else if (type==='grass') {
-      for (var l=0;l<15;l++){
-        (function(){
-          var t2=Math.random();
-          var ang=t2*Math.PI*3;
-          var r2=0.08+Math.random()*0.15;
-          var px=sx+dx*t2+Math.cos(ang)*r2;
-          var py=sy+dy*t2+Math.sin(ang)*r2;
-          var p=box(0.04,l%3===0?0x86efac:0x22c55e,px,py,(Math.random()-0.5)*0.15);
-          addP(p, (Math.random()-0.5)*0.02, 0.02+Math.random()*0.02, (Math.random()-0.5)*0.02, -0.008, 20, 20);
-        })();
-      }
-      addDynLight(0x22c55e, 3.0, 10, ex, ey, 0.5, 16);
-    } else if (type==='psychic') {
-      for (var r=0;r<5;r++){
-        (function(ring){
-          setTimeout(function(){
-            for (var s=0;s<12;s++){
-              var ang=s/12*Math.PI*2;
-              var rad=0.1+ring*0.1;
-              var px=ex+Math.cos(ang)*rad;
-              var py=ey+Math.sin(ang)*rad;
-              var p=sph(0.03,s%2===0?0xf472b6:0xfce7f3,px,py,0);
-              addP(p, Math.cos(ang)*0.025, Math.sin(ang)*0.025, 0, 0, 18, 18);
-            }
-          }, Math.round(r*120*S));
-        })(r);
-      }
-      addDynLight(0xec4899, 4.0, 12, ex, ey, 1, 20);
-    } else if (type==='dragon') {
-      for (var d=0;d<20;d++){
-        (function(){
-          var t2=Math.random();
-          var px=sx+dx*t2+(Math.random()-0.5)*0.1;
-          var py=sy+dy*t2+(Math.random()-0.5)*0.1;
-          var col2=d%3===0?0xfde047:(d%3===1?0xfb923c:0x7e22ce);
-          var p=sph(0.05+Math.random()*0.08,col2,px,py,(Math.random()-0.5)*0.15);
-          addP(p, (Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02+0.01, (Math.random()-0.5)*0.02, 0.005, 20, 20);
-        })();
-      }
-      addDynLight(0x7e22ce, 4.0, 12, ex, ey, 1, 18);
-      addDynLight(0xfb923c, 2.0, 6, ex, ey+0.3, 0, 14);
-    } else if (type==='dark') {
-      for (var d2=0;d2<15;d2++){
-        (function(){
-          var ang=Math.random()*Math.PI*2;
-          var sz=0.06+Math.random()*0.1;
-          var p=sph(sz,d2%2===0?0x292524:0x44403c,ex+Math.cos(ang)*0.15,ey+Math.sin(ang)*0.15,0);
-          p.material.opacity=0.6;
-          addP(p, Math.cos(ang)*0.015, Math.sin(ang)*0.015, 0, 0, 22, 22);
-        })();
-      }
-      addDynLight(0x292524, 2.0, 8, ex, ey, 0.5, 18);
-    } else if (type==='steel') {
-      for (var st=0;st<18;st++){
-        (function(){
-          var ang=Math.random()*Math.PI*2;
-          var spd=0.05+Math.random()*0.08;
-          var p=box(0.05,st%3===0?0xd4d4d8:0xa1a1aa,ex+(Math.random()-0.5)*0.15,ey+(Math.random()-0.5)*0.15,(Math.random()-0.5)*0.15);
-          p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
-          addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd+0.02, (Math.random()-0.5)*0.03, -0.018, 20, 20);
-        })();
-      }
-      addDynLight(0xa1a1aa, 3.0, 10, ex, ey, 0.5, 14);
-    } else if (type==='fairy') {
-      for (var fa=0;fa<20;fa++){
-        (function(){
-          var t2=Math.random();
-          var px=sx+dx*t2+(Math.random()-0.5)*0.2;
-          var py=sy+dy*t2+(Math.random()-0.5)*0.2;
-          var col2=fa%3===0?0xf9a8d4:(fa%2===0?0xf472b6:0xfce7f3);
-          var p=sph(0.03+Math.random()*0.04,col2,px,py,(Math.random()-0.5)*0.15);
-          addP(p, (Math.random()-0.5)*0.03, 0.02+Math.random()*0.02, (Math.random()-0.5)*0.03, 0.005, 22, 22);
-        })();
-      }
-      addDynLight(0xf472b6, 4.0, 12, ex, ey, 1, 18);
-    } else if (type==='fighting') {
-      for (var fi=0;fi<20;fi++){
-        (function(){
-          var ang=Math.random()*Math.PI*2;
-          var spd=0.06+Math.random()*0.1;
-          var p=sph(0.04+Math.random()*0.06,fi%2===0?0xdc2626:0xfca5a5,ex+(Math.random()-0.5)*0.1,ey+(Math.random()-0.5)*0.1,(Math.random()-0.5)*0.15);
-          addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.03, -0.008, 12, 12);
-        })();
-      }
-      addDynLight(0xef4444, 4.0, 10, ex, ey, 0.5, 12);
-    } else if (type==='poison') {
-      for (var po=0;po<18;po++){
-        (function(){
-          var px=ex+(Math.random()-0.5)*0.3;
-          var py=ey+Math.random()*0.2;
-          var p=sph(0.04+Math.random()*0.05,po%3===0?0xc084fc:0x9333ea,px,py,0);
-          addP(p, (Math.random()-0.5)*0.02, -0.03-Math.random()*0.02, (Math.random()-0.5)*0.02, -0.005, 22, 22);
-        })();
-      }
-      addDynLight(0x9333ea, 3.0, 10, ex, ey, 0.5, 16);
-    } else if (type==='ground') {
-      for (var g2=0;g2<25;g2++){
-        (function(){
-          var px=ex+(Math.random()-0.5)*0.5;
-          var py=ey-0.2;
-          var sz=0.05+Math.random()*0.1;
-          var col2=g2%3===0?0xd97706:0x92400e;
-          var p=g2%4===0?box(sz,col2,px,py,(Math.random()-0.5)*0.3):sph(sz,col2,px,py,(Math.random()-0.5)*0.3);
-          addP(p, (Math.random()-0.5)*0.04, 0.04+Math.random()*0.06, (Math.random()-0.5)*0.04, -0.022, 24, 24);
-        })();
-      }
-      addDynLight(0xd97706, 3.0, 10, ex, ey-0.3, 0.5, 16);
-    } else if (type==='ghost') {
-      for (var gh=0;gh<15;gh++){
-        (function(){
-          var px=sx+dx*Math.random()+(Math.random()-0.5)*0.3;
-          var py=sy+dy*Math.random()+(Math.random()-0.5)*0.3;
-          var sz=0.07+Math.random()*0.12;
-          var p=sph(sz,gh%2===0?0xa78bfa:0xe9d5ff,px,py,(Math.random()-0.5)*0.2);
-          p.material.opacity=0.35;
-          addP(p, (Math.random()-0.5)*0.02, 0.015+Math.random()*0.02, (Math.random()-0.5)*0.02, 0.004, 26, 26);
-        })();
-      }
-      addDynLight(0x8b5cf6, 3.0, 10, ex, ey, 1, 20);
-    } else if (type==='flying') {
-      for (var fl2=0;fl2<15;fl2++){
-        (function(){
-          var t2=Math.random();
-          var px=sx+dx*t2+(Math.random()-0.5)*0.15;
-          var py=sy+dy*t2+(Math.random()-0.5)*0.15;
-          var p=box(0.03,fl2%2===0?0xa78bfa:0xc4b5fd,px,py,(Math.random()-0.5)*0.2);
-          addP(p, nx*0.05+(Math.random()-0.5)*0.03, ny*0.05+(Math.random()-0.5)*0.03, (Math.random()-0.5)*0.02, -0.005, 18, 18);
-        })();
-      }
-      addDynLight(0x8b5cf6, 3.0, 10, ex, ey, 0.5, 14);
-    } else if (type==='rock') {
-      for (var rk=0;rk<20;rk++){
-        (function(){
-          var px=ex+(Math.random()-0.5)*0.5;
-          var py=ey+0.2+Math.random()*0.2;
-          var sz=0.05+Math.random()*0.12;
-          var col2=rk%3===0?0xa8a29e:0x57534e;
-          var p=box(sz,col2,px,py,(Math.random()-0.5)*0.3);
-          p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
-          addP(p, (Math.random()-0.5)*0.04, -0.06-Math.random()*0.04, (Math.random()-0.5)*0.04, -0.025, 24, 24);
-        })();
-      }
-      addDynLight(0x78716c, 2.5, 8, ex, ey, 0.5, 14);
-    } else {
-      for (var n=0;n<14;n++){
-        (function(){
-          var ang=Math.random()*Math.PI*2;
-          var spd=0.04+Math.random()*0.06;
-          var p=sph(0.04,n%2===0?0xd4d4d8:0xa1a1aa,ex+(Math.random()-0.5)*0.1,ey+(Math.random()-0.5)*0.1,(Math.random()-0.5)*0.1);
-          addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.02, -0.012, 16, 16);
-        })();
-      }
+    // Rotate attacker toward target
+    if (atk.isGLB && atk.mesh.rotation) {
+      atk.mesh.rotation.y = dir > 0 ? -0.8 : 0.8;
     }
 
-    // === PHASE 4: Impact + camera shake + knockback ===
+    // === PHASE 1: Camera zoom in on attacker ===
+    b3d.camGoal = { x: sx*0.4, y: sy+0.6, z: camDef.z - 1.8, fov: camDef.fov - 12 };
+    b3d.camLookGoal = new THREE.Vector3(sx, sy, 0);
+
+    // === PHASE 2: Energy charge — growing orb at attacker ===
+    var orbX = sx + dir*0.35, orbY = sy + 0.1, orbZ = 0.2;
+    var orbCore = sph(0.02, 0xffffff, orbX, orbY, orbZ, 10);
+    b3d.scene.add(orbCore);
+    var orbGlow = sph(0.05, c, orbX, orbY, orbZ, 10);
+    orbGlow.material.opacity = 0.35;
+    b3d.scene.add(orbGlow);
+    var orbLight = new THREE.PointLight(c, 0, 6);
+    orbLight.position.set(orbX, orbY, orbZ);
+    b3d.scene.add(orbLight);
+    addDynLight(c, 2.5, 5, orbX, orbY, orbZ, Math.round(12*S));
+
+    // Charge particles swirl inward
+    var chargeSteps = 15;
+    var chargeDur = Math.round(200 * S);
+    for (var ch=0; ch<chargeSteps; ch++) {
+      (function(){
+        var ang = Math.random()*Math.PI*2;
+        var r = 0.25+Math.random()*0.35;
+        var p = sph(0.015+Math.random()*0.02, c, orbX+Math.cos(ang)*r, orbY+Math.sin(ang)*r, (Math.random()-0.5)*0.2);
+        addP(p, (orbX-p.position.x)*0.02, (orbY-p.position.y)*0.02, 0, 0, Math.round(16*S), Math.round(16*S));
+      })();
+    }
+    // Animate orb growth via interval
+    var orbGrowId = setInterval(function(){
+      var t = Math.min(1, (Date.now() - orbGrowStart) / chargeDur);
+      orbCore.scale.setScalar(0.3 + t*3.5);
+      orbGlow.scale.setScalar(0.3 + t*5);
+      orbLight.intensity = t * 5;
+      orbCore.material.color.setHex(t > 0.5 ? 0xffffff : c);
+    }, 30);
+    var orbGrowStart = Date.now();
+
+    // === PHASE 3: Launch projectile or lunge ===
+    var launchDelay = chargeDur;
     setTimeout(function(){
-      bShake = 10;
-      if (tgt.mesh.material && !tgt.isGLB) { tgt.mesh.material.color.setHex(0xffffff); }
-      // Flash white on GLB
-      if (tgt.isGLB) {
-        tgt.mesh.traverse(function(child){
-          if (child.isMesh && child.material) { child.material.emissive = new THREE.Color(0xffffff); child.material.emissiveIntensity = 0.8; }
-        });
-      }
-      var kb = isMe ? 0.35 : -0.35;
-      tgt.mesh.position.x += kb;
-      tgt.glow.position.x = tgt.mesh.position.x;
-      // Big impact light
-      addDynLight(0xffffff, 6.0, 15, ex, ey+0.3, 0.5, 8);
+      clearInterval(orbGrowId);
+      disposeMesh(orbCore);
+      disposeMesh(orbGlow);
+      b3d.scene.remove(orbLight);
 
-      setTimeout(function(){
-        if (tgt.mesh.material && !tgt.isGLB) tgt.mesh.material.color.setHex(0xffffff);
-        if (tgt.isGLB) {
-          tgt.mesh.traverse(function(child){
-            if (child.isMesh && child.material) { child.material.emissive = new THREE.Color(0x000000); child.material.emissiveIntensity = 0; }
-          });
+      if (isMelee) {
+        // ---- MELEE: Physical lunge + strike ----
+        var lungeSteps = 10;
+        var lungeStepMs = Math.round(28 * S);
+        for (var ls=0; ls<lungeSteps; ls++) {
+          (function(step){
+            setTimeout(function(){
+              var t = (step+1)/lungeSteps;
+              var easeT = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+              atk.mesh.position.x = origX + dir*0.7 + dir*0.6*easeT;
+              atk.mesh.position.y = origY + 0.15 + (ey-origY)*0.25*easeT;
+              if (atk.isGLB && atk.mesh.rotation) atk.mesh.rotation.z = -dir*0.15*easeT;
+              atk.glow.position.copy(atk.mesh.position);
+            }, Math.round(step * lungeStepMs));
+          })(ls);
         }
-        tgt.mesh.position.x -= kb;
-        tgt.glow.position.x = tgt.mesh.position.x;
-      }, Math.round(300*S));
-    }, Math.round(350*S));
+        // Strike impact
+        var meleeImpactDelay = Math.round(lungeSteps * lungeStepMs + 40*S);
+        setTimeout(function(){
+          // Camera shake
+          b3d.shake = 14;
+          flashScreen(c);
+          // Burst at target
+          for (var bi=0; bi<40; bi++){
+            (function(){
+              var ang=Math.random()*Math.PI*2;
+              var spd=0.06+Math.random()*0.14;
+              var sz=0.04+Math.random()*0.09;
+              var p=sph(sz,Math.random()>0.5?c:0xffffff,ex+(Math.random()-0.5)*0.12,ey+(Math.random()-0.5)*0.12,(Math.random()-0.5)*0.2);
+              addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.04, -0.01, 14, 14);
+            })();
+          }
+          // Shockwave rings expanding
+          for (var sr=0;sr<4;sr++){
+            (function(ring){
+              setTimeout(function(){
+                var sz2=0.08+ring*0.09;
+                var p2=sph(sz2,c,ex,ey,0,10);
+                p2.material.opacity=0.5;
+                addP(p2, 0, 0, 0, 0, 20, 20, true);
+              }, Math.round(ring*45*S));
+            })(sr);
+          }
+          addDynLight(0xffffff, 8.0, 15, ex, ey+0.2, 0.4, Math.round(8*S));
+          addDynLight(c, 5.0, 12, ex, ey, 0.3, Math.round(14*S));
+          // Target hit
+          setTimeout(function(){
+            if (tgt.mesh.material && !tgt.isGLB) tgt.mesh.material.color.setHex(0xffffff);
+            if (tgt.isGLB) tgt.mesh.traverse(function(ch){ if (ch.isMesh && ch.material){ ch.material.emissive=new THREE.Color(0xffffff); ch.material.emissiveIntensity=0.8; }});
+            var kb = isMe ? 0.4 : -0.4;
+            tgt.mesh.position.x += kb;
+            tgt.glow.position.x = tgt.mesh.position.x;
+            setTimeout(function(){
+              if (tgt.mesh.material && !tgt.isGLB) tgt.mesh.material.color.setHex(0xffffff);
+              if (tgt.isGLB) tgt.mesh.traverse(function(ch){ if (ch.isMesh && ch.material){ ch.material.emissive=new THREE.Color(0); ch.material.emissiveIntensity=0; }});
+              tgt.mesh.position.x -= kb;
+              tgt.glow.position.x = tgt.mesh.position.x;
+            }, Math.round(280*S));
+          }, Math.round(60*S));
+          // Return attacker
+          setTimeout(function(){
+            atk.mesh.position.x = origX;
+            atk.mesh.position.y = origY;
+            atk.glow.position.copy(atk.mesh.position);
+            if (atk.isGLB && atk.mesh.rotation) atk.mesh.rotation.z = 0;
+          }, Math.round(350*S));
+          // Camera return
+          setTimeout(function(){
+            b3d.camGoal = null;
+            b3d.camLookGoal = null;
+            if (atk.isGLB && atk.mesh.rotation) atk.mesh.rotation.y = dir > 0 ? -0.3 : 0.3;
+          }, Math.round(300*S));
+        }, meleeImpactDelay);
 
-    // === PHASE 5: Return attacker ===
+      } else {
+        // ---- RANGED: Projectile orb travels to target ----
+        var projCore = sph(0.1, 0xffffff, orbX, orbY, orbZ, 12);
+        b3d.scene.add(projCore);
+        var projGlow = sph(0.22, c, orbX, orbY, orbZ, 12);
+        projGlow.material.opacity = 0.4;
+        b3d.scene.add(projGlow);
+        var projLight = new THREE.PointLight(c, 5, 8);
+        projLight.position.set(orbX, orbY, orbZ+0.2);
+        b3d.scene.add(projLight);
+        b3d.dynLights.push({ light:projLight, life:Math.round(35*S), maxLife:Math.round(35*S), maxIntensity:5 });
+
+        // Camera tracks midpoint during flight
+        setTimeout(function(){
+          b3d.camGoal = { x: (sx+ex)*0.25, y: Math.max(sy,ey)+0.5, z: camDef.z - 1.0, fov: camDef.fov - 6 };
+          b3d.camLookGoal = new THREE.Vector3((sx+ex)*0.5, (sy+ey)*0.45, 0);
+        }, Math.round(80*S));
+
+        // Animate projectile
+        var projSteps = 22;
+        var projStepMs = Math.round(22 * S);
+        for (var ps=0; ps<=projSteps; ps++) {
+          (function(step){
+            setTimeout(function(){
+              var t = step/projSteps;
+              var easeT = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+              var px = orbX + (ex-orbX)*easeT;
+              var py = orbY + (ey-orbY)*easeT;
+              var sc = 0.8 + Math.sin(t*Math.PI)*1.2;
+              projCore.position.set(px, py, orbZ);
+              projCore.scale.setScalar(sc);
+              projGlow.position.set(px, py, orbZ);
+              projGlow.scale.setScalar(sc*1.8);
+              projLight.position.set(px, py+0.2, orbZ+0.2);
+              // Trail particles
+              if (step > 1 && step % 2 === 0) {
+                for (var tp=0; tp<3; tp++){
+                  var tp2 = sph(0.02+Math.random()*0.03, c, px+(Math.random()-0.5)*0.1, py+(Math.random()-0.5)*0.1, orbZ+(Math.random()-0.5)*0.1);
+                  tp2.material.opacity = 0.55;
+                  addP(tp2, (Math.random()-0.5)*0.015, (Math.random()-0.5)*0.015-0.008, (Math.random()-0.5)*0.01, -0.002, Math.round(14*S), Math.round(14*S));
+                }
+              }
+              // Core white flashes
+              if (step % 3 === 0) {
+                var pp = sph(0.03, 0xffffff, px, py, orbZ);
+                addP(pp, 0, 0, 0, 0, Math.round(5*S), Math.round(5*S), true);
+              }
+            }, Math.round(step * projStepMs));
+          })(ps);
+        }
+
+        // Impact on arrival
+        var projTravelTime = Math.round((projSteps+1) * projStepMs);
+        setTimeout(function(){
+          // Remove projectile
+          disposeMesh(projCore);
+          disposeMesh(projGlow);
+          b3d.scene.remove(projLight);
+          // Camera shake + flash
+          b3d.shake = 16;
+          flashScreen(c);
+          // Impact explosion — expanding rings + particles
+          for (var ei=0; ei<45; ei++){
+            (function(){
+              var ang=Math.random()*Math.PI*2;
+              var spd=0.04+Math.random()*0.12;
+              var sz=0.03+Math.random()*0.08;
+              var p=sph(sz,Math.random()>0.4?c:0xffffff,ex+(Math.random()-0.5)*0.1,ey+(Math.random()-0.5)*0.1,(Math.random()-0.5)*0.15);
+              addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.03, -0.008, 16, 16);
+            })();
+          }
+          // Expanding shockwave rings
+          for (var ri=0;ri<5;ri++){
+            (function(ring){
+              setTimeout(function(){
+                var sz2=0.06+ring*0.1;
+                var p2=sph(sz2,c,ex,ey,0,12);
+                p2.material.opacity=0.55;
+                addP(p2, 0, 0, 0, 0, 22, 22, true);
+              }, Math.round(ri*35*S));
+            })(ri);
+          }
+          addDynLight(0xffffff, 9.0, 16, ex, ey+0.3, 0.5, Math.round(8*S));
+          addDynLight(c, 6.0, 14, ex, ey, 0.3, Math.round(15*S));
+          // Target hit
+          setTimeout(function(){
+            if (tgt.mesh.material && !tgt.isGLB) tgt.mesh.material.color.setHex(0xffffff);
+            if (tgt.isGLB) tgt.mesh.traverse(function(ch){ if (ch.isMesh && ch.material){ ch.material.emissive=new THREE.Color(0xffffff); ch.material.emissiveIntensity=0.8; }});
+            var kb = isMe ? 0.4 : -0.4;
+            tgt.mesh.position.x += kb;
+            tgt.glow.position.x = tgt.mesh.position.x;
+            setTimeout(function(){
+              if (tgt.mesh.material && !tgt.isGLB) tgt.mesh.material.color.setHex(0xffffff);
+              if (tgt.isGLB) tgt.mesh.traverse(function(ch){ if (ch.isMesh && ch.material){ ch.material.emissive=new THREE.Color(0); ch.material.emissiveIntensity=0; }});
+              tgt.mesh.position.x -= kb;
+              tgt.glow.position.x = tgt.mesh.position.x;
+            }, Math.round(300*S));
+          }, Math.round(80*S));
+          // Return attacker
+          setTimeout(function(){
+            atk.mesh.position.x = origX;
+            atk.mesh.position.y = origY;
+            atk.glow.position.copy(atk.mesh.position);
+          }, Math.round(350*S));
+          // Camera return
+          setTimeout(function(){
+            b3d.camGoal = null;
+            b3d.camLookGoal = null;
+            if (atk.isGLB && atk.mesh.rotation) atk.mesh.rotation.y = dir > 0 ? -0.3 : 0.3;
+          }, Math.round(300*S));
+        }, projTravelTime);
+      }
+    }, launchDelay);
+
+    // === PHASE 4: Type-specific extra effects at target (delayed after impact) ===
+    var typeDelay = isMelee
+      ? Math.round(launchDelay + 10*28*S + 40*S + 80*S)
+      : Math.round(launchDelay + 23*22*S + 80*S);
+
     setTimeout(function(){
-      atk.mesh.position.x = origX;
-      atk.mesh.position.y = origY;
-      atk.glow.position.copy(atk.mesh.position);
-    }, Math.round(500*S));
+      if (type==='fire') {
+        for (var f=0;f<18;f++){
+          (function(){
+            var fx=ex+(Math.random()-0.5)*0.35;
+            var fy=ey+Math.random()*0.15-0.25;
+            var sz=0.05+Math.random()*0.12;
+            var col2=f%3===0?0xfbbf24:(f%2===0?0xff6b35:0xdc2626);
+            var p=sph(sz,col2,fx,fy,(Math.random()-0.5)*0.2);
+            addP(p, (Math.random()-0.5)*0.02, 0.06+Math.random()*0.05, (Math.random()-0.5)*0.02, 0.012, 28, 28);
+          })();
+        }
+      } else if (type==='water') {
+        for (var s=0;s<20;s++){
+          (function(){
+            var ang=-Math.PI/2+((Math.random()-0.5)*Math.PI);
+            var spd=0.04+Math.random()*0.08;
+            var p=sph(0.04+Math.random()*0.07,Math.random()>0.5?0x60a5fa:0x93c5fd,ex+(Math.random()-0.5)*0.12,ey,0);
+            addP(p, Math.cos(ang)*spd, Math.abs(Math.sin(ang))*spd+0.03, (Math.random()-0.5)*0.04, -0.02, 20, 20);
+          })();
+        }
+      } else if (type==='electric') {
+        for (var a=0;a<28;a++){
+          (function(){
+            var ang=Math.random()*Math.PI*2;
+            var spd=0.12+Math.random()*0.2;
+            var p=sph(0.03,Math.random()>0.5?0xfde047:0xffffff,ex+(Math.random()-0.5)*0.22,ey+(Math.random()-0.5)*0.22,(Math.random()-0.5)*0.15);
+            addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.06, 0, 8, 8);
+          })();
+        }
+        addDynLight(0xffffff, 7.0, 16, ex, ey+0.5, 0, 7);
+      } else if (type==='ice') {
+        for (var i2=0;i2<22;i2++){
+          (function(){
+            var ang=Math.random()*Math.PI*2;
+            var spd=0.04+Math.random()*0.09;
+            var sz=0.04+Math.random()*0.09;
+            var p=box(sz,Math.random()>0.5?0x67e8f9:0xffffff,ex+(Math.random()-0.5)*0.22,ey+(Math.random()-0.5)*0.22,(Math.random()-0.5)*0.22);
+            p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd+0.02, (Math.random()-0.5)*0.04, -0.016, 24, 24);
+          })();
+        }
+        for (var f2=0;f2<7;f2++){
+          (function(){
+            var p2=sph(0.2+Math.random()*0.18,0xe0f2fe,ex+(Math.random()-0.5)*0.3,ey-0.1,(Math.random()-0.5)*0.22);
+            p2.material.opacity=0.22;
+            addP(p2, (Math.random()-0.5)*0.01, 0.012, (Math.random()-0.5)*0.01, 0.003, 30, 30);
+          })();
+        }
+      } else if (type==='grass') {
+        for (var l=0;l<16;l++){
+          (function(){
+            var ang=Math.random()*Math.PI*2;
+            var r2=Math.random()*0.16;
+            var p=box(0.04,l%3===0?0x86efac:0x22c55e,ex+Math.cos(ang)*r2,ey+Math.sin(ang)*r2,(Math.random()-0.5)*0.15);
+            addP(p, Math.cos(ang)*0.02, Math.sin(ang)*0.02+0.02, (Math.random()-0.5)*0.02, -0.008, 22, 22);
+          })();
+        }
+      } else if (type==='psychic') {
+        for (var r=0;r<5;r++){
+          (function(ring){
+            setTimeout(function(){
+              for (var s=0;s<14;s++){
+                var ang=s/14*Math.PI*2;
+                var rad=0.08+ring*0.1;
+                var p=sph(0.03,s%2===0?0xf472b6:0xfce7f3,ex+Math.cos(ang)*rad,ey+Math.sin(ang)*rad,0);
+                addP(p, Math.cos(ang)*0.03, Math.sin(ang)*0.03, 0, 0, 20, 20);
+              }
+            }, Math.round(r*55*S));
+          })(r);
+        }
+      } else if (type==='dragon') {
+        for (var d=0;d<22;d++){
+          (function(){
+            var ang=Math.random()*Math.PI*2;
+            var spd=0.03+Math.random()*0.05;
+            var col2=d%3===0?0xfde047:(d%3===1?0xfb923c:0x7e22ce);
+            var p=sph(0.05+Math.random()*0.09,col2,ex+Math.cos(ang)*0.12,ey+Math.sin(ang)*0.12,(Math.random()-0.5)*0.16);
+            addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd+0.01, (Math.random()-0.5)*0.02, 0.005, 22, 22);
+          })();
+        }
+      } else if (type==='ghost') {
+        for (var gh=0;gh<18;gh++){
+          (function(){
+            var ang=Math.random()*Math.PI*2;
+            var sz=0.07+Math.random()*0.13;
+            var p=sph(sz,gh%2===0?0xa78bfa:0xe9d5ff,ex+Math.cos(ang)*0.16,ey+Math.sin(ang)*0.16,(Math.random()-0.5)*0.22);
+            p.material.opacity=0.38;
+            addP(p, Math.cos(ang)*0.018, Math.sin(ang)*0.018, 0, 0, 24, 24);
+          })();
+        }
+      } else if (type==='poison') {
+        for (var po=0;po<20;po++){
+          (function(){
+            var px=ex+(Math.random()-0.5)*0.32;
+            var py=ey+Math.random()*0.22;
+            var p=sph(0.04+Math.random()*0.06,po%3===0?0xc084fc:0x9333ea,px,py,0);
+            addP(p, (Math.random()-0.5)*0.02, -0.03-Math.random()*0.02, (Math.random()-0.5)*0.02, -0.005, 24, 24);
+          })();
+        }
+      } else if (type==='ground') {
+        for (var g2=0;g2<28;g2++){
+          (function(){
+            var px=ex+(Math.random()-0.5)*0.55;
+            var py=ey-0.22;
+            var sz=0.05+Math.random()*0.12;
+            var col2=g2%3===0?0xd97706:0x92400e;
+            var p=g2%4===0?box(sz,col2,px,py,(Math.random()-0.5)*0.32):sph(sz,col2,px,py,(Math.random()-0.5)*0.32);
+            addP(p, (Math.random()-0.5)*0.04, 0.05+Math.random()*0.06, (Math.random()-0.5)*0.04, -0.024, 26, 26);
+          })();
+        }
+      } else if (type==='flying') {
+        for (var fl2=0;fl2<16;fl2++){
+          (function(){
+            var ang=Math.random()*Math.PI*2;
+            var px=ex+(Math.random()-0.5)*0.16;
+            var py=ey+(Math.random()-0.5)*0.16;
+            var p=box(0.03,fl2%2===0?0xa78bfa:0xc4b5fd,px,py,(Math.random()-0.5)*0.22);
+            addP(p, nx*0.05+(Math.random()-0.5)*0.03, ny*0.05+(Math.random()-0.5)*0.03, (Math.random()-0.5)*0.02, -0.005, 20, 20);
+          })();
+        }
+      } else if (type==='rock') {
+        for (var rk=0;rk<22;rk++){
+          (function(){
+            var px=ex+(Math.random()-0.5)*0.52;
+            var py=ey+0.22+Math.random()*0.2;
+            var sz=0.05+Math.random()*0.14;
+            var col2=rk%3===0?0xa8a29e:0x57534e;
+            var p=box(sz,col2,px,py,(Math.random()-0.5)*0.32);
+            p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(p, (Math.random()-0.5)*0.04, -0.065-Math.random()*0.04, (Math.random()-0.5)*0.04, -0.026, 26, 26);
+          })();
+        }
+      } else if (type==='dark') {
+        for (var d2=0;d2<18;d2++){
+          (function(){
+            var ang=Math.random()*Math.PI*2;
+            var sz=0.06+Math.random()*0.11;
+            var p=sph(sz,d2%2===0?0x292524:0x44403c,ex+Math.cos(ang)*0.16,ey+Math.sin(ang)*0.16,0);
+            p.material.opacity=0.6;
+            addP(p, Math.cos(ang)*0.016, Math.sin(ang)*0.016, 0, 0, 24, 24);
+          })();
+        }
+      } else if (type==='steel') {
+        for (var st=0;st<20;st++){
+          (function(){
+            var ang=Math.random()*Math.PI*2;
+            var spd=0.05+Math.random()*0.09;
+            var p=box(0.055,st%3===0?0xd4d4d8:0xa1a1aa,ex+(Math.random()-0.5)*0.16,ey+(Math.random()-0.5)*0.16,(Math.random()-0.5)*0.16);
+            p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd+0.02, (Math.random()-0.5)*0.03, -0.02, 22, 22);
+          })();
+        }
+      } else if (type==='fairy') {
+        for (var fa=0;fa<22;fa++){
+          (function(){
+            var ang=Math.random()*Math.PI*2;
+            var sz=0.03+Math.random()*0.05;
+            var col2=fa%3===0?0xf9a8d4:(fa%2===0?0xf472b6:0xfce7f3);
+            var p=sph(sz,col2,ex+Math.cos(ang)*0.16,ey+Math.sin(ang)*0.16,(Math.random()-0.5)*0.16);
+            addP(p, Math.cos(ang)*0.03, Math.sin(ang)*0.03+0.02, (Math.random()-0.5)*0.03, 0.005, 24, 24);
+          })();
+        }
+      } else {
+        for (var n=0;n<16;n++){
+          (function(){
+            var ang=Math.random()*Math.PI*2;
+            var spd=0.04+Math.random()*0.07;
+            var p=sph(0.04,n%2===0?0xd4d4d8:0xa1a1aa,ex+(Math.random()-0.5)*0.12,ey+(Math.random()-0.5)*0.12,(Math.random()-0.5)*0.1);
+            addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.02, -0.014, 18, 18);
+          })();
+        }
+      }
+    }, typeDelay);
   }
 
   function b3dUpdateTextures() {
@@ -6319,6 +6467,7 @@
     if (b3d.dynLights) { b3d.dynLights.forEach(function(dl){ b3d.scene.remove(dl.light); }); }
     b3d.scene = null; b3d.camera = null; b3d.renderer = null;
     b3d.player = null; b3d.opp = null; b3d.particles = []; b3d.dynLights = [];
+    b3d.camDefault = null; b3d.camGoal = null; b3d.camLookGoal = null; b3d.shake = 0;
     var c = document.getElementById('battle3d');
     if (c) c.innerHTML = '';
   }
