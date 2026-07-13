@@ -6656,327 +6656,506 @@
       }
     }, launchDelay);
 
-    // === PHASE 4: Type-specific extra effects at target (delayed after impact) ===
+    // === PHASE 4: Type-specific cinematic impact effects (Sword/Shield level) ===
     var typeDelay = isMelee
       ? Math.round(launchDelay + 10*28*S + 40*S + 80*S)
       : Math.round(launchDelay + 23*22*S + 80*S);
 
     setTimeout(function(){
+      b3d.shake = type==='rock'||type==='ground'?22:type==='dragon'?18:type==='electric'?20:14;
       if (type==='fire') {
-        for (var f=0;f<18;f++){
+        // Wave 1: Explosion burst
+        for(var f1=0;f1<20;f1++){
           (function(){
-            var fx=ex+(Math.random()-0.5)*0.35;
-            var fy=ey+Math.random()*0.15-0.25;
-            var sz=0.05+Math.random()*0.12;
-            var col2=f%3===0?0xfbbf24:(f%2===0?0xff6b35:0xdc2626);
-            var p=sph(sz,col2,fx,fy,(Math.random()-0.5)*0.2);
-            addP(p, (Math.random()-0.5)*0.02, 0.06+Math.random()*0.05, (Math.random()-0.5)*0.02, 0.012, 28, 28);
+            var a=Math.random()*Math.PI*2, sp=0.08+Math.random()*0.16;
+            var col=[0xff4500,0xff6b35,0xfbbf24,0xfef3c7,0xef4444][f1%5];
+            var p=sph(0.04+Math.random()*0.08,col,ex+(Math.random()-0.5)*0.15,ey+(Math.random()-0.5)*0.15,(Math.random()-0.5)*0.2);
+            addP(p, Math.cos(a)*sp, Math.sin(a)*sp+0.04, (Math.random()-0.5)*0.04, 0.015, 30, 30);
           })();
         }
-        for (var fl=0;fl<8;fl++){
+        // Wave 2: Rising flame pillars
+        for(var fp=0;fp<8;fp++){
           (function(){
-            var fp=sph(0.08+Math.random()*0.06,0xff4500,ex+(Math.random()-0.5)*0.2,ey+0.1+Math.random()*0.15,(Math.random()-0.5)*0.12);
-            fp.material.opacity=0.7;
-            addP(fp, (Math.random()-0.5)*0.01, 0.08+Math.random()*0.04, (Math.random()-0.5)*0.01, 0.008, 22, 22);
+            var fa=fp/8*Math.PI*2;
+            var pillar=sph(0.06+Math.random()*0.04,[0xff4500,0xfbbf24,0xef4444][fp%3],ex+Math.cos(fa)*0.12,ey+0.05,Math.sin(fa)*0.08);
+            pillar.scale.set(0.5+Math.random()*0.3,2.5+Math.random()*1.5,0.5+Math.random()*0.3);
+            addP(pillar, Math.cos(fa)*0.015, 0.1+Math.random()*0.06, Math.sin(fa)*0.015, 0.02, 26, 26);
           })();
         }
-        addDynLight(0xff6b35, 6.0, 14, ex, ey+0.3, 0.3, Math.round(12*S));
+        // Wave 3: Embers rising
+        for(var fe2=0;fe2<30;fe2++){
+          (function(){
+            var eb=sph(0.008+Math.random()*0.012,[0xfbbf24,0xff6b35,0xffffff,0xfef3c7][fe2%4],ex+(Math.random()-0.5)*0.5,ey+Math.random()*0.1,(Math.random()-0.5)*0.3);
+            eb.material.opacity=0.9;
+            addP(eb, (Math.random()-0.5)*0.01, 0.04+Math.random()*0.06, (Math.random()-0.5)*0.01, 0.008, 35, 35);
+          })();
+        }
+        // Wave 4: Heat distortion rings
+        for(var hr=0;hr<4;hr++){
+          (function(){
+            var ring=sph(0.1+hr*0.06,0xff6b35,ex,ey,0,10);
+            ring.scale.set(1.5,0.3,1.5); ring.material.opacity=0.35-hr*0.06;
+            addP(ring, 0, 0.02+hr*0.01, 0, 0.005, 24+hr*4, 24+hr*4, true);
+          })();
+        }
+        addDynLight(0xff4500, 10.0, 20, ex, ey+0.4, 0.4, Math.round(18*S));
+        addDynLight(0xfbbf24, 7.0, 16, ex, ey+0.2, 0.2, Math.round(22*S));
+        addDynLight(0xffffff, 4.0, 10, ex, ey+0.6, 0.3, Math.round(6*S));
       } else if (type==='water') {
-        for (var s=0;s<20;s++){
+        // Wave 1: Water column burst
+        for(var w1=0;w1<30;w1++){
           (function(){
-            var ang=-Math.PI/2+((Math.random()-0.5)*Math.PI);
-            var spd=0.04+Math.random()*0.08;
-            var p=sph(0.04+Math.random()*0.07,Math.random()>0.5?0x60a5fa:0x93c5fd,ex+(Math.random()-0.5)*0.12,ey,0);
-            addP(p, Math.cos(ang)*spd, Math.abs(Math.sin(ang))*spd+0.03, (Math.random()-0.5)*0.04, -0.02, 20, 20);
+            var a=-Math.PI/2+((Math.random()-0.5)*Math.PI*0.8);
+            var sp=0.05+Math.random()*0.12;
+            var col=[0x3b82f6,0x60a5fa,0x93c5fd,0xbfdbfe,0xffffff][w1%5];
+            var p=sph(0.03+Math.random()*0.06,col,ex+(Math.random()-0.5)*0.1,ey+(Math.random()-0.5)*0.08,0);
+            addP(p, Math.cos(a)*sp, Math.abs(Math.sin(a))*sp+0.05, (Math.random()-0.5)*0.05, -0.025, 24, 24);
           })();
         }
-        for (var wd=0;wd<8;wd++){
+        // Wave 2: Water droplets arc
+        for(var wd2=0;wd2<12;wd2++){
           (function(){
-            var ang2=-Math.PI*0.7+Math.random()*Math.PI*0.4;
-            var sp2=0.06+Math.random()*0.06;
-            var dp=sph(0.025+Math.random()*0.02,0x93c5fd,ex+(Math.random()-0.5)*0.08,ey-0.05,0);
-            dp.material.opacity=0.65;
-            addP(dp, Math.cos(ang2)*sp2, Math.sin(ang2)*sp2*0.6+0.04, (Math.random()-0.5)*0.03, -0.018, 18, 18);
+            var da=-Math.PI*0.7+Math.random()*Math.PI*0.4;
+            var dsp=0.07+Math.random()*0.08;
+            var dp=sph(0.02+Math.random()*0.025,0x93c5fd,ex+(Math.random()-0.5)*0.1,ey-0.05,0);
+            dp.material.opacity=0.7;
+            addP(dp, Math.cos(da)*dsp, Math.sin(da)*dsp*0.7+0.05, (Math.random()-0.5)*0.04, -0.022, 22, 22);
           })();
         }
-        var ripple=sph(0.12,0x3b82f6,ex,ey-0.1,0,10);
-        ripple.scale.set(1.6,0.4,1.6);
-        ripple.material.opacity=0.35;
-        addP(ripple, 0, 0, 0, 0, 28, 28, true);
+        // Wave 3: Expanding ripples
+        for(var wr=0;wr<5;wr++){
+          (function(){
+            setTimeout(function(){
+              var rip=new THREE.Mesh(new THREE.RingGeometry(0.05+wr*0.03,0.12+wr*0.04,16),new THREE.MeshBasicMaterial({color:0x60a5fa,transparent:true,opacity:0.5-wr*0.08,side:THREE.DoubleSide}));
+              rip.position.set(ex,ey-0.1,0); rip.rotation.x=-Math.PI/2;
+              b3d.scene.add(rip);
+              addP(rip, 0, 0, 0, 0, 26, 26, true);
+            }, Math.round(wr*40*S));
+          })();
+        }
+        // Wave 4: Mist
+        for(var wm=0;wm<6;wm++){
+          (function(){
+            var mist=sph(0.15+Math.random()*0.12,0xbfdbfe,ex+(Math.random()-0.5)*0.3,ey-0.05,(Math.random()-0.5)*0.2);
+            mist.material.opacity=0.18; mist.scale.set(1.5+Math.random(),0.4,1.5+Math.random());
+            addP(mist, (Math.random()-0.5)*0.008, 0.008, (Math.random()-0.5)*0.008, 0.003, 32, 32);
+          })();
+        }
+        addDynLight(0x3b82f6, 8.0, 18, ex, ey+0.3, 0.3, Math.round(16*S));
+        addDynLight(0xffffff, 5.0, 12, ex, ey+0.5, 0.2, Math.round(8*S));
       } else if (type==='electric') {
-        for (var a=0;a<28;a++){
+        // Wave 1: Lightning burst — jagged bolts radiating
+        for(var lb2=0;lb2<10;lb2++){
           (function(){
             var ang=Math.random()*Math.PI*2;
-            var spd=0.12+Math.random()*0.2;
-            var p=sph(0.03,Math.random()>0.5?0xfde047:0xffffff,ex+(Math.random()-0.5)*0.22,ey+(Math.random()-0.5)*0.22,(Math.random()-0.5)*0.15);
-            addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.06, 0, 8, 8);
-          })();
-        }
-        for (var lb=0;lb<6;lb++){
-          (function(){
-            var ang3=Math.random()*Math.PI*2;
-            var len=0.08+Math.random()*0.12;
-            for(var ls=0;ls<5;ls++){
-              var bp=sph(0.015,ls%2===0?0xfef08a:0xffffff,ex+Math.cos(ang3)*ls*0.03,ey+Math.sin(ang3)*ls*0.03,(Math.random()-0.5)*0.08);
-              bp.material.opacity=0.9-ls*0.15;
-              addP(bp, Math.cos(ang3)*0.02, Math.sin(ang3)*0.02, 0, 0, 6, 6);
+            var pts=[];
+            var zx=0, zy=0;
+            for(var lz=0;lz<8;lz++){
+              zx+=Math.cos(ang)*0.04+(Math.random()-0.5)*0.06;
+              zy+=Math.sin(ang)*0.04+(Math.random()-0.5)*0.06;
+              pts.push(new THREE.Vector3(ex+zx,ey+zy,(Math.random()-0.5)*0.1));
+            }
+            for(var ls2=0;ls2<pts.length-1;ls2++){
+              var p1=pts[ls2],p2=pts[ls2+1];
+              var ddx=p2.x-p1.x,ddy=p2.y-p1.y,ddz=p2.z-p1.z;
+              var ll=Math.sqrt(ddx*ddx+ddy*ddy+ddz*ddz);
+              var seg3=new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.006,ll,3),new THREE.MeshBasicMaterial({color:ls2%2===0?0xfde047:0xffffff,transparent:true,opacity:0.95}));
+              seg3.position.set((p1.x+p2.x)/2,(p1.y+p2.y)/2,(p1.z+p2.z)/2);
+              seg3.lookAt(p2); seg3.rotateX(Math.PI/2);
+              addP(seg3, 0, 0, 0, 0, Math.round(10+Math.random()*6), Math.round(10+Math.random()*6), true);
             }
           })();
         }
-        addDynLight(0xffffff, 9.0, 20, ex, ey+0.5, 0, 8);
-        addDynLight(0xfde047, 6.0, 16, ex, ey, 0.2, Math.round(10*S));
+        // Wave 2: Electric sparks
+        for(var es2=0;es2<35;es2++){
+          (function(){
+            var a2=Math.random()*Math.PI*2, sp2=0.15+Math.random()*0.25;
+            var sp=new THREE.Mesh(new THREE.SphereGeometry(0.015+Math.random()*0.01,4,3),new THREE.MeshBasicMaterial({color:Math.random()>0.3?0xfde047:0xffffff,transparent:true,opacity:0.95}));
+            sp.position.set(ex+(Math.random()-0.5)*0.2,ey+(Math.random()-0.5)*0.2,(Math.random()-0.5)*0.15);
+            addP(sp, Math.cos(a2)*sp2, Math.sin(a2)*sp2, (Math.random()-0.5)*0.08, 0, 8, 8);
+          })();
+        }
+        // Wave 3: Screen flash
+        flashScreen(0xfde047);
+        addDynLight(0xffffff, 12.0, 25, ex, ey+0.5, 0, Math.round(6*S));
+        addDynLight(0xfde047, 8.0, 18, ex, ey, 0.3, Math.round(12*S));
+        addDynLight(0xfef08a, 5.0, 14, ex, ey-0.3, 0.2, Math.round(16*S));
       } else if (type==='ice') {
-        for (var i2=0;i2<22;i2++){
+        // Wave 1: Crystal shards burst
+        for(var ic2=0;ic2<28;ic2++){
           (function(){
-            var ang=Math.random()*Math.PI*2;
-            var spd=0.04+Math.random()*0.09;
-            var sz=0.04+Math.random()*0.09;
-            var p=box(sz,Math.random()>0.5?0x67e8f9:0xffffff,ex+(Math.random()-0.5)*0.22,ey+(Math.random()-0.5)*0.22,(Math.random()-0.5)*0.22);
-            p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
-            addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd+0.02, (Math.random()-0.5)*0.04, -0.016, 24, 24);
+            var a3=Math.random()*Math.PI*2, sp3=0.05+Math.random()*0.12;
+            var h2=0.06+Math.random()*0.1;
+            var shard=new THREE.Mesh(new THREE.ConeGeometry(0.012+Math.random()*0.01,h2,4),new THREE.MeshBasicMaterial({color:[0x67e8f9,0xffffff,0xe0f2fe,0xcffafe][ic2%4],transparent:true,opacity:0.9}));
+            shard.position.set(ex+(Math.random()-0.5)*0.2,ey+(Math.random()-0.5)*0.2,(Math.random()-0.5)*0.2);
+            shard.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(shard, Math.cos(a3)*sp3, Math.sin(a3)*sp3+0.03, (Math.random()-0.5)*0.05, -0.02, 28, 28);
           })();
         }
-        for (var f2=0;f2<7;f2++){
+        // Wave 2: Large crystal pillars growing from ground
+        for(var cp=0;cp<6;cp++){
           (function(){
-            var p2=sph(0.2+Math.random()*0.18,0xe0f2fe,ex+(Math.random()-0.5)*0.3,ey-0.1,(Math.random()-0.5)*0.22);
-            p2.material.opacity=0.22;
-            addP(p2, (Math.random()-0.5)*0.01, 0.012, (Math.random()-0.5)*0.01, 0.003, 30, 30);
+            var ca=cp/6*Math.PI*2;
+            var pillar=new THREE.Mesh(new THREE.ConeGeometry(0.02+Math.random()*0.015,0.15+Math.random()*0.12,5),new THREE.MeshBasicMaterial({color:cp%2===0?0x67e8f9:0xffffff,transparent:true,opacity:0.85}));
+            pillar.position.set(ex+Math.cos(ca)*0.1,ey-0.08,Math.sin(ca)*0.08);
+            pillar.rotation.z=(Math.random()-0.5)*0.3;
+            addP(pillar, Math.cos(ca)*0.005, 0.04+Math.random()*0.03, Math.sin(ca)*0.005, -0.008, 30, 30);
           })();
         }
-        for(var ic=0;ic<5;ic++){
+        // Wave 3: Frost mist
+        for(var fm=0;fm<8;fm++){
           (function(){
-            var ish=box(0.03,0xffffff,ex+(Math.random()-0.5)*0.18,ey+(Math.random()-0.5)*0.18,(Math.random()-0.5)*0.12);
-            ish.scale.set(0.3,2.5,0.3);
-            ish.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
-            addP(ish, (Math.random()-0.5)*0.03, Math.random()*0.04+0.02, (Math.random()-0.5)*0.03, -0.022, 20, 20);
+            var mist2=sph(0.18+Math.random()*0.15,0xcffafe,ex+(Math.random()-0.5)*0.35,ey-0.1,(Math.random()-0.5)*0.25);
+            mist2.material.opacity=0.15; mist2.scale.set(1.8+Math.random(),0.3,1.8+Math.random());
+            addP(mist2, (Math.random()-0.5)*0.006, 0.01, (Math.random()-0.5)*0.006, 0.002, 34, 34);
           })();
         }
-        addDynLight(0xe0f2fe, 4.0, 12, ex, ey, 0.2, Math.round(10*S));
+        // Wave 4: Octahedron ice crystals
+        for(var oc=0;oc<8;oc++){
+          (function(){
+            var oc2=new THREE.Mesh(new THREE.OctahedronGeometry(0.02+Math.random()*0.02,0),new THREE.MeshBasicMaterial({color:0xe0f2fe,transparent:true,opacity:0.75}));
+            oc2.position.set(ex+(Math.random()-0.5)*0.3,ey+(Math.random()-0.5)*0.3,(Math.random()-0.5)*0.2);
+            oc2.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(oc2, (Math.random()-0.5)*0.04, Math.random()*0.05+0.02, (Math.random()-0.5)*0.04, -0.018, 26, 26);
+          })();
+        }
+        addDynLight(0xe0f2fe, 6.0, 16, ex, ey, 0.3, Math.round(14*S));
+        addDynLight(0xffffff, 4.0, 10, ex, ey+0.4, 0.2, Math.round(8*S));
       } else if (type==='grass') {
-        for (var l=0;l<16;l++){
+        // Wave 1: Vine eruption
+        for(var vl2=0;vl2<8;vl2++){
           (function(){
-            var ang=Math.random()*Math.PI*2;
-            var r2=Math.random()*0.16;
-            var p=box(0.04,l%3===0?0x86efac:0x22c55e,ex+Math.cos(ang)*r2,ey+Math.sin(ang)*r2,(Math.random()-0.5)*0.15);
-            addP(p, Math.cos(ang)*0.02, Math.sin(ang)*0.02+0.02, (Math.random()-0.5)*0.02, -0.008, 22, 22);
+            var va2=vl2/8*Math.PI*2;
+            var vine=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.008,0.2+Math.random()*0.12,5),new THREE.MeshBasicMaterial({color:0x15803d,transparent:true,opacity:0.85}));
+            vine.position.set(ex+Math.cos(va2)*0.08,ey-0.05,Math.sin(va2)*0.06);
+            vine.rotation.z=va2+Math.PI/2+(Math.random()-0.5)*0.4;
+            addP(vine, Math.cos(va2)*0.012, 0.04+Math.random()*0.03, Math.sin(va2)*0.012, 0.005, 28, 28);
           })();
         }
-        for(var vl=0;vl<6;vl++){
+        // Wave 2: Leaf storm
+        for(var ls3=0;ls3<24;ls3++){
           (function(){
-            var va=vl/6*Math.PI*2;
-            var vine=sph(0.025,0x15803d,ex+Math.cos(va)*0.08,ey+Math.sin(va)*0.08,0);
-            vine.scale.set(0.4,2.2,0.4);
-            vine.rotation.z=va+Math.PI/2;
-            addP(vine, Math.cos(va)*0.015, Math.sin(va)*0.015+0.01, 0, 0.003, 26, 26);
+            var la2=Math.random()*Math.PI*2;
+            var leaf2=new THREE.Mesh(new THREE.SphereGeometry(0.02+Math.random()*0.015,6,4),new THREE.MeshBasicMaterial({color:[0x22c55e,0x4ade80,0x86efac,0x15803d][ls3%4],transparent:true,opacity:0.85}));
+            leaf2.scale.set(0.3+Math.random()*0.2,1.4+Math.random()*0.4,0.2+Math.random()*0.1);
+            leaf2.position.set(ex+Math.cos(la2)*0.12,ey+Math.sin(la2)*0.12,(Math.random()-0.5)*0.12);
+            leaf2.rotation.z=Math.random()*Math.PI;
+            addP(leaf2, Math.cos(la2)*0.03, Math.sin(la2)*0.03+0.02, (Math.random()-0.5)*0.02, -0.008, 26, 26);
           })();
         }
-        for(var lf2=0;lf2<8;lf2++){
+        // Wave 3: Pollen particles
+        for(var pp2=0;pp2<15;pp2++){
           (function(){
-            var la=Math.random()*Math.PI*2;
-            var leaf=box(0.03,lf2%2===0?0x22c55e:0x4ade80,ex+Math.cos(la)*0.12,ey+Math.sin(la)*0.12,(Math.random()-0.5)*0.1);
-            leaf.scale.set(0.4,1.8,0.25);
-            addP(leaf, Math.cos(la)*0.025, Math.sin(la)*0.025+0.015, (Math.random()-0.5)*0.01, -0.006, 24, 24);
+            var pol=sph(0.01+Math.random()*0.008,[0xfbbf24,0xfde047,0xffffff][pp2%3],ex+(Math.random()-0.5)*0.4,ey+(Math.random()-0.5)*0.3,(Math.random()-0.5)*0.2);
+            pol.material.opacity=0.7;
+            addP(pol, (Math.random()-0.5)*0.008, 0.015+Math.random()*0.01, (Math.random()-0.5)*0.008, 0.002, 30, 30);
           })();
         }
+        addDynLight(0x22c55e, 7.0, 16, ex, ey+0.3, 0.3, Math.round(16*S));
+        addDynLight(0xfbbf24, 4.0, 10, ex, ey+0.5, 0.2, Math.round(10*S));
       } else if (type==='psychic') {
-        for (var r=0;r<5;r++){
-          (function(ring){
+        // Wave 1: Expanding energy rings (sequenced)
+        for(var pr=0;pr<6;pr++){
+          (function(ring2){
             setTimeout(function(){
-              for (var s=0;s<14;s++){
-                var ang=s/14*Math.PI*2;
-                var rad=0.08+ring*0.1;
-                var p=sph(0.03,s%2===0?0xf472b6:0xfce7f3,ex+Math.cos(ang)*rad,ey+Math.sin(ang)*rad,0);
-                addP(p, Math.cos(ang)*0.03, Math.sin(ang)*0.03, 0, 0, 20, 20);
+              for(var ps3=0;ps3<16;ps3++){
+                var ang2=ps3/16*Math.PI*2;
+                var rad2=0.06+ring2*0.08;
+                var col2=[0xf472b6,0xfce7f3,0xfdf2f8,0xf472b6,0xfce7f3,0xfdf2f8][ring2];
+                var p2=new THREE.Mesh(new THREE.SphereGeometry(0.02+Math.random()*0.01,6,4),new THREE.MeshBasicMaterial({color:col2,transparent:true,opacity:0.8}));
+                p2.position.set(ex+Math.cos(ang2)*rad2,ey+Math.sin(ang2)*rad2,0);
+                addP(p2, Math.cos(ang2)*0.035, Math.sin(ang2)*0.035, 0, 0, 22, 22);
               }
-            }, Math.round(r*55*S));
-          })(r);
+            }, Math.round(ring2*45*S));
+          })(pr);
         }
-        for(var pi=0;pi<3;pi++){
+        // Wave 2: Central psychic eye flash
+        for(var pe=0;pe<3;pe++){
           (function(){
-            var rng2=sph(0.06,0xf472b6,ex,ey,0,14);
-            rng2.scale.set(1,1,0.1);
-            rng2.material.opacity=0.4;
-            addP(rng2, 0, 0, 0, 0, Math.round(18*S+pi*8*S), Math.round(18*S+pi*8*S), true);
+            var eyeR=sph(0.08-pe*0.02,0xf472b6,ex,ey,0,14);
+            eyeR.scale.set(1.2,1.2,0.1); eyeR.material.opacity=0.5-pe*0.12;
+            addP(eyeR, 0, 0, 0, 0, Math.round(20+pe*10), Math.round(20+pe*10), true);
           })();
         }
-        addDynLight(0xf472b6, 5.0, 14, ex, ey+0.2, 0.2, Math.round(14*S));
+        // Wave 3: Floating orbs
+        for(var po2=0;po2<8;po2++){
+          (function(){
+            var oa=po2/8*Math.PI*2;
+            var orb2=new THREE.Mesh(new THREE.SphereGeometry(0.015,6,4),new THREE.MeshBasicMaterial({color:po2%2===0?0xfce7f3:0xfdf2f8,transparent:true,opacity:0.7}));
+            orb2.position.set(ex+Math.cos(oa)*0.14,ey+Math.sin(oa)*0.14,(Math.random()-0.5)*0.1);
+            addP(orb2, Math.cos(oa)*0.015, Math.sin(oa)*0.015+0.01, 0, 0.002, 26, 26);
+          })();
+        }
+        addDynLight(0xf472b6, 8.0, 18, ex, ey+0.3, 0.3, Math.round(18*S));
+        addDynLight(0xfdf2f8, 5.0, 12, ex, ey, 0.2, Math.round(14*S));
       } else if (type==='dragon') {
-        for (var d=0;d<22;d++){
+        // Wave 1: Dragon flame explosion
+        for(var df2=0;df2<28;df2++){
           (function(){
-            var ang=Math.random()*Math.PI*2;
-            var spd=0.03+Math.random()*0.05;
-            var col2=d%3===0?0xfde047:(d%3===1?0xfb923c:0x7e22ce);
-            var p=sph(0.05+Math.random()*0.09,col2,ex+Math.cos(ang)*0.12,ey+Math.sin(ang)*0.12,(Math.random()-0.5)*0.16);
-            addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd+0.01, (Math.random()-0.5)*0.02, 0.005, 22, 22);
+            var a4=Math.random()*Math.PI*2, sp4=0.04+Math.random()*0.08;
+            var col3=[0x7e22ce,0xfde047,0xfb923c,0xfbbf24,0xef4444,0x7e22ce][df2%6];
+            var p3=sph(0.04+Math.random()*0.08,col3,ex+Math.cos(a4)*0.1,ey+Math.sin(a4)*0.1,(Math.random()-0.5)*0.18);
+            addP(p3, Math.cos(a4)*sp4, Math.sin(a4)*sp4+0.02, (Math.random()-0.5)*0.03, 0.008, 26, 26);
           })();
         }
-        for(var dbs=0;dbs<4;dbs++){
+        // Wave 2: Dragon flame pillars
+        for(var dp2=0;dp2<6;dp2++){
           (function(){
-            var ba=dbs/4*Math.PI*2;
-            var flame=sph(0.07,0xfb923c,ex+Math.cos(ba)*0.08,ey+Math.sin(ba)*0.08,0);
-            flame.scale.set(0.6,2,0.6);
-            addP(flame, Math.cos(ba)*0.02, 0.06+Math.random()*0.03, Math.sin(ba)*0.02, 0.01, 20, 20);
+            var da2=dp2/6*Math.PI*2;
+            var fl=new THREE.Mesh(new THREE.ConeGeometry(0.05+Math.random()*0.03,0.2+Math.random()*0.12,6),new THREE.MeshBasicMaterial({color:[0xfb923c,0xfbbf24,0x7e22ce][dp2%3],transparent:true,opacity:0.85}));
+            fl.position.set(ex+Math.cos(da2)*0.1,ey,Math.sin(da2)*0.08);
+            fl.rotation.z=da2;
+            addP(fl, Math.cos(da2)*0.015, 0.08+Math.random()*0.04, Math.sin(da2)*0.015, 0.015, 24, 24);
           })();
         }
-        addDynLight(0x7e22ce, 6.0, 16, ex, ey+0.2, 0.2, Math.round(14*S));
-        addDynLight(0xfde047, 4.0, 12, ex, ey+0.4, 0.1, Math.round(10*S));
+        // Wave 3: Scale debris
+        for(var sd=0;sd<15;sd++){
+          (function(){
+            var sc=new THREE.Mesh(new THREE.OctahedronGeometry(0.01+Math.random()*0.015,0),new THREE.MeshBasicMaterial({color:[0x7e22ce,0xfde047,0xfbbf24][sd%3],transparent:true,opacity:0.8}));
+            sc.position.set(ex+(Math.random()-0.5)*0.35,ey+(Math.random()-0.5)*0.35,(Math.random()-0.5)*0.2);
+            sc.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(sc, (Math.random()-0.5)*0.05, Math.random()*0.06+0.02, (Math.random()-0.5)*0.05, 0.005, 28, 28);
+          })();
+        }
+        addDynLight(0x7e22ce, 9.0, 20, ex, ey+0.3, 0.3, Math.round(16*S));
+        addDynLight(0xfde047, 6.0, 14, ex, ey+0.5, 0.2, Math.round(12*S));
+        addDynLight(0xfb923c, 4.0, 10, ex, ey, 0.1, Math.round(20*S));
       } else if (type==='ghost') {
-        for (var gh=0;gh<18;gh++){
+        // Wave 1: Spectral explosion
+        for(var ge=0;ge<22;ge++){
           (function(){
-            var ang=Math.random()*Math.PI*2;
-            var sz=0.07+Math.random()*0.13;
-            var p=sph(sz,gh%2===0?0xa78bfa:0xe9d5ff,ex+Math.cos(ang)*0.16,ey+Math.sin(ang)*0.16,(Math.random()-0.5)*0.22);
-            p.material.opacity=0.38;
-            addP(p, Math.cos(ang)*0.018, Math.sin(ang)*0.018, 0, 0, 24, 24);
+            var a5=Math.random()*Math.PI*2;
+            var sz2=0.06+Math.random()*0.14;
+            var wisp=new THREE.Mesh(new THREE.SphereGeometry(sz2,8,6),new THREE.MeshBasicMaterial({color:[0x7c3aed,0xa78bfa,0xc4b5fd,0xe9d5ff][ge%4],transparent:true,opacity:0.45}));
+            wisp.position.set(ex+Math.cos(a5)*0.15,ey+Math.sin(a5)*0.15,(Math.random()-0.5)*0.25);
+            addP(wisp, Math.cos(a5)*0.02, Math.sin(a5)*0.02, 0, 0.003, 28, 28);
           })();
         }
-        for(var gs2=0;gs2<5;gs2++){
+        // Wave 2: Spectral hands
+        for(var gh2=0;gh2<5;gh2++){
           (function(){
-            var ga=gs2/5*Math.PI*2;
-            var wisp2=sph(0.04+Math.random()*0.03,gs2%2===0?0x7c3aed:0xc4b5fd,ex+Math.cos(ga)*0.12,ey+Math.sin(ga)*0.12,(Math.random()-0.5)*0.15);
-            wisp2.material.opacity=0.45;
-            addP(wisp2, Math.cos(ga)*0.01, Math.sin(ga)*0.01-0.01, 0, 0.002, 26, 26);
+            var ga2=gh2/5*Math.PI*2;
+            var hand=new THREE.Mesh(new THREE.ConeGeometry(0.025,0.12,4),new THREE.MeshBasicMaterial({color:0xa78bfa,transparent:true,opacity:0.5}));
+            hand.position.set(ex+Math.cos(ga2)*0.12,ey+Math.sin(ga2)*0.12,(Math.random()-0.5)*0.15);
+            hand.rotation.z=ga2+Math.PI/2;
+            addP(hand, Math.cos(ga2)*0.01, Math.sin(ga2)*0.01-0.015, 0, -0.002, 30, 30);
           })();
         }
-        addDynLight(0x7c3aed, 4.5, 14, ex, ey+0.2, 0.2, Math.round(12*S));
+        // Wave 3: Dark portal rings
+        for(var gpr=0;gpr<3;gpr++){
+          (function(){
+            var pring=new THREE.Mesh(new THREE.TorusGeometry(0.08+gpr*0.04,0.008,8,16),new THREE.MeshBasicMaterial({color:0x7c3aed,transparent:true,opacity:0.4-gpr*0.1}));
+            pring.position.set(ex,ey,0); pring.rotation.x=Math.PI/2;
+            addP(pring, 0, 0, 0, 0, 28+gpr*6, 28+gpr*6, true);
+          })();
+        }
+        addDynLight(0x7c3aed, 7.0, 18, ex, ey+0.3, 0.3, Math.round(16*S));
+        addDynLight(0xa78bfa, 4.0, 12, ex, ey, 0.2, Math.round(20*S));
       } else if (type==='poison') {
-        for (var po=0;po<20;po++){
+        // Wave 1: Toxic bubble explosion
+        for(var pb3=0;pb3<25;pb3++){
           (function(){
-            var px=ex+(Math.random()-0.5)*0.32;
-            var py=ey+Math.random()*0.22;
-            var p=sph(0.04+Math.random()*0.06,po%3===0?0xc084fc:0x9333ea,px,py,0);
-            addP(p, (Math.random()-0.5)*0.02, -0.03-Math.random()*0.02, (Math.random()-0.5)*0.02, -0.005, 24, 24);
+            var px2=ex+(Math.random()-0.5)*0.35;
+            var py2=ey+Math.random()*0.25;
+            var bub2=sph(0.03+Math.random()*0.05,[0xc084fc,0x9333ea,0xa855f7,0x7e22ce][pb3%4],px2,py2,(Math.random()-0.5)*0.1);
+            addP(bub2, (Math.random()-0.5)*0.025, -0.03-Math.random()*0.025, (Math.random()-0.5)*0.025, -0.006, 28, 28);
           })();
         }
-        for(var pb=0;pb<6;pb++){
+        // Wave 2: Rising toxic bubbles
+        for(var ptb=0;ptb<10;ptb++){
           (function(){
-            var bub=sph(0.02+Math.random()*0.025,pb%2===0?0xc084fc:0xa855f7,ex+(Math.random()-0.5)*0.2,ey+Math.random()*0.15,(Math.random()-0.5)*0.12);
-            bub.material.opacity=0.6;
-            addP(bub, (Math.random()-0.5)*0.008, 0.015+Math.random()*0.01, (Math.random()-0.5)*0.008, 0.002, 22, 22);
+            var bub3=new THREE.Mesh(new THREE.SphereGeometry(0.018+Math.random()*0.02,8,6),new THREE.MeshBasicMaterial({color:[0xc084fc,0xa855f7][ptb%2],transparent:true,opacity:0.6}));
+            bub3.position.set(ex+(Math.random()-0.5)*0.25,ey+Math.random()*0.1,(Math.random()-0.5)*0.15);
+            addP(bub3, (Math.random()-0.5)*0.008, 0.02+Math.random()*0.015, (Math.random()-0.5)*0.008, 0.003, 26, 26);
           })();
         }
+        // Wave 3: Toxic puddle on ground
+        var puddle=sph(0.2,0x9333ea,ex,ey-0.15,0,10);
+        puddle.scale.set(2,0.25,2); puddle.material.opacity=0.35;
+        addP(puddle, 0, 0, 0, 0, 32, 32, true);
+        addDynLight(0x9333ea, 6.0, 16, ex, ey, 0.3, Math.round(14*S));
       } else if (type==='ground') {
-        for (var g2=0;g2<28;g2++){
+        // Wave 1: Earth eruption
+        for(var ge2=0;ge2<35;ge2++){
           (function(){
-            var px=ex+(Math.random()-0.5)*0.55;
-            var py=ey-0.22;
-            var sz=0.05+Math.random()*0.12;
-            var col2=g2%3===0?0xd97706:0x92400e;
-            var p=g2%4===0?box(sz,col2,px,py,(Math.random()-0.5)*0.32):sph(sz,col2,px,py,(Math.random()-0.5)*0.32);
-            addP(p, (Math.random()-0.5)*0.04, 0.05+Math.random()*0.06, (Math.random()-0.5)*0.04, -0.024, 26, 26);
+            var px3=ex+(Math.random()-0.5)*0.6;
+            var py3=ey-0.25;
+            var sz3=0.04+Math.random()*0.14;
+            var col4=[0xd97706,0x92400e,0xb45309,0x78350f][ge2%4];
+            var p4=ge2%3===0?new THREE.Mesh(new THREE.BoxGeometry(sz3,sz3*0.8,sz3*0.7),new THREE.MeshBasicMaterial({color:col4})):sph(sz3,col4,px3,py3,(Math.random()-0.5)*0.35);
+            p4.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(p4, (Math.random()-0.5)*0.05, 0.06+Math.random()*0.07, (Math.random()-0.5)*0.05, -0.028, 28, 28);
           })();
         }
-        for(var df=0;df<3;df++){
+        // Wave 2: Ground fissures
+        for(var gf=0;gf<5;gf++){
           (function(){
-            var fiss=sph(0.03,0x78350f,ex+(Math.random()-0.5)*0.3,ey-0.18,(Math.random()-0.5)*0.08);
-            fiss.scale.set(0.3+Math.random()*0.5,0.15,0.3);
-            fiss.material.opacity=0.6;
-            addP(fiss, (Math.random()-0.5)*0.005, 0, (Math.random()-0.5)*0.005, -0.001, 28, 28);
+            var fiss=new THREE.Mesh(new THREE.BoxGeometry(0.15+Math.random()*0.2,0.02,0.02+Math.random()*0.02),new THREE.MeshBasicMaterial({color:0x78350f,transparent:true,opacity:0.65}));
+            fiss.position.set(ex+(Math.random()-0.5)*0.4,ey-0.2,(Math.random()-0.5)*0.15);
+            fiss.rotation.y=Math.random()*Math.PI;
+            addP(fiss, (Math.random()-0.5)*0.005, 0, (Math.random()-0.5)*0.005, -0.001, 30, 30);
           })();
         }
+        // Wave 3: Dust cloud
+        for(var gdc=0;gdc<8;gdc++){
+          (function(){
+            var dust2=sph(0.12+Math.random()*0.1,0xd6d3d1,ex+(Math.random()-0.5)*0.4,ey+0.05,(Math.random()-0.5)*0.25);
+            dust2.material.opacity=0.25; dust2.scale.set(1.5+Math.random()*0.8,0.4,1.5+Math.random()*0.8);
+            addP(dust2, (Math.random()-0.5)*0.01, 0.012+Math.random()*0.008, (Math.random()-0.5)*0.01, 0.002, 34, 34);
+          })();
+        }
+        addDynLight(0xd97706, 6.0, 16, ex, ey, 0.3, Math.round(14*S));
       } else if (type==='flying') {
-        for (var fl2=0;fl2<16;fl2++){
+        // Wave 1: Wind slash burst
+        for(var wf=0;wf<22;wf++){
           (function(){
-            var ang=Math.random()*Math.PI*2;
-            var px=ex+(Math.random()-0.5)*0.16;
-            var py=ey+(Math.random()-0.5)*0.16;
-            var p=box(0.03,fl2%2===0?0xa78bfa:0xc4b5fd,px,py,(Math.random()-0.5)*0.22);
-            addP(p, nx*0.05+(Math.random()-0.5)*0.03, ny*0.05+(Math.random()-0.5)*0.03, (Math.random()-0.5)*0.02, -0.005, 20, 20);
+            var a6=Math.random()*Math.PI*2;
+            var feather2=new THREE.Mesh(new THREE.SphereGeometry(0.02+Math.random()*0.012,6,4),new THREE.MeshBasicMaterial({color:[0xa78bfa,0xc4b5fd,0xddd6fe][wf%3],transparent:true,opacity:0.75}));
+            feather2.scale.set(0.3+Math.random()*0.15,1.3+Math.random()*0.3,0.15+Math.random()*0.1);
+            feather2.position.set(ex+(Math.random()-0.5)*0.2,ey+(Math.random()-0.5)*0.2,(Math.random()-0.5)*0.2);
+            feather2.rotation.z=Math.random()*Math.PI;
+            addP(feather2, Math.cos(a6)*0.04, Math.sin(a6)*0.04+0.02, (Math.random()-0.5)*0.03, -0.006, 24, 24);
           })();
         }
-        for(var ws=0;ws<4;ws++){
+        // Wave 2: Wind slashes
+        for(var ws3=0;ws3<6;ws3++){
           (function(){
-            var slash=sph(0.02,0xc4b5fd,ex+(Math.random()-0.5)*0.15,ey+(Math.random()-0.5)*0.15,0);
-            slash.scale.set(2.5,0.2,0.1);
-            slash.rotation.z=Math.random()*Math.PI;
-            addP(slash, (Math.random()-0.5)*0.03, (Math.random()-0.5)*0.03, 0, 0, 14, 14);
+            var slash=new THREE.Mesh(new THREE.TorusGeometry(0.06+ws3*0.015,0.004,4,12),new THREE.MeshBasicMaterial({color:0xc4b5fd,transparent:true,opacity:0.5}));
+            slash.position.set(ex,ey,(Math.random()-0.5)*0.15);
+            slash.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(slash, (Math.random()-0.5)*0.03, (Math.random()-0.5)*0.03, 0, 0, 18, 18);
           })();
         }
+        // Wave 3: Feather flurry
+        for(var ff=0;ff<12;ff++){
+          (function(){
+            var ff2=new THREE.Mesh(new THREE.SphereGeometry(0.008+Math.random()*0.008,4,3),new THREE.MeshBasicMaterial({color:[0xc4b5fd,0xa78bfa,0xddd6fe,0xffffff][ff%4],transparent:true,opacity:0.7}));
+            ff2.scale.set(0.3,1.2,0.15);
+            ff2.position.set(ex+(Math.random()-0.5)*0.4,ey+(Math.random()-0.5)*0.4,(Math.random()-0.5)*0.2);
+            ff2.rotation.z=Math.random()*Math.PI;
+            addP(ff2, (Math.random()-0.5)*0.02, 0.02+Math.random()*0.02, (Math.random()-0.5)*0.02, -0.003, 30, 30);
+          })();
+        }
+        addDynLight(0xc4b5fd, 5.0, 14, ex, ey+0.3, 0.2, Math.round(14*S));
       } else if (type==='rock') {
-        for (var rk=0;rk<22;rk++){
+        // Wave 1: Boulder rain
+        for(var rb=0;rb<30;rb++){
           (function(){
-            var px=ex+(Math.random()-0.5)*0.52;
-            var py=ey+0.22+Math.random()*0.2;
-            var sz=0.05+Math.random()*0.14;
-            var col2=rk%3===0?0xa8a29e:0x57534e;
-            var p=box(sz,col2,px,py,(Math.random()-0.5)*0.32);
-            p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
-            addP(p, (Math.random()-0.5)*0.04, -0.065-Math.random()*0.04, (Math.random()-0.5)*0.04, -0.026, 26, 26);
+            var px4=ex+(Math.random()-0.5)*0.6;
+            var py4=ey+0.25+Math.random()*0.2;
+            var sz4=0.04+Math.random()*0.14;
+            var col5=[0xa8a29e,0x57534e,0x78716c][rb%3];
+            var rk2=new THREE.Mesh(new THREE.BoxGeometry(sz4,sz4*0.8,sz4*0.7),new THREE.MeshBasicMaterial({color:col5}));
+            rk2.position.set(px4,py4,(Math.random()-0.5)*0.35);
+            rk2.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(rk2, (Math.random()-0.5)*0.05, -0.07-Math.random()*0.05, (Math.random()-0.5)*0.05, -0.03, 28, 28);
           })();
         }
-        for(var dk=0;dk<6;dk++){
+        // Wave 2: Dust cloud
+        for(var rdc=0;rdc<8;rdc++){
           (function(){
-            var dust=sph(0.08+Math.random()*0.06,dk%2===0?0xd6d3d1:0xa8a29e,ex+(Math.random()-0.5)*0.3,ey+0.1,(Math.random()-0.5)*0.2);
-            dust.material.opacity=0.3;
-            dust.scale.set(1.2+Math.random()*0.5,0.5,1.2+Math.random()*0.5);
-            addP(dust, (Math.random()-0.5)*0.008, 0.008+Math.random()*0.006, (Math.random()-0.5)*0.008, 0.001, 30, 30);
+            var rdust=sph(0.1+Math.random()*0.08,[0xd6d3d1,0xa8a29e][rdc%2],ex+(Math.random()-0.5)*0.35,ey+0.08,(Math.random()-0.5)*0.25);
+            rdust.material.opacity=0.28; rdust.scale.set(1.4+Math.random()*0.6,0.4,1.4+Math.random()*0.6);
+            addP(rdust, (Math.random()-0.5)*0.01, 0.01+Math.random()*0.008, (Math.random()-0.5)*0.01, 0.002, 32, 32);
           })();
         }
+        addDynLight(0xa8a29e, 5.0, 14, ex, ey, 0.3, Math.round(12*S));
       } else if (type==='dark') {
-        for (var d2=0;d2<18;d2++){
+        // Wave 1: Shadow vortex
+        for(var dv=0;dv<22;dv++){
           (function(){
-            var ang=Math.random()*Math.PI*2;
-            var sz=0.06+Math.random()*0.11;
-            var p=sph(sz,d2%2===0?0x292524:0x44403c,ex+Math.cos(ang)*0.16,ey+Math.sin(ang)*0.16,0);
-            p.material.opacity=0.6;
-            addP(p, Math.cos(ang)*0.016, Math.sin(ang)*0.016, 0, 0, 24, 24);
+            var a7=Math.random()*Math.PI*2;
+            var sz5=0.05+Math.random()*0.12;
+            var shadow=new THREE.Mesh(new THREE.SphereGeometry(sz5,8,6),new THREE.MeshBasicMaterial({color:[0x1c1917,0x292524,0x44403c][dv%3],transparent:true,opacity:0.65}));
+            shadow.position.set(ex+Math.cos(a7)*0.15,ey+Math.sin(a7)*0.15,(Math.random()-0.5)*0.2);
+            addP(shadow, Math.cos(a7)*0.02, Math.sin(a7)*0.02, 0, 0.002, 28, 28);
           })();
         }
-        for(var dt=0;dt<5;dt++){
+        // Wave 2: Shadow tendrils
+        for(var st3=0;st3<7;st3++){
           (function(){
-            var tendril=sph(0.03,dt%2===0?0x1c1917:0x292524,ex+(Math.random()-0.5)*0.12,ey+(Math.random()-0.5)*0.12,(Math.random()-0.5)*0.1);
-            tendril.scale.set(0.3+Math.random()*0.3,2+Math.random(),0.3);
-            tendril.material.opacity=0.5;
-            addP(tendril, (Math.random()-0.5)*0.008, 0.02+Math.random()*0.01, 0, 0.001, 22, 22);
+            var tendril=new THREE.Mesh(new THREE.SphereGeometry(0.025,6,4),new THREE.MeshBasicMaterial({color:0x1c1917,transparent:true,opacity:0.55}));
+            tendril.scale.set(0.3+Math.random()*0.3,2.2+Math.random()*0.8,0.3+Math.random()*0.2);
+            tendril.position.set(ex+(Math.random()-0.5)*0.15,ey+(Math.random()-0.5)*0.15,(Math.random()-0.5)*0.1);
+            tendril.rotation.z=(Math.random()-0.5)*0.8;
+            addP(tendril, (Math.random()-0.5)*0.008, 0.025+Math.random()*0.012, 0, 0.002, 24, 24);
           })();
         }
-        addDynLight(0x1c1917, 5.0, 14, ex, ey, 0.3, Math.round(12*S));
+        // Wave 3: Dark pulse rings
+        for(var dpr=0;dpr<3;dpr++){
+          (function(){
+            var dring=new THREE.Mesh(new THREE.TorusGeometry(0.06+dpr*0.04,0.006,8,16),new THREE.MeshBasicMaterial({color:0x1c1917,transparent:true,opacity:0.4-dpr*0.1}));
+            dring.position.set(ex,ey,0); dring.rotation.x=Math.PI/2;
+            addP(dring, 0, 0, 0, 0, 26+dpr*6, 26+dpr*6, true);
+          })();
+        }
+        addDynLight(0x1c1917, 8.0, 18, ex, ey, 0.3, Math.round(16*S));
+        addDynLight(0x292524, 4.0, 12, ex, ey+0.3, 0.2, Math.round(20*S));
       } else if (type==='steel') {
-        for (var st=0;st<20;st++){
+        // Wave 1: Metal shrapnel
+        for(var ms=0;ms<28;ms++){
           (function(){
-            var ang=Math.random()*Math.PI*2;
-            var spd=0.05+Math.random()*0.09;
-            var p=box(0.055,st%3===0?0xd4d4d8:0xa1a1aa,ex+(Math.random()-0.5)*0.16,ey+(Math.random()-0.5)*0.16,(Math.random()-0.5)*0.16);
-            p.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
-            addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd+0.02, (Math.random()-0.5)*0.03, -0.02, 22, 22);
+            var a8=Math.random()*Math.PI*2, sp5=0.06+Math.random()*0.12;
+            var metal=new THREE.Mesh(new THREE.BoxGeometry(0.03+Math.random()*0.04,0.03+Math.random()*0.04,0.015+Math.random()*0.01),new THREE.MeshBasicMaterial({color:[0xd4d4d8,0xa1a1aa,0xe4e4e7][ms%3]}));
+            metal.position.set(ex+(Math.random()-0.5)*0.18,ey+(Math.random()-0.5)*0.18,(Math.random()-0.5)*0.16);
+            metal.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(metal, Math.cos(a8)*sp5, Math.sin(a8)*sp5+0.02, (Math.random()-0.5)*0.04, -0.022, 24, 24);
           })();
         }
-        for(var sk=0;sk<5;sk++){
+        // Wave 2: Sparks
+        for(var sk2=0;sk2<15;sk2++){
           (function(){
-            var spark=sph(0.012,sk%2===0?0xfbbf24:0xffffff,ex+(Math.random()-0.5)*0.14,ey+(Math.random()-0.5)*0.14,(Math.random()-0.5)*0.08);
-            spark.material.opacity=0.85;
-            addP(spark, (Math.random()-0.5)*0.06, (Math.random()-0.5)*0.06, 0, 0, 6, 6);
+            var spark2=sph(0.008+Math.random()*0.008,[0xfbbf24,0xffffff,0xfde047][sk2%3],ex+(Math.random()-0.5)*0.16,ey+(Math.random()-0.5)*0.16,(Math.random()-0.5)*0.1);
+            spark2.material.opacity=0.9;
+            addP(spark2, (Math.random()-0.5)*0.08, (Math.random()-0.5)*0.08, 0, 0, 7, 7);
           })();
         }
-        addDynLight(0xfbbf24, 5.0, 12, ex, ey, 0.2, Math.round(8*S));
+        // Wave 3: Gear ring
+        var gear=new THREE.Mesh(new THREE.TorusGeometry(0.1,0.008,6,12),new THREE.MeshBasicMaterial({color:0xd4d4d8,transparent:true,opacity:0.5}));
+        gear.position.set(ex,ey,0); gear.rotation.x=Math.PI/2;
+        addP(gear, 0, 0, 0, 0, 22, 22, true);
+        addDynLight(0xfbbf24, 7.0, 16, ex, ey, 0.3, Math.round(10*S));
+        addDynLight(0xd4d4d8, 4.0, 10, ex, ey+0.3, 0.2, Math.round(14*S));
       } else if (type==='fairy') {
-        for (var fa=0;fa<22;fa++){
+        // Wave 1: Sparkle starburst
+        for(var fs2=0;fs2<30;fs2++){
           (function(){
-            var ang=Math.random()*Math.PI*2;
-            var sz=0.03+Math.random()*0.05;
-            var col2=fa%3===0?0xf9a8d4:(fa%2===0?0xf472b6:0xfce7f3);
-            var p=sph(sz,col2,ex+Math.cos(ang)*0.16,ey+Math.sin(ang)*0.16,(Math.random()-0.5)*0.16);
-            addP(p, Math.cos(ang)*0.03, Math.sin(ang)*0.03+0.02, (Math.random()-0.5)*0.03, 0.005, 24, 24);
+            var a9=Math.random()*Math.PI*2;
+            var star=new THREE.Mesh(new THREE.OctahedronGeometry(0.012+Math.random()*0.012,0),new THREE.MeshBasicMaterial({color:[0xf9a8d4,0xf472b6,0xfce7f3,0xfdf2f8][fs2%4],transparent:true,opacity:0.85}));
+            star.position.set(ex+Math.cos(a9)*0.12,ey+Math.sin(a9)*0.12,(Math.random()-0.5)*0.18);
+            star.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(star, Math.cos(a9)*0.035, Math.sin(a9)*0.035+0.02, (Math.random()-0.5)*0.03, 0.006, 28, 28);
           })();
         }
-        for(var fb=0;fb<6;fb++){
+        // Wave 2: Heart shapes
+        for(var fh=0;fh<6;fh++){
           (function(){
-            var fba=fb/6*Math.PI*2;
-            var star=sph(0.02,fb%2===0?0xfdf2f8:0xf9a8d4,ex+Math.cos(fba)*0.1,ey+Math.sin(fba)*0.1,(Math.random()-0.5)*0.08);
-            star.material.opacity=0.8;
-            addP(star, Math.cos(fba)*0.02, Math.sin(fba)*0.02+0.015, (Math.random()-0.5)*0.01, 0.003, 20, 20);
+            var hring=new THREE.Mesh(new THREE.TorusGeometry(0.03+fh*0.008,0.005,4,8),new THREE.MeshBasicMaterial({color:0xf472b6,transparent:true,opacity:0.6}));
+            hring.position.set(ex+(Math.random()-0.5)*0.2,ey+(Math.random()-0.5)*0.2,(Math.random()-0.5)*0.1);
+            hring.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+            addP(hring, (Math.random()-0.5)*0.02, 0.02+Math.random()*0.015, (Math.random()-0.5)*0.02, 0.003, 24, 24);
           })();
         }
-        addDynLight(0xfdf2f8, 5.0, 14, ex, ey+0.2, 0.2, Math.round(14*S));
+        // Wave 3: Fairy dust trail
+        for(var fd=0;fd<15;fd++){
+          (function(){
+            var dust3=sph(0.006+Math.random()*0.006,[0xfdf2f8,0xfce7f3,0xf9a8d4][fd%3],ex+(Math.random()-0.5)*0.4,ey+(Math.random()-0.5)*0.4,(Math.random()-0.5)*0.2);
+            dust3.material.opacity=0.75;
+            addP(dust3, (Math.random()-0.5)*0.01, 0.01+Math.random()*0.01, (Math.random()-0.5)*0.01, 0.002, 32, 32);
+          })();
+        }
+        addDynLight(0xf472b6, 8.0, 18, ex, ey+0.3, 0.3, Math.round(18*S));
+        addDynLight(0xfdf2f8, 5.0, 12, ex, ey, 0.2, Math.round(14*S));
       } else {
-        for (var n=0;n<16;n++){
+        // Normal: generic impact
+        for(var nm=0;nm<20;nm++){
           (function(){
-            var ang=Math.random()*Math.PI*2;
-            var spd=0.04+Math.random()*0.07;
-            var p=sph(0.04,n%2===0?0xd4d4d8:0xa1a1aa,ex+(Math.random()-0.5)*0.12,ey+(Math.random()-0.5)*0.12,(Math.random()-0.5)*0.1);
-            addP(p, Math.cos(ang)*spd, Math.sin(ang)*spd, (Math.random()-0.5)*0.02, -0.014, 18, 18);
+            var a10=Math.random()*Math.PI*2, sp6=0.05+Math.random()*0.1;
+            var p5=sph(0.03+Math.random()*0.05,[0xd4d4d8,0xa1a1aa][nm%2],ex+(Math.random()-0.5)*0.15,ey+(Math.random()-0.5)*0.15,(Math.random()-0.5)*0.12);
+            addP(p5, Math.cos(a10)*sp6, Math.sin(a10)*sp6, (Math.random()-0.5)*0.03, -0.016, 22, 22);
           })();
         }
+        addDynLight(0xd4d4d8, 5.0, 14, ex, ey, 0.3, Math.round(12*S));
       }
     }, typeDelay);
   }
