@@ -5928,7 +5928,7 @@
     if (!obj) return;
     if (obj.mesh) { b3d.scene.remove(obj.mesh); if (obj.mesh.geometry) obj.mesh.geometry.dispose(); if (obj.mesh.material) { if (obj.mesh.material.map) obj.mesh.material.map.dispose(); obj.mesh.material.dispose(); } }
     if (obj.glow) { b3d.scene.remove(obj.glow); if (obj.glow.geometry) obj.glow.geometry.dispose(); if (obj.glow.material) obj.glow.material.dispose(); }
-    if (obj.gltf && obj.gltf.scene) { obj.gltf.scene.traverse(function(ch){ if (ch.isMesh){ if (ch.geometry) ch.geometry.dispose(); if (ch.material){ if (ch.material.map) ch.material.map.dispose(); ch.material.dispose(); }}); }
+    if (obj.gltf && obj.gltf.scene) { obj.gltf.scene.traverse(function(ch){ if (ch.isMesh){ if (ch.geometry) ch.geometry.dispose(); if (ch.material){ if (ch.material.map) ch.material.map.dispose(); ch.material.dispose(); }}}); }
     if (side === 'player') b3d.player = null; else b3d.opp = null;
   }
 
