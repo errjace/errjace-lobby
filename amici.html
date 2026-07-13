@@ -6071,105 +6071,195 @@
   function makeProj(type, x, y, z, c, dir) {
     var g = new THREE.Group();
     if (type === 'fire') {
-      var cone = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.22, 8), new THREE.MeshBasicMaterial({color:0xff4500,transparent:true,opacity:0.92}));
-      cone.rotation.z = -Math.PI/2; g.add(cone);
-      var inner = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.16, 8), new THREE.MeshBasicMaterial({color:0xfbbf24}));
-      inner.rotation.z = -Math.PI/2; g.add(inner);
-      var tip = new THREE.Mesh(new THREE.SphereGeometry(0.025,6,4), new THREE.MeshBasicMaterial({color:0xffffff}));
-      tip.position.x = -0.12; g.add(tip);
+      var flame1 = new THREE.Mesh(new THREE.ConeGeometry(0.07,0.28,6), new THREE.MeshBasicMaterial({color:0xff4500,transparent:true,opacity:0.9}));
+      flame1.rotation.z = -Math.PI/2; g.add(flame1);
+      var flame2 = new THREE.Mesh(new THREE.ConeGeometry(0.045,0.22,6), new THREE.MeshBasicMaterial({color:0xfbbf24,transparent:true,opacity:0.85}));
+      flame2.rotation.z = -Math.PI/2; g.add(flame2);
+      var flame3 = new THREE.Mesh(new THREE.ConeGeometry(0.025,0.16,6), new THREE.MeshBasicMaterial({color:0xfef3c7,transparent:true,opacity:0.8}));
+      flame3.rotation.z = -Math.PI/2; g.add(flame3);
+      for (var fe=0;fe<5;fe++){
+        var ember = new THREE.Mesh(new THREE.SphereGeometry(0.01+Math.random()*0.015,4,3), new THREE.MeshBasicMaterial({color:[0xff6b35,0xfbbf24,0xef4444][fe%3],transparent:true,opacity:0.8}));
+        ember.position.set(-0.1-fe*0.04, (Math.random()-0.5)*0.08, (Math.random()-0.5)*0.06); g.add(ember);
+      }
+      var heat = new THREE.Mesh(new THREE.ConeGeometry(0.1,0.35,8), new THREE.MeshBasicMaterial({color:0xff2200,transparent:true,opacity:0.15}));
+      heat.rotation.z = -Math.PI/2; heat.position.x = 0.04; g.add(heat);
     } else if (type === 'water') {
-      var body = new THREE.Mesh(new THREE.SphereGeometry(0.055,10,8), new THREE.MeshBasicMaterial({color:0x3b82f6,transparent:true,opacity:0.88}));
-      body.scale.set(2.8,0.75,0.75); g.add(body);
-      var core = new THREE.Mesh(new THREE.SphereGeometry(0.035,8,6), new THREE.MeshBasicMaterial({color:0x93c5fd,transparent:true,opacity:0.7}));
-      core.scale.set(2,0.5,0.5); g.add(core);
-      for (var ds=0;ds<3;ds++){
-        var dr = new THREE.Mesh(new THREE.SphereGeometry(0.018,6,4), new THREE.MeshBasicMaterial({color:0x60a5fa,transparent:true,opacity:0.6}));
-        dr.position.set(0.08+ds*0.06,(Math.random()-0.5)*0.06,(Math.random()-0.5)*0.04); g.add(dr);
+      var mainDrop = new THREE.Mesh(new THREE.SphereGeometry(0.06,12,10), new THREE.MeshBasicMaterial({color:0x3b82f6,transparent:true,opacity:0.85}));
+      mainDrop.scale.set(2.2,0.7,0.7); g.add(mainDrop);
+      var innerDrop = new THREE.Mesh(new THREE.SphereGeometry(0.04,10,8), new THREE.MeshBasicMaterial({color:0x93c5fd,transparent:true,opacity:0.6}));
+      innerDrop.scale.set(2,0.5,0.5); innerDrop.position.x = -0.02; g.add(innerDrop);
+      var shine = new THREE.Mesh(new THREE.SphereGeometry(0.02,6,4), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.5}));
+      shine.position.set(-0.06,0.02,0.02); g.add(shine);
+      for (var wds=0;wds<6;wds++){
+        var drp = new THREE.Mesh(new THREE.SphereGeometry(0.012+Math.random()*0.01,6,4), new THREE.MeshBasicMaterial({color:[0x60a5fa,0x93c5fd,0x3b82f6][wds%3],transparent:true,opacity:0.65}));
+        drp.position.set(0.1+wds*0.04, (Math.random()-0.5)*0.1, (Math.random()-0.5)*0.06); g.add(drp);
       }
+      var splash = new THREE.Mesh(new THREE.RingGeometry(0.02,0.06,8), new THREE.MeshBasicMaterial({color:0x60a5fa,transparent:true,opacity:0.4,side:THREE.DoubleSide}));
+      splash.position.x = -0.15; g.add(splash);
     } else if (type === 'electric') {
-      for (var es=0;es<7;es++){
-        var seg = new THREE.Mesh(new THREE.BoxGeometry(0.02+Math.random()*0.01, 0.04+Math.random()*0.06, 0.02), new THREE.MeshBasicMaterial({color:es%2===0?0xfde047:0xffffff}));
-        seg.position.set(es*0.04-0.12, (Math.random()-0.5)*0.08, (Math.random()-0.5)*0.03);
-        seg.rotation.z = (Math.random()-0.5)*0.5; g.add(seg);
+      var boltPts = [];
+      var zigzag = 0;
+      for (var ez=0;ez<12;ez++){
+        zigzag += (Math.random()-0.5)*0.06;
+        boltPts.push(new THREE.Vector3(ez*0.035-0.2, zigzag, (Math.random()-0.5)*0.03));
       }
-      var arc = new THREE.Mesh(new THREE.SphereGeometry(0.04,6,4), new THREE.MeshBasicMaterial({color:0xfef08a,transparent:true,opacity:0.5}));
-      g.add(arc);
+      for (var es=0;es<boltPts.length-1;es++){
+        var sp1 = boltPts[es], sp2 = boltPts[es+1];
+        var dx2=sp2.x-sp1.x, dy2=sp2.y-sp1.y, dz2=sp2.z-sp1.z;
+        var segLen=Math.sqrt(dx2*dx2+dy2*dy2+dz2*dz2);
+        var seg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.008+Math.random()*0.005,0.008+Math.random()*0.005,segLen,3), new THREE.MeshBasicMaterial({color:es%2===0?0xfde047:0xffffff,transparent:true,opacity:0.95}));
+        seg2.position.set((sp1.x+sp2.x)/2,(sp1.y+sp2.y)/2,(sp1.z+sp2.z)/2);
+        seg2.lookAt(sp2); seg2.rotateX(Math.PI/2); g.add(seg2);
+      }
+      for(var eb=0;eb<5;eb++){
+        var spark = new THREE.Mesh(new THREE.SphereGeometry(0.008+Math.random()*0.008,4,3), new THREE.MeshBasicMaterial({color:Math.random()>0.5?0xfef08a:0xffffff,transparent:true,opacity:0.9}));
+        spark.position.set((Math.random()-0.5)*0.3,(Math.random()-0.5)*0.15,(Math.random()-0.5)*0.06); g.add(spark);
+      }
+      var aura = new THREE.Mesh(new THREE.SphereGeometry(0.08,8,6), new THREE.MeshBasicMaterial({color:0xfde047,transparent:true,opacity:0.2}));
+      g.add(aura);
     } else if (type === 'ice') {
-      for (var is2=0;is2<5;is2++){
-        var shard = new THREE.Mesh(new THREE.ConeGeometry(0.02+Math.random()*0.01, 0.09+Math.random()*0.05, 4), new THREE.MeshBasicMaterial({color:is2%2===0?0x67e8f9:0xffffff,transparent:true,opacity:0.88}));
-        shard.position.set((Math.random()-0.5)*0.08,(Math.random()-0.5)*0.08,(Math.random()-0.5)*0.04);
-        shard.rotation.set(Math.random(),Math.random(),Math.random()); g.add(shard);
+      for (var is2=0;is2<7;is2++){
+        var h=0.08+Math.random()*0.08;
+        var shard = new THREE.Mesh(new THREE.ConeGeometry(0.015+Math.random()*0.01,h,4), new THREE.MeshBasicMaterial({color:is2%3===0?0x67e8f9:(is2%3===1?0xffffff:0xe0f2fe),transparent:true,opacity:0.88}));
+        shard.position.set((Math.random()-0.5)*0.1,(Math.random()-0.5)*0.1,(Math.random()-0.5)*0.06);
+        shard.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI); g.add(shard);
       }
+      var frost = new THREE.Mesh(new THREE.OctahedronGeometry(0.04,0), new THREE.MeshBasicMaterial({color:0xcffafe,transparent:true,opacity:0.55}));
+      frost.position.set(-0.04,0,0); g.add(frost);
+      for(var ice=0;ice<4;ice++){
+        var crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.015+Math.random()*0.01,0), new THREE.MeshBasicMaterial({color:0xe0f2fe,transparent:true,opacity:0.7}));
+        crystal.position.set(-0.12-ice*0.03, (Math.random()-0.5)*0.06, (Math.random()-0.5)*0.06); g.add(crystal);
+      }
+      var mist = new THREE.Mesh(new THREE.SphereGeometry(0.12,8,6), new THREE.MeshBasicMaterial({color:0xcffafe,transparent:true,opacity:0.12}));
+      g.add(mist);
     } else if (type === 'grass') {
-      for (var gs=0;gs<4;gs++){
-        var lf = new THREE.Mesh(new THREE.SphereGeometry(0.03,6,4), new THREE.MeshBasicMaterial({color:gs%2===0?0x22c55e:0x86efac}));
-        lf.scale.set(0.5,1.6,0.35);
-        lf.position.set((Math.random()-0.5)*0.06,(Math.random()-0.5)*0.06,0);
-        lf.rotation.z = Math.random()*Math.PI; g.add(lf);
+      for (var gs=0;gs<6;gs++){
+        var leaf = new THREE.Mesh(new THREE.SphereGeometry(0.025+Math.random()*0.01,6,4), new THREE.MeshBasicMaterial({color:gs%3===0?0x22c55e:(gs%3===1?0x86efac:0x4ade80),transparent:true,opacity:0.88}));
+        leaf.scale.set(0.35+Math.random()*0.2,1.4+Math.random()*0.4,0.2+Math.random()*0.15);
+        leaf.position.set((Math.random()-0.5)*0.1,(Math.random()-0.5)*0.08,(Math.random()-0.5)*0.04);
+        leaf.rotation.z = Math.random()*Math.PI; g.add(leaf);
       }
-      var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.12,4), new THREE.MeshBasicMaterial({color:0x15803d}));
-      stem.rotation.z = Math.PI/2; stem.position.x = 0.04; g.add(stem);
+      var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.006,0.14,4), new THREE.MeshBasicMaterial({color:0x15803d}));
+      stem.rotation.z = Math.PI/2; g.add(stem);
+      var bud = new THREE.Mesh(new THREE.SphereGeometry(0.025,6,4), new THREE.MeshBasicMaterial({color:0x22c55e}));
+      bud.position.x = -0.07; g.add(bud);
+      var aura2 = new THREE.Mesh(new THREE.SphereGeometry(0.1,8,6), new THREE.MeshBasicMaterial({color:0x22c55e,transparent:true,opacity:0.15}));
+      g.add(aura2);
     } else if (type === 'psychic') {
-      for (var ps2=0;ps2<3;ps2++){
-        var rng = new THREE.Mesh(new THREE.RingGeometry(0.03+ps2*0.025, 0.05+ps2*0.025, 16), new THREE.MeshBasicMaterial({color:ps2%2===0?0xf472b6:0xfce7f3,transparent:true,opacity:0.65,side:THREE.DoubleSide}));
-        rng.position.z = ps2*0.015; g.add(rng);
+      for (var ps2=0;ps2<4;ps2++){
+        var rng = new THREE.Mesh(new THREE.TorusGeometry(0.03+ps2*0.02,0.004+ps2*0.001,8,20), new THREE.MeshBasicMaterial({color:ps2%2===0?0xf472b6:0xfce7f3,transparent:true,opacity:0.7-ps2*0.1}));
+        rng.rotation.x = Math.PI/2; g.add(rng);
       }
-      var eye = new THREE.Mesh(new THREE.SphereGeometry(0.02,8,6), new THREE.MeshBasicMaterial({color:0xffffff}));
-      eye.position.z = 0.06; g.add(eye);
+      var eyeOuter = new THREE.Mesh(new THREE.SphereGeometry(0.035,10,8), new THREE.MeshBasicMaterial({color:0xf472b6,transparent:true,opacity:0.6}));
+      g.add(eyeOuter);
+      var eyeInner = new THREE.Mesh(new THREE.SphereGeometry(0.02,8,6), new THREE.MeshBasicMaterial({color:0xffffff}));
+      g.add(eyeInner);
+      var pupil = new THREE.Mesh(new THREE.SphereGeometry(0.01,6,4), new THREE.MeshBasicMaterial({color:0x831843}));
+      pupil.position.z = 0.018; g.add(pupil);
+      for(var pi2=0;pi2<3;pi2++){
+        var orb = new THREE.Mesh(new THREE.SphereGeometry(0.01,4,3), new THREE.MeshBasicMaterial({color:0xfce7f3,transparent:true,opacity:0.6}));
+        var a2=pi2/3*Math.PI*2;
+        orb.position.set(Math.cos(a2)*0.06,Math.sin(a2)*0.06,0); g.add(orb);
+      }
     } else if (type === 'ghost') {
-      for (var ghs=0;ghs<3;ghs++){
-        var wisp = new THREE.Mesh(new THREE.SphereGeometry(0.05+ghs*0.015,8,6), new THREE.MeshBasicMaterial({color:ghs%2===0?0x7c3aed:0xa78bfa,transparent:true,opacity:0.5-ghs*0.1}));
-        wisp.scale.set(1.2,0.65,0.65); wisp.position.x = ghs*0.03; g.add(wisp);
+      var spectralBody = new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8), new THREE.MeshBasicMaterial({color:0x7c3aed,transparent:true,opacity:0.55}));
+      spectralBody.scale.set(0.9,1.2,0.7); g.add(spectralBody);
+      var innerGlow = new THREE.Mesh(new THREE.SphereGeometry(0.045,8,6), new THREE.MeshBasicMaterial({color:0xa78bfa,transparent:true,opacity:0.4}));
+      innerGlow.scale.set(0.8,1.1,0.6); g.add(innerGlow);
+      var geye = new THREE.Mesh(new THREE.SphereGeometry(0.015,6,4), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.8}));
+      geye.position.set(-0.01,0.02,0.04); g.add(geye);
+      var gpupil = new THREE.Mesh(new THREE.SphereGeometry(0.007,4,3), new THREE.MeshBasicMaterial({color:0x1e1b4b}));
+      gpupil.position.set(-0.01,0.02,0.055); g.add(gpupil);
+      for(var gt=0;gt<4;gt++){
+        var trail = new THREE.Mesh(new THREE.SphereGeometry(0.03+gt*0.01,6,4), new THREE.MeshBasicMaterial({color:0x6d28d9,transparent:true,opacity:0.35-gt*0.07}));
+        trail.scale.set(0.8,0.5,0.5); trail.position.x = 0.06+gt*0.04; g.add(trail);
       }
     } else if (type === 'dragon') {
-      for (var dgs=0;dgs<4;dgs++){
-        var beam = new THREE.Mesh(new THREE.ConeGeometry(0.04+dgs*0.008, 0.12, 6), new THREE.MeshBasicMaterial({color:dgs%3===0?0x7e22ce:(dgs%3===1?0xfde047:0xfb923c),transparent:true,opacity:0.85}));
-        beam.rotation.z = -Math.PI/2; beam.position.x = dgs*0.035; g.add(beam);
+      for(var dr2=0;dr2<5;dr2++){
+        var core2 = new THREE.Mesh(new THREE.ConeGeometry(0.04+dr2*0.005,0.14,6), new THREE.MeshBasicMaterial({color:[0x7e22ce,0xfde047,0xfb923c,0xfbbf24,0xdc2626][dr2],transparent:true,opacity:0.88-dr2*0.08}));
+        core2.rotation.z = -Math.PI/2; core2.position.x = dr2*0.028; g.add(core2);
       }
+      for(var dsh=0;dsh<3;dsh++){
+        var scale = new THREE.Mesh(new THREE.SphereGeometry(0.015+Math.random()*0.01,4,3), new THREE.MeshBasicMaterial({color:dsh%2===0?0xfde047:0xffffff,transparent:true,opacity:0.7}));
+        scale.position.set((Math.random()-0.5)*0.15, (Math.random()-0.5)*0.1, (Math.random()-0.5)*0.06); g.add(scale);
+      }
+      var dragonGlow = new THREE.Mesh(new THREE.SphereGeometry(0.14,8,6), new THREE.MeshBasicMaterial({color:0x7e22ce,transparent:true,opacity:0.15}));
+      g.add(dragonGlow);
     } else if (type === 'poison') {
-      var blob = new THREE.Mesh(new THREE.SphereGeometry(0.055,10,8), new THREE.MeshBasicMaterial({color:0x9333ea,transparent:true,opacity:0.85}));
-      g.add(blob);
-      for (var pos=0;pos<4;pos++){
-        var drip = new THREE.Mesh(new THREE.SphereGeometry(0.015,6,4), new THREE.MeshBasicMaterial({color:pos%2===0?0xc084fc:0x7e22ce,transparent:true,opacity:0.7}));
-        drip.position.set((Math.random()-0.5)*0.06, -0.05-pos*0.025, (Math.random()-0.5)*0.03); g.add(drip);
+      var mainBlob = new THREE.Mesh(new THREE.SphereGeometry(0.06,10,8), new THREE.MeshBasicMaterial({color:0x9333ea,transparent:true,opacity:0.85}));
+      g.add(mainBlob);
+      var innerBlob = new THREE.Mesh(new THREE.SphereGeometry(0.035,8,6), new THREE.MeshBasicMaterial({color:0xc084fc,transparent:true,opacity:0.6}));
+      innerBlob.position.y = 0.01; g.add(innerBlob);
+      for(var pb2=0;pb2<6;pb2++){
+        var drip = new THREE.Mesh(new THREE.SphereGeometry(0.012+Math.random()*0.008,6,4), new THREE.MeshBasicMaterial({color:pb2%2===0?0xc084fc:0x7e22ce,transparent:true,opacity:0.7}));
+        drip.position.set((Math.random()-0.5)*0.08, -0.06-pb2*0.02, (Math.random()-0.5)*0.04); g.add(drip);
       }
+      var toxicGlow = new THREE.Mesh(new THREE.SphereGeometry(0.1,8,6), new THREE.MeshBasicMaterial({color:0x9333ea,transparent:true,opacity:0.12}));
+      g.add(toxicGlow);
     } else if (type === 'fairy') {
-      for (var fs=0;fs<6;fs++){
-        var ang2 = fs/6*Math.PI*2;
-        var sp = new THREE.Mesh(new THREE.SphereGeometry(0.018,6,4), new THREE.MeshBasicMaterial({color:fs%3===0?0xf9a8d4:(fs%3===1?0xf472b6:0xfce7f3)}));
-        sp.position.set(Math.cos(ang2)*0.05, Math.sin(ang2)*0.05, 0); g.add(sp);
+      for(var fss=0;fss<8;fss++){
+        var ang3=fss/8*Math.PI*2;
+        var star = new THREE.Mesh(new THREE.OctahedronGeometry(0.012+Math.random()*0.008,0), new THREE.MeshBasicMaterial({color:[0xf9a8d4,0xf472b6,0xfce7f3,0xfdf2f8][fss%4],transparent:true,opacity:0.85}));
+        star.position.set(Math.cos(ang3)*0.06, Math.sin(ang3)*0.06, (Math.random()-0.5)*0.04); g.add(star);
       }
-      var core = new THREE.Mesh(new THREE.SphereGeometry(0.025,8,6), new THREE.MeshBasicMaterial({color:0xfdf2f8}));
-      g.add(core);
+      var core3 = new THREE.Mesh(new THREE.SphereGeometry(0.03,8,6), new THREE.MeshBasicMaterial({color:0xfdf2f8}));
+      g.add(core3);
+      var pinkGlow = new THREE.Mesh(new THREE.SphereGeometry(0.12,8,6), new THREE.MeshBasicMaterial({color:0xf472b6,transparent:true,opacity:0.12}));
+      g.add(pinkGlow);
+      var ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.07,0.005,6,16), new THREE.MeshBasicMaterial({color:0xf9a8d4,transparent:true,opacity:0.45}));
+      ring2.rotation.x = Math.PI/2; g.add(ring2);
     } else if (type === 'steel') {
-      var disc = new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.015,12), new THREE.MeshBasicMaterial({color:0xd4d4d8}));
-      disc.rotation.x = Math.PI/2; g.add(disc);
-      var rim = new THREE.Mesh(new THREE.TorusGeometry(0.065,0.008,6,16), new THREE.MeshBasicMaterial({color:0xa1a1aa}));
-      g.add(rim);
-    } else if (type === 'ground' || type === 'rock') {
-      for (var rks=0;rks<5;rks++){
-        var rsize = 0.03+Math.random()*0.04;
-        var rk = new THREE.Mesh(new THREE.BoxGeometry(rsize,rsize,rsize), new THREE.MeshBasicMaterial({color:type==='rock'?((rks%2===0)?0xa8a29e:0x57534e):((rks%2===0)?0xd97706:0x92400e)}));
-        rk.position.set((Math.random()-0.5)*0.08,(Math.random()-0.5)*0.08,(Math.random()-0.5)*0.04);
-        rk.rotation.set(Math.random(),Math.random(),Math.random()); g.add(rk);
+      var blade = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,0.012,12), new THREE.MeshBasicMaterial({color:0xd4d4d8}));
+      blade.rotation.x = Math.PI/2; g.add(blade);
+      var bladeInner = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.015,12), new THREE.MeshBasicMaterial({color:0xa1a1aa}));
+      bladeInner.rotation.x = Math.PI/2; g.add(bladeInner);
+      var rim2 = new THREE.Mesh(new THREE.TorusGeometry(0.075,0.006,6,16), new THREE.MeshBasicMaterial({color:0xe4e4e7}));
+      rim2.rotation.x = Math.PI/2; g.add(rim2);
+      for(var sbs=0;sbs<4;sbs++){
+        var spike = new THREE.Mesh(new THREE.ConeGeometry(0.008,0.04,3), new THREE.MeshBasicMaterial({color:0xd4d4d8}));
+        var sAngle=sbs/4*Math.PI*2;
+        spike.position.set(Math.cos(sAngle)*0.08,Math.sin(sAngle)*0.08,0);
+        spike.rotation.z = sAngle-Math.PI/2; g.add(spike);
       }
+    } else if (type === 'ground' || type === 'rock') {
+      for(var rks=0;rks<8;rks++){
+        var rsize = 0.025+Math.random()*0.04;
+        var isRock = type==='rock';
+        var rk = new THREE.Mesh(new THREE.BoxGeometry(rsize,rsize*0.8,rsize*0.7), new THREE.MeshBasicMaterial({color:isRock?((rks%3===0?0xa8a29e:(rks%3===1?0x57534e:0x78716c))):((rks%3===0?0xd97706:(rks%3===1?0x92400e:0xb45309)))}));
+        rk.position.set((Math.random()-0.5)*0.12,(Math.random()-0.5)*0.1,(Math.random()-0.5)*0.06);
+        rk.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI); g.add(rk);
+      }
+      var dust = new THREE.Mesh(new THREE.SphereGeometry(0.1,6,4), new THREE.MeshBasicMaterial({color:type==='rock'?0xa8a29e:0xd97706,transparent:true,opacity:0.15}));
+      g.add(dust);
     } else if (type === 'flying') {
-      for (var fls=0;fls<3;fls++){
-        var feather = new THREE.Mesh(new THREE.SphereGeometry(0.03,6,4), new THREE.MeshBasicMaterial({color:fls%2===0?0xa78bfa:0xc4b5fd,transparent:true,opacity:0.7}));
-        feather.scale.set(0.4,1.4,0.2);
-        feather.position.set(fls*0.04,(Math.random()-0.5)*0.04,(Math.random()-0.5)*0.03);
-        feather.rotation.z = -0.3+fls*0.2; g.add(feather);
+      for(var fls=0;fls<5;fls++){
+        var feather = new THREE.Mesh(new THREE.SphereGeometry(0.025+Math.random()*0.01,6,4), new THREE.MeshBasicMaterial({color:[0xa78bfa,0xc4b5fd,0xddd6fe][fls%3],transparent:true,opacity:0.75}));
+        feather.scale.set(0.3+Math.random()*0.15,1.3+Math.random()*0.3,0.15+Math.random()*0.1);
+        feather.position.set(fls*0.03-0.06,(Math.random()-0.5)*0.06,(Math.random()-0.5)*0.04);
+        feather.rotation.z = -0.4+fls*0.2; g.add(feather);
+      }
+      for(var ws2=0;ws2<3;ws2++){
+        var wind = new THREE.Mesh(new THREE.TorusGeometry(0.04+ws2*0.015,0.003,4,12), new THREE.MeshBasicMaterial({color:0xc4b5fd,transparent:true,opacity:0.35}));
+        wind.position.z = -0.02+ws2*0.02; g.add(wind);
       }
     } else if (type === 'dark') {
-      var shadow = new THREE.Mesh(new THREE.ConeGeometry(0.05,0.18,8), new THREE.MeshBasicMaterial({color:0x292524,transparent:true,opacity:0.8}));
-      shadow.rotation.z = -Math.PI/2; g.add(shadow);
-      var dark = new THREE.Mesh(new THREE.SphereGeometry(0.04,8,6), new THREE.MeshBasicMaterial({color:0x44403c,transparent:true,opacity:0.6}));
-      dark.scale.set(1.5,0.8,0.8); g.add(dark);
+      var darkCore = new THREE.Mesh(new THREE.ConeGeometry(0.06,0.22,6), new THREE.MeshBasicMaterial({color:0x292524,transparent:true,opacity:0.85}));
+      darkCore.rotation.z = -Math.PI/2; g.add(darkCore);
+      var darkInner = new THREE.Mesh(new THREE.ConeGeometry(0.035,0.16,6), new THREE.MeshBasicMaterial({color:0x1c1917,transparent:true,opacity:0.7}));
+      darkInner.rotation.z = -Math.PI/2; g.add(darkInner);
+      var darkSphere = new THREE.Mesh(new THREE.SphereGeometry(0.04,8,6), new THREE.MeshBasicMaterial({color:0x44403c,transparent:true,opacity:0.5}));
+      darkSphere.scale.set(1.4,0.7,0.7); g.add(darkSphere);
+      for(var dt2=0;dt2<3;dt2++){
+        var tendril = new THREE.Mesh(new THREE.SphereGeometry(0.015+Math.random()*0.01,4,3), new THREE.MeshBasicMaterial({color:0x1c1917,transparent:true,opacity:0.5}));
+        tendril.scale.set(0.4+Math.random()*0.3,1.8+Math.random()*0.5,0.4);
+        tendril.position.set(dt2*0.04-0.04,(Math.random()-0.5)*0.06,(Math.random()-0.5)*0.04);
+        tendril.rotation.z = (Math.random()-0.5)*0.8; g.add(tendril);
+      }
     } else {
-      var orb = new THREE.Mesh(new THREE.SphereGeometry(0.08,10,8), new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.9}));
+      var orb = new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8), new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.9}));
       g.add(orb);
     }
-    var glow = new THREE.Mesh(new THREE.SphereGeometry(0.16,10,8), new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.28}));
+    var glow = new THREE.Mesh(new THREE.SphereGeometry(0.18,10,8), new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.22}));
     g.add(glow);
     g.position.set(x,y,z);
     return g;
@@ -6178,50 +6268,74 @@
   function makeTrail(type, px, py, pz, c) {
     var tr = [];
     if (type === 'fire') {
-      for (var ft=0;ft<3;ft++){
-        var em = sph(0.015+Math.random()*0.02, [0xff6b35,0xfbbf24,0xdc2626][ft], px+(Math.random()-0.5)*0.08, py+(Math.random()-0.5)*0.08, pz+(Math.random()-0.5)*0.06);
-        tr.push({mesh:em, vx:(Math.random()-0.5)*0.008, vy:0.015+Math.random()*0.012, vz:0, ay:-0.0004, life:20, maxLife:20, fade:true});
+      for (var ft=0;ft<5;ft++){
+        var em = new THREE.Mesh(new THREE.SphereGeometry(0.012+Math.random()*0.02,4,3), new THREE.MeshBasicMaterial({color:[0xff6b35,0xfbbf24,0xdc2626,0xfef3c7,0xef4444][ft],transparent:true,opacity:0.85}));
+        em.position.set(px+(Math.random()-0.5)*0.1,py+(Math.random()-0.5)*0.1,pz+(Math.random()-0.5)*0.06);
+        tr.push({mesh:em, vx:(Math.random()-0.5)*0.01, vy:0.018+Math.random()*0.015, vz:0, ay:-0.0005, life:22, maxLife:22, fade:true});
       }
     } else if (type === 'water') {
-      for (var wt=0;wt<3;wt++){
-        var dr = sph(0.012+Math.random()*0.015, [0x60a5fa,0x93c5fd,0x3b82f6][wt], px+(Math.random()-0.5)*0.1, py+(Math.random()-0.5)*0.06, pz+(Math.random()-0.5)*0.06);
-        tr.push({mesh:dr, vx:(Math.random()-0.5)*0.006, vy:-0.008-Math.random()*0.008, vz:0, ay:-0.0002, life:16, maxLife:16, fade:true});
+      for (var wt=0;wt<5;wt++){
+        var dr = new THREE.Mesh(new THREE.SphereGeometry(0.01+Math.random()*0.015,6,4), new THREE.MeshBasicMaterial({color:[0x60a5fa,0x93c5fd,0x3b82f6,0xbfdbfe,0xffffff][wt],transparent:true,opacity:0.7}));
+        dr.position.set(px+(Math.random()-0.5)*0.12,py+(Math.random()-0.5)*0.08,pz+(Math.random()-0.5)*0.06);
+        tr.push({mesh:dr, vx:(Math.random()-0.5)*0.008, vy:-0.01-Math.random()*0.01, vz:0, ay:-0.0003, life:18, maxLife:18, fade:true});
       }
     } else if (type === 'electric') {
-      for (var et=0;et<4;et++){
-        var sp = sph(0.01+Math.random()*0.008, Math.random()>0.5?0xfde047:0xffffff, px+(Math.random()-0.5)*0.12, py+(Math.random()-0.5)*0.12, pz+(Math.random()-0.5)*0.06);
-        tr.push({mesh:sp, vx:(Math.random()-0.5)*0.02, vy:(Math.random()-0.5)*0.02, vz:0, ay:0, life:6, maxLife:6, fade:true});
+      for (var et=0;et<6;et++){
+        var sp = new THREE.Mesh(new THREE.SphereGeometry(0.008+Math.random()*0.008,4,3), new THREE.MeshBasicMaterial({color:Math.random()>0.4?0xfde047:0xffffff,transparent:true,opacity:0.9}));
+        sp.position.set(px+(Math.random()-0.5)*0.15,py+(Math.random()-0.5)*0.15,pz+(Math.random()-0.5)*0.06);
+        tr.push({mesh:sp, vx:(Math.random()-0.5)*0.025, vy:(Math.random()-0.5)*0.025, vz:0, ay:0, life:7, maxLife:7, fade:true});
       }
     } else if (type === 'ice') {
-      for (var it=0;it<2;it++){
-        var ic = sph(0.01+Math.random()*0.012, Math.random()>0.5?0x67e8f9:0xe0f2fe, px+(Math.random()-0.5)*0.08, py+(Math.random()-0.5)*0.08, pz+(Math.random()-0.5)*0.04);
-        tr.push({mesh:ic, vx:(Math.random()-0.5)*0.005, vy:-0.003, vz:0, ay:-0.0001, life:20, maxLife:20, fade:true});
+      for (var it=0;it<4;it++){
+        var ic = new THREE.Mesh(new THREE.OctahedronGeometry(0.008+Math.random()*0.01,0), new THREE.MeshBasicMaterial({color:[0x67e8f9,0xe0f2fe,0xffffff,0xcffafe][it],transparent:true,opacity:0.75}));
+        ic.position.set(px+(Math.random()-0.5)*0.1,py+(Math.random()-0.5)*0.1,pz+(Math.random()-0.5)*0.04);
+        ic.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+        tr.push({mesh:ic, vx:(Math.random()-0.5)*0.006, vy:-0.004, vz:0, ay:-0.00015, life:22, maxLife:22, fade:true});
+      }
+    } else if (type === 'grass') {
+      for (var gt2=0;gt2<4;gt2++){
+        var lf2 = new THREE.Mesh(new THREE.SphereGeometry(0.01+Math.random()*0.01,4,3), new THREE.MeshBasicMaterial({color:[0x22c55e,0x86efac,0x4ade80,0x15803d][gt2],transparent:true,opacity:0.8}));
+        lf2.scale.set(0.4,1.3,0.25);
+        lf2.position.set(px+(Math.random()-0.5)*0.1,py+(Math.random()-0.5)*0.1,pz+(Math.random()-0.5)*0.04);
+        lf2.rotation.z = Math.random()*Math.PI;
+        tr.push({mesh:lf2, vx:(Math.random()-0.5)*0.008, vy:0.005+Math.random()*0.005, vz:0, ay:-0.0003, life:20, maxLife:20, fade:true});
       }
     } else if (type === 'ghost') {
-      for (var ght=0;ght<2;ght++){
-        var gw = sph(0.02+Math.random()*0.025, ght%2===0?0x7c3aed:0xa78bfa, px+(Math.random()-0.5)*0.1, py+(Math.random()-0.5)*0.1, pz+(Math.random()-0.5)*0.08);
-        gw.material.opacity=0.35;
-        tr.push({mesh:gw, vx:(Math.random()-0.5)*0.005, vy:(Math.random()-0.5)*0.005, vz:0, ay:0, life:22, maxLife:22, fade:true});
+      for (var ght=0;ght<3;ght++){
+        var gw = new THREE.Mesh(new THREE.SphereGeometry(0.02+Math.random()*0.025,6,4), new THREE.MeshBasicMaterial({color:ght%2===0?0x7c3aed:0xa78bfa,transparent:true,opacity:0.35}));
+        gw.position.set(px+(Math.random()-0.5)*0.1,py+(Math.random()-0.5)*0.1,pz+(Math.random()-0.5)*0.08);
+        tr.push({mesh:gw, vx:(Math.random()-0.5)*0.006, vy:(Math.random()-0.5)*0.006, vz:0, ay:0.0002, life:24, maxLife:24, fade:true});
       }
     } else if (type === 'dragon') {
-      for (var dgt=0;dgt<3;dgt++){
-        var dc = sph(0.012+Math.random()*0.015, [0x7e22ce,0xfde047,0xfb923c][dgt], px+(Math.random()-0.5)*0.08, py+(Math.random()-0.5)*0.08, pz+(Math.random()-0.5)*0.06);
-        tr.push({mesh:dc, vx:(Math.random()-0.5)*0.008, vy:(Math.random()-0.5)*0.008, vz:0, ay:0.0003, life:18, maxLife:18, fade:true});
+      for (var dgt=0;dgt<4;dgt++){
+        var dc = new THREE.Mesh(new THREE.SphereGeometry(0.01+Math.random()*0.015,4,3), new THREE.MeshBasicMaterial({color:[0x7e22ce,0xfde047,0xfb923c,0xfbbf24][dgt],transparent:true,opacity:0.8}));
+        dc.position.set(px+(Math.random()-0.5)*0.1,py+(Math.random()-0.5)*0.1,pz+(Math.random()-0.5)*0.06);
+        tr.push({mesh:dc, vx:(Math.random()-0.5)*0.01, vy:(Math.random()-0.5)*0.01, vz:0, ay:0.0003, life:20, maxLife:20, fade:true});
       }
     } else if (type === 'poison') {
-      for (var pt=0;pt<2;pt++){
-        var pb = sph(0.012+Math.random()*0.015, pt%2===0?0xc084fc:0x9333ea, px+(Math.random()-0.5)*0.08, py-0.02, pz+(Math.random()-0.5)*0.04);
-        tr.push({mesh:pb, vx:(Math.random()-0.5)*0.005, vy:-0.006, vz:0, ay:-0.0002, life:20, maxLife:20, fade:true});
+      for (var pt=0;pt<3;pt++){
+        var pb = new THREE.Mesh(new THREE.SphereGeometry(0.01+Math.random()*0.015,6,4), new THREE.MeshBasicMaterial({color:pt%2===0?0xc084fc:0x9333ea,transparent:true,opacity:0.7}));
+        pb.position.set(px+(Math.random()-0.5)*0.1,py-0.02,pz+(Math.random()-0.5)*0.04);
+        tr.push({mesh:pb, vx:(Math.random()-0.5)*0.006, vy:-0.007, vz:0, ay:-0.0003, life:22, maxLife:22, fade:true});
       }
     } else if (type === 'fairy') {
-      for (var ft2=0;ft2<3;ft2++){
-        var fs = sph(0.008+Math.random()*0.01, [0xf9a8d4,0xf472b6,0xfdf2f8][ft2], px+(Math.random()-0.5)*0.1, py+(Math.random()-0.5)*0.1, pz+(Math.random()-0.5)*0.06);
-        tr.push({mesh:fs, vx:(Math.random()-0.5)*0.006, vy:0.004+Math.random()*0.004, vz:0, ay:0.0001, life:18, maxLife:18, fade:true});
+      for (var ft2=0;ft2<4;ft2++){
+        var fs = new THREE.Mesh(new THREE.OctahedronGeometry(0.006+Math.random()*0.008,0), new THREE.MeshBasicMaterial({color:[0xf9a8d4,0xf472b6,0xfdf2f8,0xfce7f3][ft2],transparent:true,opacity:0.8}));
+        fs.position.set(px+(Math.random()-0.5)*0.12,py+(Math.random()-0.5)*0.12,pz+(Math.random()-0.5)*0.06);
+        tr.push({mesh:fs, vx:(Math.random()-0.5)*0.007, vy:0.005+Math.random()*0.005, vz:0, ay:0.00015, life:20, maxLife:20, fade:true});
+      }
+    } else if (type === 'steel') {
+      for (var stt=0;stt<3;stt++){
+        var spk = new THREE.Mesh(new THREE.BoxGeometry(0.015+Math.random()*0.01,0.015+Math.random()*0.01,0.008), new THREE.MeshBasicMaterial({color:[0xd4d4d8,0xa1a1aa,0xfbbf24][stt],transparent:true,opacity:0.85}));
+        spk.position.set(px+(Math.random()-0.5)*0.1,py+(Math.random()-0.5)*0.1,pz+(Math.random()-0.5)*0.06);
+        spk.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+        tr.push({mesh:spk, vx:(Math.random()-0.5)*0.015, vy:(Math.random()-0.5)*0.015, vz:0, ay:-0.0002, life:8, maxLife:8, fade:true});
       }
     } else {
-      for (var nt=0;nt<2;nt++){
-        var np = sph(0.012+Math.random()*0.015, Math.random()>0.5?c:0xffffff, px+(Math.random()-0.5)*0.08, py+(Math.random()-0.5)*0.08, pz+(Math.random()-0.5)*0.06);
-        tr.push({mesh:np, vx:(Math.random()-0.5)*0.01, vy:(Math.random()-0.5)*0.01-0.005, vz:0, ay:-0.0002, life:14, maxLife:14, fade:true});
+      for (var nt=0;nt<3;nt++){
+        var np = new THREE.Mesh(new THREE.SphereGeometry(0.01+Math.random()*0.015,6,4), new THREE.MeshBasicMaterial({color:Math.random()>0.5?c:0xffffff,transparent:true,opacity:0.75}));
+        np.position.set(px+(Math.random()-0.5)*0.1,py+(Math.random()-0.5)*0.1,pz+(Math.random()-0.5)*0.06);
+        tr.push({mesh:np, vx:(Math.random()-0.5)*0.012, vy:(Math.random()-0.5)*0.012-0.005, vz:0, ay:-0.00025, life:16, maxLife:16, fade:true});
       }
     }
     return tr;
@@ -6434,10 +6548,38 @@
               var px = orbX + (ex-orbX)*easeT;
               var py = orbY + (ey-orbY)*easeT;
               var sc = 0.8 + Math.sin(t*Math.PI)*1.2;
+              if (type==='electric') {
+                px += Math.sin(step*1.8)*0.06*(1-easeT);
+                py += Math.cos(step*2.2)*0.04*(1-easeT);
+                projGroup.rotation.z += 0.25;
+              } else if (type==='fire') {
+                py += Math.sin(step*0.9)*0.04;
+                projGroup.rotation.z += 0.12;
+              } else if (type==='ice') {
+                projGroup.rotation.x += 0.08; projGroup.rotation.y += 0.14;
+              } else if (type==='psychic') {
+                projGroup.rotation.z += 0.06;
+                var orbit = Math.sin(step*0.5)*0.03;
+                px += orbit; py += Math.cos(step*0.5)*0.02;
+              } else if (type==='ghost') {
+                py += Math.sin(step*0.7)*0.05;
+                sc *= 0.9 + Math.sin(step*1.2)*0.2;
+              } else if (type==='dragon') {
+                projGroup.rotation.z += 0.1;
+                py += Math.sin(step*0.6)*0.03;
+              } else if (type==='steel') {
+                projGroup.rotation.z += 0.2;
+              } else if (type==='grass') {
+                projGroup.rotation.z += 0.04;
+                py += Math.sin(step*0.8)*0.025;
+              } else if (type==='water') {
+                py += Math.sin(step*0.6)*0.03;
+              } else {
+                projGroup.rotation.x += 0.08;
+                projGroup.rotation.z += 0.06;
+              }
               projGroup.position.set(px, py, orbZ);
               projGroup.scale.setScalar(sc);
-              projGroup.rotation.x += 0.08;
-              projGroup.rotation.z += (type==='electric'?0.25:type==='ice'?0.12:type==='steel'?0.15:0.06);
               projLight.position.set(px, py+0.2, orbZ+0.2);
               if (step > 1 && step % 2 === 0) {
                 var trails = makeTrail(type, px, py, orbZ, c);
