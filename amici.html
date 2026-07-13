@@ -6209,7 +6209,7 @@
       this.material.color.setHex(colors[cidx]);
     };
     b3d.scene.add(core);
-    b3d.particles.push({mesh:core, vx:0, vy:0.003, vz:0, gy:0.001, life:Math.round(20*S), maxLife:Math.round(20*S), noScale:true});
+    b3d.particles.push({mesh:core, vx:0, vy:0.003, vz:0, gy:0.001, life:Math.round(20*1.8), maxLife:Math.round(20*1.8), noScale:true});
     // Flame tongues exploding outward
     for (var fi=0; fi<count; fi++) {
       (function(){
@@ -6239,7 +6239,7 @@
           this.rotation.z += (Math.random()-0.5)*0.1;
         };
         b3d.scene.add(cone);
-        b3d.particles.push({mesh:cone, vx:0, vy:0, vz:0, gy:0, life:Math.round(16*S), maxLife:Math.round(16*S), noScale:true});
+        b3d.particles.push({mesh:cone, vx:0, vy:0, vz:0, gy:0, life:Math.round(16*1.8), maxLife:Math.round(16*1.8), noScale:true});
       })();
     }
     // Embers flying outward fast
@@ -6259,7 +6259,7 @@
           this.scale.setScalar(0.5+a*0.5);
         };
         b3d.scene.add(e);
-        b3d.particles.push({mesh:e, vx:0, vy:0, vz:0, gy:-0.001, life:Math.round(14*S), maxLife:Math.round(14*S), noScale:true});
+        b3d.particles.push({mesh:e, vx:0, vy:0, vz:0, gy:-0.001, life:Math.round(14*1.8), maxLife:Math.round(14*1.8), noScale:true});
       })();
     }
     // Smoke cloud rising
@@ -6281,7 +6281,7 @@
           this.scale.setScalar(0.3+tt*2.5);
         };
         b3d.scene.add(sm);
-        b3d.particles.push({mesh:sm, vx:0, vy:0, vz:0, gy:0, life:Math.round(22*S), maxLife:Math.round(22*S), noScale:true});
+        b3d.particles.push({mesh:sm, vx:0, vy:0, vz:0, gy:0, life:Math.round(22*1.8), maxLife:Math.round(22*1.8), noScale:true});
       })();
     }
   }
@@ -8711,6 +8711,7 @@
       clearInterval(orbGrowId);
       disposeMesh(orbCore);
       disposeMesh(orbGlow);
+      if (orbHalo) disposeMesh(orbHalo);
       b3d.scene.remove(orbLight);
 
       if (isMelee) {
