@@ -8876,7 +8876,8 @@
           for (var sti=0;sti<spawnedTrails.length;sti++){
             var st=spawnedTrails[sti];
             if(st.mesh.parent) b3d.scene.remove(st.mesh);
-            addP(st.mesh, st.vx, st.vy, st.vz, st.ay, Math.round(st.life*S), Math.round(st.maxLife*S), true);
+            if(st.mesh.geometry) st.mesh.geometry.dispose();
+            if(st.mesh.material) st.mesh.material.dispose();
           }
           b3d.shake = 16;
           flashScreen(c);
