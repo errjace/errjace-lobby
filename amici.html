@@ -5818,7 +5818,10 @@
     b3d.renderer.toneMappingExposure = 1.0;
     container.appendChild(b3d.renderer.domElement);
     // Lights — neutral, preserve original Pokemon colors
-    b3d.scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+    b3d.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    var dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(2, 4, 3);
+    b3d.scene.add(dirLight);
     // Ground glow
     var bg = new THREE.Mesh(new THREE.RingGeometry(1.2, 3.5, 32), new THREE.MeshBasicMaterial({ color:0x1a1a2e, transparent:true, opacity:0.25, side:THREE.DoubleSide }));
     bg.rotation.x = -Math.PI/2; bg.position.y = -1.6;
@@ -5833,7 +5836,8 @@
     // Setup loaders
     if (typeof THREE.DRACOLoader !== 'undefined') {
       b3d.dracoLoader = new THREE.DRACOLoader();
-      b3d.dracoLoader.setDecoderPath('https://unpkg.com/three@0.152.2/examples/jsm/libs/draco/');
+      b3d.dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+      b3d.dracoLoader.setDecoderConfig({ type: 'js' });
     }
     if (typeof THREE.GLTFLoader !== 'undefined') {
       b3d.gltfLoader = new THREE.GLTFLoader();
@@ -5869,35 +5873,91 @@
 
   var GLB_URL = 'https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/models/opt/regular/';
 
+  function stripUnsupportedGlbExtensions(arrayBuffer) {
+    try {
+      var header = new DataView(arrayBuffer, 0, 12);
+      var totalLength = header.getUint32(8, true);
+      var chunk0LenDV = new DataView(arrayBuffer, 12, 4);
+      var jsonChunkLength = chunk0LenDV.getUint32(0, true);
+      var jsonBytes = new Uint8Array(arrayBuffer, 20, jsonChunkLength);
+      var jsonStr = '';
+      for (var i = 0; i < jsonBytes.length; i++) jsonStr += String.fromCharCode(jsonBytes[i]);
+      var gltf = JSON.parse(jsonStr);
+      var modified = false;
+      if (gltf.extensionsRequired) {
+        var before = gltf.extensionsRequired.length;
+        gltf.extensionsRequired = gltf.extensionsRequired.filter(function(e) { return e !== 'EXT_texture_webp'; });
+        if (gltf.extensionsRequired.length < before) modified = true;
+      }
+      if (gltf.extensionsUsed) {
+        gltf.extensionsUsed = gltf.extensionsUsed.filter(function(e) { return e !== 'EXT_texture_webp'; });
+      }
+      if (modified) {
+        var newJson = JSON.stringify(gltf);
+        while (newJson.length % 4 !== 0) newJson += ' ';
+        var newJsonLen = newJson.length;
+        var binChunkStart = 20 + jsonChunkLength;
+        var binChunkLenDV = new DataView(arrayBuffer, binChunkStart, 4);
+        var binChunkDataLen = binChunkLenDV.getUint32(0, true);
+        var binDataStart = binChunkStart + 8;
+        var newTotalLen = 12 + 8 + newJsonLen + 8 + binChunkDataLen;
+        var buf = new ArrayBuffer(newTotalLen);
+        var dv = new DataView(buf);
+        dv.setUint32(0, 0x46546C67, true);
+        dv.setUint32(4, 2, true);
+        dv.setUint32(8, newTotalLen, true);
+        dv.setUint32(12, newJsonLen, true);
+        dv.setUint32(16, 0x4E4F534A, true);
+        var outArr = new Uint8Array(buf);
+        for (var j = 0; j < newJsonLen; j++) outArr[20 + j] = newJson.charCodeAt(j);
+        var binOutStart = 20 + newJsonLen;
+        dv.setUint32(binOutStart, binChunkDataLen, true);
+        dv.setUint32(binOutStart + 4, 0x004E4942, true);
+        var binSource = new Uint8Array(arrayBuffer, binDataStart, binChunkDataLen);
+        for (var k = 0; k < binChunkDataLen; k++) outArr[binOutStart + 8 + k] = binSource[k];
+        return buf;
+      }
+    } catch(e) {}
+    return arrayBuffer;
+  }
+
   function b3dLoadPoke(side, imgUrl, cb) {
     if (!b3d.ready) return;
     var xPos = b3dGetXPos(side);
     var dexId = extractDexId(imgUrl);
-    // Try loading GLB model
     if (dexId && b3d.gltfLoader) {
       var glbUrl = GLB_URL + dexId + '.glb';
-      b3d.gltfLoader.load(glbUrl, function(gltf) {
-        var model = gltf.scene;
-        model.scale.set(0.35, 0.35, 0.35);
-        model.position.set(xPos, -0.5, 0);
-        model.rotation.y = side==='player' ? -0.3 : 0.3;
-        b3d.scene.add(model);
-        // Store animations if available
-        var mixer = null;
-        if (gltf.animations && gltf.animations.length > 0) {
-          mixer = new THREE.AnimationMixer(model);
-          var idleAnim = gltf.animations[0];
-          var action = mixer.clipAction(idleAnim);
-          action.play();
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', glbUrl, true);
+      xhr.responseType = 'arraybuffer';
+      xhr.onload = function() {
+        if (xhr.status === 200 && xhr.response) {
+          var cleanBuffer = stripUnsupportedGlbExtensions(xhr.response);
+          b3d.gltfLoader.parse(cleanBuffer, '', function(gltf) {
+            var model = gltf.scene;
+            model.scale.set(0.35, 0.35, 0.35);
+            model.position.set(xPos, -0.5, 0);
+            model.rotation.y = side==='player' ? -0.3 : 0.3;
+            b3d.scene.add(model);
+            var mixer = null;
+            if (gltf.animations && gltf.animations.length > 0) {
+              mixer = new THREE.AnimationMixer(model);
+              var idleAnim = gltf.animations[0];
+              var action = mixer.clipAction(idleAnim);
+              action.play();
+            }
+            var obj = { mesh:model, glow:null, origX:xPos, origY:-0.5, tex:null, mixer:mixer, gltf:gltf, isGLB:true };
+            if (side==='player') b3d.player = obj; else b3d.opp = obj;
+            if (cb) cb();
+          }, function() {
+            b3dLoadPokeBillboard(side, imgUrl, xPos, cb);
+          });
+        } else {
+          b3dLoadPokeBillboard(side, imgUrl, xPos, cb);
         }
-        // No glow — preserve original colors
-        var obj = { mesh:model, glow:null, origX:xPos, origY:-0.5, tex:null, mixer:mixer, gltf:gltf, isGLB:true };
-        if (side==='player') b3d.player = obj; else b3d.opp = obj;
-        if (cb) cb();
-      }, undefined, function() {
-        // GLB failed — fallback to billboard
-        b3dLoadPokeBillboard(side, imgUrl, xPos, cb);
-      });
+      };
+      xhr.onerror = function() { b3dLoadPokeBillboard(side, imgUrl, xPos, cb); };
+      xhr.send();
     } else {
       b3dLoadPokeBillboard(side, imgUrl, xPos, cb);
     }
