@@ -2491,6 +2491,8 @@
   var battleData = null;
   var myBattleIdx = -1;
   var prevLogLen = 0;
+  var lastPlayerPoke = -1;
+  var lastOppPoke = -1;
   // === BATTLE ANIMATION ENGINE (canvas particelle) ===
   var bParticles = [], bAnimId = null, bShake = 0, bCanvas = null, bCtx = null;
 
@@ -2936,6 +2938,8 @@
     battleData = data;
     myBattleIdx = data.myIdx;
     prevLogLen = 0;
+    lastPlayerPoke = data.players[myBattleIdx] ? data.players[myBattleIdx].currentPoke : 0;
+    lastOppPoke = data.players[1 - myBattleIdx] ? data.players[1 - myBattleIdx].currentPoke : 0;
     document.getElementById('battleOverlay').classList.add('active');
     setTimeout(function(){
       bInitCanvas();
@@ -2993,9 +2997,9 @@
         bCleanup();
         b3dCleanup();
         if (isBot) {
-          showChatMsg('Pokémon', '🤖', won ? '🎉 Hai vinto l\'allenamento! (+30 XP)' : '😞 Hai perso l\'allenamento. (+10 XP)', 'system');
+          showChatMsg('Pokémon', '🤖', won ? '🎉 Hai vinto l\'allenamento! (+100 XP)' : '😞 Hai perso l\'allenamento. (+10 XP)', 'system');
         } else {
-          showChatMsg('Pokémon', '⚔️', won ? '🎉 Hai vinto la battaglia Pokémon! (+30 XP)' : '😞 Hai perso la battaglia Pokémon. (+10 XP)', 'system');
+          showChatMsg('Pokémon', '⚔️', won ? '🎉 Hai vinto la battaglia Pokémon! (+100 XP)' : '😞 Hai perso la battaglia Pokémon. (+10 XP)', 'system');
         }
         battleData = null;
       }, 3000);
@@ -3008,6 +3012,15 @@
     var myPoke = me.team[me.currentPoke];
     var oppPoke = opp.team[opp.currentPoke];
     var isMyTurn = battleData.turnPlayer === myBattleIdx;
+    // Update 3D models when currentPoke changes (switch)
+    if (me.currentPoke !== lastPlayerPoke && myPoke) {
+      lastPlayerPoke = me.currentPoke;
+      if (b3d && b3d.ready) { b3dRemovePoke('player'); b3dLoadPoke('player', myPoke.img); }
+    }
+    if (opp.currentPoke !== lastOppPoke && oppPoke) {
+      lastOppPoke = opp.currentPoke;
+      if (b3d && b3d.ready) { b3dRemovePoke('opponent'); b3dLoadPoke('opponent', oppPoke.img); }
+    }
     // Opponent
     if (oppPoke && !oppPoke.fainted) {
       document.getElementById('opponentSprite').querySelector('img').src = oppPoke.img;
@@ -5801,15 +5814,11 @@
     b3d.renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
     b3d.renderer.setSize(w, h);
     b3d.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    b3d.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    b3d.renderer.toneMappingExposure = 0.95;
+    b3d.renderer.toneMapping = THREE.NoToneMapping;
+    b3d.renderer.toneMappingExposure = 1.0;
     container.appendChild(b3d.renderer.domElement);
     // Lights — neutral, preserve original Pokemon colors
-    b3d.scene.add(new THREE.AmbientLight(0xffffff, 0.45));
-    var dl = new THREE.DirectionalLight(0xfff5e6, 0.9); dl.position.set(2,4,3);
-    b3d.scene.add(dl);
-    var fl = new THREE.PointLight(0x4a4a6a, 0.15, 10); fl.position.set(0,-1,2);
-    b3d.scene.add(fl);
+    b3d.scene.add(new THREE.AmbientLight(0xffffff, 1.0));
     // Ground glow
     var bg = new THREE.Mesh(new THREE.RingGeometry(1.2, 3.5, 32), new THREE.MeshBasicMaterial({ color:0x1a1a2e, transparent:true, opacity:0.25, side:THREE.DoubleSide }));
     bg.rotation.x = -Math.PI/2; bg.position.y = -1.6;
@@ -5881,12 +5890,8 @@
           var action = mixer.clipAction(idleAnim);
           action.play();
         }
-        // Glow
-        var gm = new THREE.MeshBasicMaterial({ color:0x7c3aed, transparent:true, opacity:0.15, side:THREE.BackSide });
-        var glow = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8), gm);
-        glow.position.set(xPos, -0.3, -0.3);
-        b3d.scene.add(glow);
-        var obj = { mesh:model, glow:glow, origX:xPos, origY:-0.5, tex:null, mixer:mixer, gltf:gltf, isGLB:true };
+        // No glow — preserve original colors
+        var obj = { mesh:model, glow:null, origX:xPos, origY:-0.5, tex:null, mixer:mixer, gltf:gltf, isGLB:true };
         if (side==='player') b3d.player = obj; else b3d.opp = obj;
         if (cb) cb();
       }, undefined, function() {
@@ -5911,14 +5916,20 @@
       var mat = new THREE.MeshBasicMaterial({ map:tex, transparent:true, side:THREE.DoubleSide, depthWrite:false });
       var mesh = new THREE.Mesh(new THREE.PlaneGeometry(w2, h2), mat);
       mesh.position.set(xPos, h2/2 - 0.3, 0);
-      var gm = new THREE.MeshBasicMaterial({ color:0x7c3aed, transparent:true, opacity:0.12, side:THREE.BackSide });
-      var glow = new THREE.Mesh(new THREE.PlaneGeometry(w2+0.12, h2+0.12), gm);
-      glow.position.copy(mesh.position); glow.position.z = -0.05;
-      b3d.scene.add(mesh); b3d.scene.add(glow);
-      var obj = { mesh:mesh, glow:glow, origX:xPos, origY:mesh.position.y, tex:tex, mixer:null, gltf:null, isGLB:false };
+      b3d.scene.add(mesh);
+      var obj = { mesh:mesh, glow:null, origX:xPos, origY:mesh.position.y, tex:tex, mixer:null, gltf:null, isGLB:false };
       if (side==='player') b3d.player = obj; else b3d.opp = obj;
       if (cb) cb();
     });
+  }
+
+  function b3dRemovePoke(side) {
+    var obj = side === 'player' ? b3d.player : b3d.opp;
+    if (!obj) return;
+    if (obj.mesh) { b3d.scene.remove(obj.mesh); if (obj.mesh.geometry) obj.mesh.geometry.dispose(); if (obj.mesh.material) { if (obj.mesh.material.map) obj.mesh.material.map.dispose(); obj.mesh.material.dispose(); } }
+    if (obj.glow) { b3d.scene.remove(obj.glow); if (obj.glow.geometry) obj.glow.geometry.dispose(); if (obj.glow.material) obj.glow.material.dispose(); }
+    if (obj.gltf && obj.gltf.scene) { obj.gltf.scene.traverse(function(ch){ if (ch.isMesh){ if (ch.geometry) ch.geometry.dispose(); if (ch.material){ if (ch.material.map) ch.material.map.dispose(); ch.material.dispose(); }}); }
+    if (side === 'player') b3d.player = null; else b3d.opp = null;
   }
 
   function b3dAnimate() {
@@ -5933,7 +5944,7 @@
       } else {
         b3d.player.mesh.position.y = b3d.player.origY + Math.sin(t*0.002)*0.04;
       }
-      b3d.player.glow.position.y = b3d.player.mesh.position.y;
+      if (b3d.player.glow) b3d.player.glow.position.y = b3d.player.mesh.position.y;
       if (b3d.player.mixer) b3d.player.mixer.update(dt);
     }
     if (b3d.opp) {
@@ -5942,7 +5953,7 @@
       } else {
         b3d.opp.mesh.position.y = b3d.opp.origY + Math.sin(t*0.0025+1)*0.04;
       }
-      b3d.opp.glow.position.y = b3d.opp.mesh.position.y;
+      if (b3d.opp.glow) b3d.opp.glow.position.y = b3d.opp.mesh.position.y;
       if (b3d.opp.mixer) b3d.opp.mixer.update(dt);
     }
     // Smoke wisps
@@ -6117,7 +6128,7 @@
               atk.mesh.position.x = origX + dir*0.7 + dir*0.6*easeT;
               atk.mesh.position.y = origY + 0.15 + (ey-origY)*0.25*easeT;
               if (atk.isGLB && atk.mesh.rotation) atk.mesh.rotation.z = -dir*0.15*easeT;
-              atk.glow.position.copy(atk.mesh.position);
+               if (atk.glow) atk.glow.position.copy(atk.mesh.position);
             }, Math.round(step * lungeStepMs));
           })(ls);
         }
@@ -6156,19 +6167,19 @@
             if (tgt.isGLB) tgt.mesh.traverse(function(ch){ if (ch.isMesh && ch.material){ ch.material.emissive=new THREE.Color(0xffffff); ch.material.emissiveIntensity=0.8; }});
             var kb = isMe ? 0.4 : -0.4;
             tgt.mesh.position.x += kb;
-            tgt.glow.position.x = tgt.mesh.position.x;
+            if (tgt.glow) tgt.glow.position.x = tgt.mesh.position.x;
             setTimeout(function(){
               if (tgt.mesh.material && !tgt.isGLB) tgt.mesh.material.color.setHex(0xffffff);
               if (tgt.isGLB) tgt.mesh.traverse(function(ch){ if (ch.isMesh && ch.material){ ch.material.emissive=new THREE.Color(0); ch.material.emissiveIntensity=0; }});
               tgt.mesh.position.x -= kb;
-              tgt.glow.position.x = tgt.mesh.position.x;
+              if (tgt.glow) tgt.glow.position.x = tgt.mesh.position.x;
             }, Math.round(280*S));
           }, Math.round(60*S));
           // Return attacker
           setTimeout(function(){
             atk.mesh.position.x = origX;
             atk.mesh.position.y = origY;
-            atk.glow.position.copy(atk.mesh.position);
+            if (atk.glow) atk.glow.position.copy(atk.mesh.position);
             if (atk.isGLB && atk.mesh.rotation) atk.mesh.rotation.z = 0;
           }, Math.round(350*S));
           // Camera return
@@ -6269,19 +6280,19 @@
             if (tgt.isGLB) tgt.mesh.traverse(function(ch){ if (ch.isMesh && ch.material){ ch.material.emissive=new THREE.Color(0xffffff); ch.material.emissiveIntensity=0.8; }});
             var kb = isMe ? 0.4 : -0.4;
             tgt.mesh.position.x += kb;
-            tgt.glow.position.x = tgt.mesh.position.x;
+            if (tgt.glow) tgt.glow.position.x = tgt.mesh.position.x;
             setTimeout(function(){
               if (tgt.mesh.material && !tgt.isGLB) tgt.mesh.material.color.setHex(0xffffff);
               if (tgt.isGLB) tgt.mesh.traverse(function(ch){ if (ch.isMesh && ch.material){ ch.material.emissive=new THREE.Color(0); ch.material.emissiveIntensity=0; }});
               tgt.mesh.position.x -= kb;
-              tgt.glow.position.x = tgt.mesh.position.x;
+              if (tgt.glow) tgt.glow.position.x = tgt.mesh.position.x;
             }, Math.round(300*S));
           }, Math.round(80*S));
           // Return attacker
           setTimeout(function(){
             atk.mesh.position.x = origX;
             atk.mesh.position.y = origY;
-            atk.glow.position.copy(atk.mesh.position);
+            if (atk.glow) atk.glow.position.copy(atk.mesh.position);
           }, Math.round(350*S));
           // Camera return
           setTimeout(function(){

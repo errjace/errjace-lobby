@@ -1995,7 +1995,7 @@ io.on('connection', (socket) => {
       const loser = b.players.find(p => p.id !== winner);
       const loserData = pokemonData[loser.id];
       const winnerData = pokemonData[winner];
-      if (winnerData) addPokeXP(winner, 30, 'battle win');
+      if (winnerData) addPokeXP(winner, 100, 'battle win');
       if (loserData) addPokeXP(loser.id, 10, 'battle loss');
       io.emit('chat message', {
         id: ++msgCounter, nick: 'Pokémon', avatar: '⚔️',
@@ -2107,10 +2107,10 @@ io.on('connection', (socket) => {
     });
     if (b.state === 'ended') {
       const won = b.winner === realPlayer.id;
-      if (pokemonData[realPlayer.id]) addPokeXP(realPlayer.id, won ? 30 : 10, won ? 'bot battle win' : 'bot battle loss');
+      if (pokemonData[realPlayer.id]) addPokeXP(realPlayer.id, won ? 100 : 10, won ? 'bot battle win' : 'bot battle loss');
       io.to(realPlayer.id).emit('chat message', {
         id: ++msgCounter, nick: 'Pokémon', avatar: '🤖',
-        msg: won ? '🏆 Hai vinto l\'allenamento contro '+bot.nick+'! (+30 XP)' : '😞 Hai perso l\'allenamento contro '+bot.nick+'. (+10 XP)',
+        msg: won ? '🏆 Hai vinto l\'allenamento contro '+bot.nick+'! (+100 XP)' : '😞 Hai perso l\'allenamento contro '+bot.nick+'. (+10 XP)',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), system: true, reactions: {}
       });
       setTimeout(() => { delete battles[battleId]; }, 5000);
@@ -2146,8 +2146,8 @@ io.on('connection', (socket) => {
       }
       return team;
     };
-    // Build bot team — 1-3 random Pokemon
-    const botTeamSize = 1 + Math.floor(Math.random() * 2);
+    // Build bot team — 6 random Pokemon
+    const botTeamSize = 6;
     const botTeam = [];
     const usedIdx = new Set();
     for (let i = 0; i < botTeamSize; i++) {
