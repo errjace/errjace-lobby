@@ -8850,14 +8850,14 @@
               if (step >= 1) {
                 var trails = makeTrail(type, px, py, orbZ, c, moveName);
                 for (var ti=0;ti<trails.length;ti++){
-                  b3d.scene.add(trails[ti].mesh);
-                  spawnedTrails.push(trails[ti]);
+                  var tr=trails[ti];
+                  addP(tr.mesh, tr.vx||0, tr.vy||0.003, tr.vz||0, tr.ay||-0.01, tr.life||20, tr.maxLife||20, true);
                 }
                 if (isStream) {
                   var trails2 = makeTrail(type, px-(ex-orbX)*0.04, py-(ey-orbY)*0.04, orbZ, c, moveName);
                   for (var ti2=0;ti2<trails2.length;ti2++){
-                    b3d.scene.add(trails2[ti2].mesh);
-                    spawnedTrails.push(trails2[ti2]);
+                    var tr2=trails2[ti2];
+                    addP(tr2.mesh, tr2.vx||0, tr2.vy||0.003, tr2.vz||0, tr2.ay||-0.01, tr2.life||20, tr2.maxLife||20, true);
                   }
                 }
               }
@@ -8874,12 +8874,6 @@
           b3d.scene.remove(projGroup);
           projGroup.traverse(function(ch){ if(ch.geometry) ch.geometry.dispose(); if(ch.material) ch.material.dispose(); });
           b3d.scene.remove(projLight);
-          for (var sti=0;sti<spawnedTrails.length;sti++){
-            var st=spawnedTrails[sti];
-            if(st.mesh.parent) b3d.scene.remove(st.mesh);
-            if(st.mesh.geometry) st.mesh.geometry.dispose();
-            if(st.mesh.material) st.mesh.material.dispose();
-          }
           b3d.shake = 16;
           flashScreen(c);
           for (var ei=0; ei<45; ei++){
