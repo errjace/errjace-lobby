@@ -6032,7 +6032,7 @@
       p.vy += p.gy||-0.02;
       p.life--; var a = p.life/p.maxLife;
       if (p.mesh.userData && p.mesh.userData.animate) {
-        p.mesh.userData.animate(a, p);
+        try { p.mesh.userData.animate.call(p.mesh, a, p); } catch(e) { if (p.mesh.material) { p.mesh.material.opacity = a; } }
       } else {
         if (p.mesh.material) { p.mesh.material.opacity = a; if (!p.noScale) p.mesh.scale.setScalar(0.3+(1-a)*0.7); }
       }
