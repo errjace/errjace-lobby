@@ -1804,7 +1804,10 @@
     <!-- Top bar -->
     <div style="display:flex;justify-content:space-between;align-items:center;padding:0.25rem 0.5rem;border-bottom:1px solid rgba(124,58,237,0.2);flex-shrink:0;">
       <span style="font-family:'Black Ops One',monospace;font-size:0.8rem;color:#a78bfa;letter-spacing:2px;">⚔️ BATTAGLIA POKÉMON</span>
-      <span id="battleTurnIndicator" style="font-size:0.65rem;color:rgba(255,255,255,0.4);"></span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span id="battleTurnIndicator" style="font-size:0.65rem;color:rgba(255,255,255,0.4);"></span>
+        <button id="musicToggle" onclick="toggleBattleMusic()" style="background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);color:#a78bfa;padding:2px 6px;border-radius:4px;cursor:pointer;font-size:0.65rem;">🔊</button>
+      </div>
     </div>
     <!-- Opponent HP bar (sopra l'arena) -->
     <div style="flex-shrink:0;padding:0.25rem 0.5rem;">
@@ -2488,6 +2491,134 @@
   }
 
   // ===== BATTLE POKEMON =====
+  // ===== CHIPTUNE BATTLE MUSIC (Web Audio API) =====
+  var battleMusic = { ctx: null, playing: false, muted: false, nodes: [], loopId: null };
+  function toggleBattleMusic() {
+    if (battleMusic.playing) { stopBattleMusic(); } else { startBattleMusic(); }
+    var btn = document.getElementById('musicToggle');
+    if (btn) btn.textContent = battleMusic.muted ? '🔇' : '🔊';
+  }
+  function startBattleMusic() {
+    if (battleMusic.playing) return;
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      battleMusic.ctx = ctx; battleMusic.playing = true; battleMusic.muted = false;
+      var masterGain = ctx.createGain();
+      masterGain.gain.value = 0.18;
+      masterGain.connect(ctx.destination);
+      battleMusic.masterGain = masterGain;
+      var bpm = 150, beat = 60 / bpm;
+      var notes = { C4:261.63, D4:293.66, E4:329.63, F4:349.23, G4:392.00, A4:440.00, B4:493.88, C5:523.25, D5:587.33, E5:659.25, F5:698.46, G5:783.99, A5:880.00, B5:987.77, C6:1046.50, G3:196.00, A3:220.00, B3:246.94, C3:130.81, D3:146.83, E3:164.81, F3:174.61, D2:73.42, E2:82.41, G2:98.00, A2:110.00, C2:65.41 };
+      function playNote(freq, startT, dur, type, gainVal, dest) {
+        var osc = ctx.createOscillator();
+        var g = ctx.createGain();
+        osc.type = type; osc.frequency.value = freq;
+        g.gain.setValueAtTime(0, startT);
+        g.gain.linearRampToValueAtTime(gainVal, startT + 0.008);
+        g.gain.setValueAtTime(gainVal, startT + dur - 0.02);
+        g.gain.linearRampToValueAtTime(0, startT + dur);
+        osc.connect(g); g.connect(dest || masterGain);
+        osc.start(startT); osc.stop(startT + dur + 0.01);
+        battleMusic.nodes.push(osc);
+      }
+      function playNoise(startT, dur, gainVal) {
+        var bufSize = ctx.sampleRate * dur;
+        var buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        var data = buf.getChannelData(0);
+        for (var i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1);
+        var src = ctx.createBufferSource();
+        src.buffer = buf;
+        var g = ctx.createGain();
+        g.gain.setValueAtTime(gainVal, startT);
+        g.gain.exponentialRampToValueAtTime(0.001, startT + dur);
+        var filt = ctx.createBiquadFilter();
+        filt.type = 'highpass'; filt.frequency.value = 800;
+        src.connect(filt); filt.connect(g); g.connect(masterGain);
+        src.start(startT); src.stop(startT + dur + 0.01);
+        battleMusic.nodes.push(src);
+      }
+      var melody = [
+        ['E5',0.5],['E5',0.5],['rest',0.5],['E5',0.5],['rest',0.25],['C5',0.25],['E5',1],
+        ['G5',1],['rest',0.5],['G4',1],['rest',0.5],
+        ['C5',1],['rest',0.5],['G4',1],['rest',0.5],['E4',1],['rest',0.5],
+        ['A4',0.5],['B4',0.5],['rest',0.25],['B4',0.25],['A4',1],
+        ['G4',0.67],['E5',0.67],['G5',0.67],['A5',0.5],['F5',0.5],['G5',0.5],
+        ['rest',0.25],['E5',0.5],['C5',0.5],['D5',0.5],['B4',0.75],
+        ['C5',0.5],['rest',0.25],['A4',0.5],['D5',0.5],['G4',0.75],
+        ['E5',0.5],['rest',0.25],['C5',0.5],['E5',0.5],['G5',0.75],
+        ['A5',0.5],['F5',0.5],['E5',0.5],['D5',0.5],['C5',0.75]
+      ];
+      var bass = [
+        ['E3',2],['C3',2],['G3',2],['A3',2],
+        ['F3',2],['D3',2],['G3',2],['E3',2],
+        ['A3',2],['E3',2],['G3',2],['C3',2],
+        ['F3',2],['D3',2],['E3',2],['E3',2]
+      ];
+      var drumPattern = [1,0,0,1,0,0,1,0,0,1,0,1,0,0,1,0];
+      var barLen = melody.reduce(function(s, n) { return s + n[1]; }, 0);
+      var loopBars = 2;
+      var loopDur = barLen * loopBars;
+      function scheduleLoop(barOffset) {
+        var baseT = ctx.currentTime + 0.1 + barOffset * loopDur;
+        var t = baseT;
+        for (var rep = 0; rep < loopBars; rep++) {
+          for (var i = 0; i < melody.length; i++) {
+            var n = melody[i];
+            var dur = n[1] * beat;
+            if (n[0] !== 'rest') playNote(notes[n[0]], t, dur * 0.9, 'square', 0.12);
+            t += dur;
+          }
+        }
+        t = baseT;
+        for (var rep = 0; rep < loopBars; rep++) {
+          for (var i = 0; i < bass.length; i++) {
+            var n = bass[i];
+            var dur = n[1] * beat;
+            playNote(notes[n[0]], t, dur * 0.85, 'triangle', 0.14);
+            t += dur;
+          }
+        }
+        t = baseT;
+        var drumStep = 0;
+        var drumLen = loopDur / drumPattern.length;
+        for (var d = 0; d < drumPattern.length; d++) {
+          if (drumPattern[d]) playNoise(t, drumLen * 0.7, 0.1);
+          if (d % 4 === 0) playNote(notes['C2'], t, drumLen * 0.6, 'square', 0.08);
+          t += drumLen;
+          drumStep++;
+        }
+      }
+      var scheduledBars = 0;
+      function scheduleAhead() {
+        if (!battleMusic.playing) return;
+        var lookAhead = loopDur * 2.5;
+        while (scheduledBars * loopDur < lookAhead) {
+          scheduleLoop(scheduledBars);
+          scheduledBars++;
+        }
+      }
+      scheduleAhead();
+      battleMusic.loopId = setInterval(function() {
+        if (!battleMusic.playing) { clearInterval(battleMusic.loopId); return; }
+        scheduleAhead();
+      }, loopDur * 1000 * 0.4);
+    } catch(e) { console.warn('[BATTLE_MUSIC] init failed:', e); }
+  }
+  function stopBattleMusic() {
+    battleMusic.playing = false;
+    if (battleMusic.loopId) { clearInterval(battleMusic.loopId); battleMusic.loopId = null; }
+    if (battleMusic.nodes) {
+      for (var i = 0; i < battleMusic.nodes.length; i++) {
+        try { battleMusic.nodes[i].stop(); } catch(e) {}
+      }
+      battleMusic.nodes = [];
+    }
+    if (battleMusic.ctx) {
+      try { battleMusic.ctx.close(); } catch(e) {}
+      battleMusic.ctx = null;
+    }
+    battleMusic.masterGain = null;
+  }
   var battleData = null;
   var myBattleIdx = -1;
   var prevLogLen = 0;
@@ -2946,6 +3077,7 @@
     lastPlayerPoke = data.players[myBattleIdx] ? data.players[myBattleIdx].currentPoke : 0;
     lastOppPoke = data.players[1 - myBattleIdx] ? data.players[1 - myBattleIdx].currentPoke : 0;
     document.getElementById('battleOverlay').classList.add('active');
+    startBattleMusic();
     setTimeout(function(){
       bInitCanvas();
     },100);
@@ -2995,6 +3127,7 @@
     battleData.winner = data.winner;
     renderBattle();
     if (data.state === 'ended') {
+      stopBattleMusic();
       var won = data.winner === socket.id;
       var isBot = battleData && battleData.isBot;
       setTimeout(function() {
@@ -3129,12 +3262,14 @@
     if (!battleData) return;
     socket.emit('battle:forfeit', { battleId: battleData.battleId });
     document.getElementById('battleOverlay').classList.remove('active');
+    stopBattleMusic();
     battleData = null;
   });
   // Close battle overlay on backdrop click
   document.getElementById('battleOverlay').addEventListener('click', function(e) {
     if (e.target === this && (!battleData || battleData.state === 'ended')) {
       this.classList.remove('active');
+      stopBattleMusic();
       battleData = null;
     }
   });
