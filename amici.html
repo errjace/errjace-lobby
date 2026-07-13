@@ -5928,6 +5928,7 @@
 
   function b3dLoadPoke(side, imgUrl, cb) {
     if (!b3d.ready) return;
+    b3dRemovePoke(side);
     var xPos = b3dGetXPos(side);
     var dexId = extractDexId(imgUrl);
     if (dexId && b3d.gltfLoader) {
