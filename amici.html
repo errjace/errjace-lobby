@@ -1459,11 +1459,9 @@
 <div class="overlay" id="nickOverlay">
   <div class="popup">
     <h2>Benvenuto/a! 🎉</h2>
-    <p>Scegli il tuo nickname e avatar</p>
+    <p>Scegli il tuo nickname</p>
     <input type="text" id="nickInput" placeholder="Il tuo nickname" maxlength="20" autocomplete="off">
     <input type="password" id="pinInput" placeholder="PIN (opzionale per nuovi, richiesto per account esistenti)" maxlength="10" autocomplete="off" style="display:none;">
-    <div class="avatar-label">Scegli il tuo profilo</div>
-    <div class="avatar-grid" id="avatarGrid"></div>
     <div class="nick-error" id="nickError">Inserisci un nickname valido.</div>
     <div class="nick-error" id="pinError" style="display:none;"></div>
     <button id="enterLobbyBtn">Entra in lobby</button>
@@ -4112,10 +4110,10 @@
     { emoji: '❤️', name: 'Heart', bg: 'linear-gradient(135deg,#e11d48,#be123c)' },
   ];
 
-  let selectedAvatar = avatars[0].emoji;
+  let selectedAvatar = avatars[Math.floor(Math.random() * avatars.length)].emoji;
 
   const grid = document.getElementById('avatarGrid');
-  avatars.forEach((a, i) => {
+  if (grid) avatars.forEach((a, i) => {
     const div = document.createElement('div');
     div.className = 'avatar-opt' + (i === 0 ? ' selected' : '');
     div.textContent = a.emoji;
