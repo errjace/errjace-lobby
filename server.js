@@ -1289,7 +1289,7 @@ io.on('connection', (socket) => {
         socket.emit('battle:start', {
           battleId: bid, myIdx: myIdx,
           players: b.players.map(p => ({ id: p.id, nick: p.nick, currentPoke: p.currentPoke,
-            team: p.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves, isDynamax:!!pk.isDynamax }))
+            team: p.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves, isMega:!!pk.isMega, isDynamax:!!pk.isDynamax }))
           })),
           turnPlayer: b.turnPlayer, log: b.log, state: b.state
         });
@@ -2234,7 +2234,7 @@ io.on('connection', (socket) => {
       const pi = b.players.findIndex(p2 => p2.id === sid);
       io.to(sid).emit('battle:start', {
         battleId: id, myIdx: pi,
-        players: b.players.map(p => ({ id: p.id, nick: p.nick, team: p.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves })), currentPoke: p.currentPoke })),
+        players: b.players.map(p => ({ id: p.id, nick: p.nick, team: p.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves, isMega:!!pk.isMega, isDynamax:!!pk.isDynamax })), currentPoke: p.currentPoke })),
         turnPlayer: b.turnPlayer, log: [], state: 'playing',
         canMega: b.players.map((p,i) => { const pk = p.team[0]; return pk && !!MEGA_MAP[pk.imgId]; }),
         canDynamax: b.players.map(() => true),
@@ -2254,7 +2254,7 @@ io.on('connection', (socket) => {
     b.players.forEach((p, i) => {
       io.to(p.id).emit('battle:state', {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
-          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted, types:pk.types, isDynamax:!!pk.isDynamax }))
+          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted, types:pk.types, isMega:!!pk.isMega, isDynamax:!!pk.isDynamax }))
         })),
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
@@ -2285,7 +2285,7 @@ io.on('connection', (socket) => {
     b.players.forEach((p, i) => {
       io.to(p.id).emit('battle:state', {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
-          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted, types:pk.types, isDynamax:!!pk.isDynamax }))
+          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted, types:pk.types, isMega:!!pk.isMega, isDynamax:!!pk.isDynamax }))
         })),
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
@@ -2310,7 +2310,6 @@ io.on('connection', (socket) => {
     pk.originalSpecies = pk.species;
     pk.species = mega.name;
     pk.types = mega.types;
-    pk.img = POKE_IMG + mega.megaId + '.png';
     pk.isMega = true;
     const oldMaxHp = pk.maxHp;
     pk.stats.atk = Math.round(pk.stats.atk * 1.3);
@@ -2323,7 +2322,7 @@ io.on('connection', (socket) => {
     b.players.forEach((pl) => {
       io.to(pl.id).emit('battle:state', {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
-          team: p2.team.map(pk2 => ({ species:pk2.species, img:pk2.img, imgId:pk2.imgId, currentHp:pk2.currentHp, maxHp:pk2.maxHp, status:pk2.status, fainted:pk2.fainted, types:pk2.types, isMega: pk2 === pk }))
+          team: p2.team.map(pk2 => ({ species:pk2.species, img:pk2.img, imgId:pk2.imgId, currentHp:pk2.currentHp, maxHp:pk2.maxHp, status:pk2.status, fainted:pk2.fainted, types:pk2.types, isMega: !!pk2.isMega, isDynamax: !!pk2.isDynamax }))
         })),
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed,
@@ -2353,7 +2352,7 @@ io.on('connection', (socket) => {
     b.players.forEach((pl) => {
       io.to(pl.id).emit('battle:state', {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
-          team: p2.team.map(pk2 => ({ species:pk2.species, img:pk2.img, imgId:pk2.imgId, currentHp:pk2.currentHp, maxHp:pk2.maxHp, status:pk2.status, fainted:pk2.fainted, types:pk2.types, isDynamax: pk2 === pk }))
+          team: p2.team.map(pk2 => ({ species:pk2.species, img:pk2.img, imgId:pk2.imgId, currentHp:pk2.currentHp, maxHp:pk2.maxHp, status:pk2.status, fainted:pk2.fainted, types:pk2.types, isMega: !!pk2.isMega, isDynamax: !!pk2.isDynamax }))
         })),
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed,
@@ -2369,7 +2368,7 @@ io.on('connection', (socket) => {
       if (p.id.startsWith('bot_')) return; // skip bot socket
       io.to(p.id).emit('battle:state', {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
-          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted, types:pk.types }))
+          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted, types:pk.types, isMega:!!pk.isMega, isDynamax:!!pk.isDynamax }))
         })),
         turnPlayer: b.turnPlayer, log: b.log.concat([users[socket.id]?.nick + ' si è arreso!']), state: b.state, winner: b.winner,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
@@ -2530,7 +2529,7 @@ io.on('connection', (socket) => {
     const myTeam = mkTeam(socket.id);
     io.to(socket.id).emit('battle:start', {
       battleId: id, myIdx: 0, isBot: true,
-      players: b.players.map(p => ({ id: p.id, nick: p.nick, team: p.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves })), currentPoke: p.currentPoke })),
+      players: b.players.map(p => ({ id: p.id, nick: p.nick, team: p.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves, isMega:!!pk.isMega, isDynamax:!!pk.isDynamax })), currentPoke: p.currentPoke })),
       turnPlayer: b.turnPlayer, log: b.log, state: 'playing',
       canMega: [myTeam.map(pk => !!MEGA_MAP[pk.imgId]).some(Boolean), false],
       canDynamax: [true, false],
