@@ -3367,11 +3367,13 @@
     bInitCanvas();
     renderBattle();
     // === 3D BATTLE ===
-    b3dInit();
-    var me = battleData.players[myBattleIdx];
-    var opp = battleData.players[1 - myBattleIdx];
-    if (me && me.team[me.currentPoke]) b3dLoadPoke('player', me.team[me.currentPoke].img);
-    if (opp && opp.team[opp.currentPoke]) b3dLoadPoke('opponent', opp.team[opp.currentPoke].img);
+    setTimeout(function() {
+      b3dInit();
+      var me = battleData.players[myBattleIdx];
+      var opp = battleData.players[1 - myBattleIdx];
+      if (me && me.team[me.currentPoke]) b3dLoadPoke('player', me.team[me.currentPoke].img);
+      if (opp && opp.team[opp.currentPoke]) b3dLoadPoke('opponent', opp.team[opp.currentPoke].img);
+    }, 50);
   });
   // Battle state update
   socket.on('battle:state', function(data) {
@@ -3493,6 +3495,7 @@
     }
     // Opponent
     if (oppPoke && !oppPoke.fainted) {
+      document.getElementById('opponentSprite').style.display = 'flex';
       document.getElementById('opponentSprite').querySelector('img').src = oppPoke.img;
       var oppFormLabel = oppMegaActive ? ' ⚡MEGA' : oppDynamaxActive ? ' 🔴DYN' : '';
       document.getElementById('opponentName').textContent = oppPoke.species + oppFormLabel;
@@ -3506,6 +3509,7 @@
       document.getElementById('opponentTypes').innerHTML = oppTypes;
       document.getElementById('opponentStatus').textContent = oppPoke.status || '';
     } else {
+      document.getElementById('opponentSprite').style.display = 'none';
       document.getElementById('opponentSprite').querySelector('img').src = '';
       document.getElementById('opponentName').textContent = oppPoke ? oppPoke.species + ' (ESAUSTO)' : '?';
       document.getElementById('opponentHpFill').style.width = '0%';
@@ -3513,6 +3517,7 @@
     }
     // Player
     if (myPoke && !myPoke.fainted) {
+      document.getElementById('playerSprite').style.display = 'flex';
       document.getElementById('playerSprite').querySelector('img').src = myPoke.img;
       var myFormLabel = myMegaActive ? ' ⚡MEGA' : myDynamaxActive ? ' 🔴DYN' : '';
       document.getElementById('playerName').textContent = myPoke.species + myFormLabel;
@@ -3526,6 +3531,7 @@
       document.getElementById('playerTypes').innerHTML = myTypes;
       document.getElementById('playerStatus').textContent = myPoke.status || '';
     } else {
+      document.getElementById('playerSprite').style.display = 'none';
       document.getElementById('playerSprite').querySelector('img').src = '';
       document.getElementById('playerName').textContent = myPoke ? myPoke.species + ' (ESAUSTO)' : '?';
       document.getElementById('playerHpFill').style.width = '0%';
@@ -6965,6 +6971,9 @@
       var obj = { mesh:mesh, glow:null, origX:xPos, origY:billY, tex:tex, mixer:null, gltf:null, isGLB:false };
       if (side==='player') b3d.player = obj; else b3d.opp = obj;
       if (cb) cb();
+    }, undefined, function() {
+      var spriteEl = document.getElementById(side === 'player' ? 'playerSprite' : 'opponentSprite');
+      if (spriteEl) spriteEl.style.display = 'flex';
     });
   }
 
