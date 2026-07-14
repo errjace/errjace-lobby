@@ -6028,7 +6028,6 @@
   // POKEMON Socket handlers
   var myPoke = null;
   socket.on('pokemon:status', function(data) {
-    if (!data.hasPokemon) setTimeout(function() { document.getElementById('pokePicker').classList.add('active'); }, 500);
   });
   socket.on('pokemon:picked', function(data) {
     if (data.error) return;
