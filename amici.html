@@ -6885,22 +6885,18 @@
     b3dRemovePoke(side);
     var xPos = b3dGetXPos(side);
     var dexId = directDexId || extractDexId(imgUrl);
-    console.log('[MEGA_3D] side='+side+' form='+form+' dexId='+dexId+' gltfLoader='+(!!b3d.gltfLoader));
-    if (!dexId) { b3dLoadPoke(side, imgUrl); return; }
-    var pokeFallback = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/' + dexId + '.png';
-    var formSpriteUrl = 'https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/sprites/opt/' + form + '/' + dexId + '.png';
-    if (b3d.gltfLoader) {
+    console.log('[MEGA_3D] side='+side+' form='+form+' dexId='+dexId+' imgUrl='+imgUrl);
+    if (b3d.gltfLoader && dexId) {
       var formUrl = 'https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/models/opt/' + form + '/' + dexId + '.glb';
       console.log('[MEGA_3D] loading GLB: ' + formUrl);
       var xhr = new XMLHttpRequest();
       xhr.open('GET', formUrl, true);
       xhr.responseType = 'arraybuffer';
       xhr.onload = function() {
-        console.log('[MEGA_3D] xhr status=' + xhr.status);
         if (xhr.status === 200 && xhr.response) {
           var cleanBuffer = stripUnsupportedGlbExtensions(xhr.response);
           b3d.gltfLoader.parse(cleanBuffer, '', function(gltf) {
-            console.log('[MEGA_3D] GLB parsed OK, scene children: ' + gltf.scene.children.length);
+            console.log('[MEGA_3D] GLB parsed OK');
             var model = gltf.scene;
             var scaleBase = form === 'gmax' ? 0.52 : 0.38;
             model.scale.set(scaleBase, scaleBase, scaleBase);
@@ -6917,47 +6913,19 @@
             }
             var obj = { mesh:model, glow:null, origX:xPos, origY:modelY, tex:null, mixer:mixer, gltf:gltf, isGLB:true };
             if (side==='player') b3d.player = obj; else b3d.opp = obj;
-            console.log('[MEGA_3D] model added to scene for ' + side);
             b3dAddFormAura(side, form);
-          }, function(err) { console.log('[MEGA_3D] GLB parse FAILED'); b3dLoadPokeBillboard(side, pokeFallback, xPos); });
+          }, function() { console.log('[MEGA_3D] GLB parse FAILED'); b3dLoadPokeBillboard(side, imgUrl, xPos, function(){ b3dAddFormAura(side, form); }); });
         } else {
-          console.log('[MEGA_3D] HTTP ' + xhr.status + ', trying sprite: ' + formSpriteUrl);
-          b3dLoadPokeFormBillboard(side, form, formSpriteUrl, pokeFallback, xPos);
+          console.log('[MEGA_3D] GLB HTTP ' + xhr.status + ', billboard fallback');
+          b3dLoadPokeBillboard(side, imgUrl, xPos, function(){ b3dAddFormAura(side, form); });
         }
       };
-      xhr.onerror = function() { console.log('[MEGA_3D] XHR error, trying sprite'); b3dLoadPokeFormBillboard(side, form, formSpriteUrl, pokeFallback, xPos); };
+      xhr.onerror = function() { console.log('[MEGA_3D] GLB XHR error'); b3dLoadPokeBillboard(side, imgUrl, xPos, function(){ b3dAddFormAura(side, form); }); };
       xhr.send();
     } else {
-      console.log('[MEGA_3D] no gltfLoader, using billboard sprite: ' + formSpriteUrl);
-      b3dLoadPokeFormBillboard(side, form, formSpriteUrl, pokeFallback, xPos);
+      console.log('[MEGA_3D] billboard mode, imgUrl: ' + imgUrl);
+      b3dLoadPokeBillboard(side, imgUrl, xPos, function(){ b3dAddFormAura(side, form); });
     }
-  }
-
-  function b3dLoadPokeFormBillboard(side, form, formSpriteUrl, pokeFallback, xPos) {
-    var loader = new THREE.TextureLoader();
-    loader.load(formSpriteUrl, function(tex) {
-      console.log('[MEGA_3D] billboard sprite loaded: ' + form);
-      var asp = tex.image.width / tex.image.height;
-      var container = document.getElementById('battle3d');
-      var ch = container ? container.offsetHeight : 300;
-      var maxH = ch / 300 * 1.8;
-      var w2 = 1.2, h2 = w2 / asp;
-      if (form === 'gmax') { w2 = 1.6; h2 = w2 / asp; }
-      else if (form === 'mega') { w2 = 1.35; h2 = w2 / asp; }
-      if (h2 > maxH) { h2 = maxH; w2 = h2 * asp; }
-      var mat = new THREE.MeshBasicMaterial({ map:tex, transparent:true, side:THREE.DoubleSide, depthWrite:false });
-      var mesh = new THREE.Mesh(new THREE.PlaneGeometry(w2, h2), mat);
-      var billY = side==='player' ? -1.2 + h2/2 : -0.9 + h2/2;
-      var billZ = side==='player' ? 0.3 : -0.8;
-      mesh.position.set(xPos, billY, billZ);
-      b3d.scene.add(mesh);
-      var obj = { mesh:mesh, glow:null, origX:xPos, origY:billY, tex:tex, mixer:null, gltf:null, isGLB:false };
-      if (side==='player') b3d.player = obj; else b3d.opp = obj;
-      b3dAddFormAura(side, form);
-    }, undefined, function() {
-      console.log('[MEGA_3D] form sprite failed, fallback to normal');
-      b3dLoadPokeBillboard(side, pokeFallback, xPos);
-    });
   }
 
   var b3dFormAuras = { player: null, opponent: null };
