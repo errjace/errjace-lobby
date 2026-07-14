@@ -1099,6 +1099,28 @@ const MEGA_MAP = {
   460:{name:'Mega Abomasnow',types:['grass','ice'],img:'0460-Mega.png'},
   475:{name:'Mega Gallade',types:['psychic','fighting'],img:'0475-Mega.png'},
 };
+const GMAX_IMG = 'https://raw.githubusercontent.com/HybridShivam/Pokemon/master/assets/images/';
+const GMAX_MAP = {
+  3:{name:'Venusaur GMax',types:['grass','poison'],img:'0003-Gmax.png'},
+  6:{name:'Charizard GMax',types:['fire','flying'],img:'0006-Gmax.png'},
+  9:{name:'Blastoise GMax',types:['water'],img:'0009-Gmax.png'},
+  12:{name:'Butterfree GMax',types:['bug','flying'],img:'0012-Gmax.png'},
+  25:{name:'Pikachu GMax',types:['electric'],img:'0025-Gmax.png'},
+  52:{name:'Meowth GMax',types:['normal'],img:'0052-Gmax.png'},
+  99:{name:'Kingler GMax',types:['water'],img:'0099-Gmax.png'},
+  131:{name:'Lapras GMax',types:['water','ice'],img:'0131-Gmax.png'},
+  133:{name:'Eevee GMax',types:['normal'],img:'0133-Gmax.png'},
+  143:{name:'Snorlax GMax',types:['normal'],img:'0143-Gmax.png'},
+  812:{name:'Rillaboom GMax',types:['grass'],img:'0812-Gmax.png'},
+  815:{name:'Cinderace GMax',types:['fire'],img:'0815-Gmax.png'},
+  818:{name:'Inteleon GMax',types:['water'],img:'0818-Gmax.png'},
+  823:{name:'Corviknight GMax',types:['flying','steel'],img:'0823-Gmax.png'},
+  826:{name:'Toxtricity GMax',types:['electric','poison'],img:'0826-Gmax.png'},
+  839:{name:'Coalossal GMax',types:['rock','fire'],img:'0839-Gmax.png'},
+  858:{name:'Hatterene GMax',types:['psychic','fairy'],img:'0858-Gmax.png'},
+  879:{name:'Copperajah GMax',types:['steel'],img:'0879-Gmax.png'},
+  884:{name:'Duraludon GMax',types:['steel','dragon'],img:'0884-Gmax.png'},
+};
 const MOVE_POOL = {
   normal:[{n:'Ultraballata',p:40,acc:100,cat:'physical'},{n:'Taglio',p:50,acc:95,cat:'physical'},{n:'Rapata',p:80,acc:100,cat:'physical'},{n:'Colpo',p:70,acc:100,cat:'physical'}],
   fire:[{n:'Braciere',p:40,acc:100,cat:'special'},{n:'Lanciafiamme',p:90,acc:100,cat:'special'},{n:'Fuocobomba',p:110,acc:85,cat:'special'},{n:'Lanciafiamme',p:90,acc:100,cat:'special'}],
@@ -1214,6 +1236,8 @@ function battleTurn(battleId, playerIdx, action) {
     // Reset mega/dynamax on switch
     b.megaActive[playerIdx] = false;
     b.dynamaxActive[playerIdx] = false;
+    if (pPoke && pPoke.isDynamax && pPoke.originalImg) { pPoke.img = pPoke.originalImg; delete pPoke.originalImg; pPoke.isDynamax = false; }
+    if (pPoke && pPoke.isDynamax && pPoke.originalSpecies) { pPoke.species = pPoke.originalSpecies; delete pPoke.originalSpecies; }
     b.log.push(`${p.nick} richiama ${oldName} e manda ${target.species}!`);
     b.turnPlayer = 1 - playerIdx;
     p.lastMove = action.type;
@@ -1229,6 +1253,8 @@ function battleTurn(battleId, playerIdx, action) {
           pk.maxHp = pk.originalMaxHp || pk.maxHp;
           pk.currentHp = Math.min(pk.currentHp, pk.maxHp);
           pk.moves.forEach(m => { if(m.originalPower) { m.p = m.originalPower; delete m.originalPower; }});
+          if (pk.originalImg) { pk.img = pk.originalImg; delete pk.originalImg; }
+          if (pk.originalSpecies) { pk.species = pk.originalSpecies; delete pk.originalSpecies; }
           b.log.push(`${b.players[i].nick}: Dynamax è finito!`);
         }
       }
@@ -2382,6 +2408,14 @@ io.on('connection', (socket) => {
     b.dynamaxActive[pIdx] = true;
     b.dynamaxTurns[pIdx] = 3;
     pk.isDynamax = true;
+    const gmax = GMAX_MAP[pk.imgId];
+    if (gmax) {
+      pk.originalImg = pk.img;
+      pk.originalSpecies = pk.species;
+      pk.species = gmax.name;
+      pk.types = gmax.types;
+      pk.img = GMAX_IMG + gmax.img;
+    }
     pk.originalMaxHp = pk.maxHp;
     pk.maxHp = pk.maxHp * 2;
     pk.currentHp = Math.min(pk.currentHp * 2, pk.maxHp);
@@ -2493,16 +2527,25 @@ io.on('connection', (socket) => {
     if (!poke || poke.fainted) return;
     b.dynamaxUsed[pIdx] = true;
     b.dynamaxActive[pIdx] = true;
+    const gmax2 = GMAX_MAP[poke.imgId];
+    if (gmax2) {
+      poke.originalImg = poke.img;
+      poke.originalSpecies = poke.species;
+      poke.species = gmax2.name;
+      poke.types = gmax2.types;
+      poke.img = GMAX_IMG + gmax2.img;
+    }
     b.log.push(`🔴 ${poke.species} Dynamax!`);
     b.turnPlayer = 1 - pIdx;
     b.players.forEach((pl) => {
       io.to(pl.id).emit('battle:state', {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
-          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
+          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
         })),
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
         megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
-        megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
+        megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed,
+        dynamaxEffect: { playerIdx: pIdx, species: poke.species, img: poke.img, turnsLeft: 3 }
       });
     });
     if (b.isBot && b.turnPlayer === 1) {

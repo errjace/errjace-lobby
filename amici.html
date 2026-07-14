@@ -3453,6 +3453,8 @@
       if (battleData.players[dIdx]) {
         var dp = battleData.players[dIdx].currentPoke;
         if (battleData.players[dIdx].team[dp]) {
+          battleData.players[dIdx].team[dp].species = data.dynamaxEffect.species;
+          battleData.players[dIdx].team[dp].img = data.dynamaxEffect.img;
           battleData.players[dIdx].team[dp].isDynamax = true;
         }
       }
