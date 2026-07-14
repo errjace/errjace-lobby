@@ -6735,11 +6735,11 @@
     // Ground circle under each Pokemon
     var groundMat = new THREE.MeshBasicMaterial({ color:0x2a5a1e, transparent:true, opacity:0.18, side:THREE.DoubleSide });
     var pg = new THREE.Mesh(new THREE.CircleGeometry(0.6, 24), groundMat);
-    pg.rotation.x = -Math.PI/2; pg.position.set(-1.8, -1.45, 0);
+    pg.rotation.x = -Math.PI/2; pg.position.set(-1.5, -1.45, 0);
     b3d.scene.add(pg);
     var og = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), groundMat.clone());
     og.material.opacity = 0.14;
-    og.rotation.x = -Math.PI/2; og.position.set(1.8, -1.45, -0.8);
+    og.rotation.x = -Math.PI/2; og.position.set(1.5, -1.45, -0.8);
     b3d.scene.add(og);
     // Ambient smoke wisps
     for (var s=0;s<6;s++) {
@@ -6775,9 +6775,9 @@
     var cw = container ? container.offsetWidth : 400;
     var ch = container ? container.offsetHeight : 300;
     var aspect = cw / ch;
-    if (aspect < 0.8) return side==='player' ? -1.2 : 1.2;
-    if (aspect < 1.2) return side==='player' ? -1.8 : 1.8;
-    return side==='player' ? -2.4 : 2.4;
+    if (aspect < 0.8) return side==='player' ? -1.0 : 1.0;
+    if (aspect < 1.2) return side==='player' ? -1.5 : 1.5;
+    return side==='player' ? -1.8 : 1.8;
   }
 
   function extractDexId(imgUrl) {
@@ -6960,7 +6960,8 @@
       if (h2 > maxH) { h2 = maxH; w2 = h2 * asp; }
       var mat = new THREE.MeshBasicMaterial({ map:tex, transparent:true, side:THREE.DoubleSide, depthWrite:false });
       var mesh = new THREE.Mesh(new THREE.PlaneGeometry(w2, h2), mat);
-      var billY = side==='player' ? -1.2 + h2/2 : -0.9 + h2/2;
+      var groundY = -1.45;
+      var billY = side==='player' ? groundY + h2/2 : groundY + h2/2;
       var billZ = side==='player' ? 0.3 : -0.8;
       mesh.position.set(xPos, billY, billZ);
       b3d.scene.add(mesh);
