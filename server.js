@@ -1898,6 +1898,30 @@ io.on('connection', (socket) => {
     io.emit('chat message', { id:++msgCounter, nick:'⚔️ NEGOZIO COMP', avatar:'⚔️', msg:`${u.nick} ha acquistato ${poke.name}! 🔥`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
   });
 
+  // NEGOZIO MEGA EVOLUZIONE
+  socket.on('mega:list', () => {
+    const megaList = COMPETITIVE_SHOP.filter(p => MEGA_MAP[p.id]).map(p => ({
+      ...p, mega: MEGA_MAP[p.id]
+    }));
+    socket.emit('mega:list', megaList);
+  });
+
+  // NEGOZIO DYNAMAX
+  socket.on('dynamax:list', () => {
+    const dynamaxList = COMPETITIVE_SHOP.filter(p => GMAX_MAP[p.id]).map(p => ({
+      ...p, gmax: GMAX_MAP[p.id]
+    }));
+    socket.emit('dynamax:list', dynamaxList);
+  });
+
+  // NEGOZIO COMPETITIVE (tutti)
+  socket.on('competitive:all', () => {
+    const listWithFlags = COMPETITIVE_SHOP.map(p => ({
+      ...p, mega: !!MEGA_MAP[p.id], gmax: !!GMAX_MAP[p.id]
+    }));
+    socket.emit('competitive:all', listWithFlags);
+  });
+
   // CARAMMELLA RARA - Buy levels
   socket.on('candy:list', () => {
     const u = users[socket.id];
