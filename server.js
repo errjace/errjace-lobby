@@ -1872,9 +1872,11 @@ io.on('connection', (socket) => {
       const nextXp = EVO_THRESH[oldLv] || (EVO_THRESH[EVO_THRESH.length-1] + 2000);
       pd.xp = nextXp;
       const newLv = getPokemonLv(pd.xp);
+      const newStage = getPokeStage(newLv);
+      pd.currentForm = STARTERS[pd.starter].evos[newStage];
       casinoBals[socket.id] = bal - CANDY_COST;
       saveNickData(socket.id);
-      socket.emit('candy:bought', { name: pd.currentForm, oldLv: oldLv, newLv: newLv, balance: casinoBals[socket.id] });
+      socket.emit('candy:bought', { name: pd.currentForm, oldLv: oldLv, newLv: newLv, balance: casinoBals[socket.id], img: POKE_IMG + STARTERS[pd.starter].imgs[newStage] + '.png' });
       io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
     } else if (target === 'team') {
       const idx = parseInt(index);
@@ -1903,6 +1905,8 @@ io.on('connection', (socket) => {
     const oldStarterLv = getPokemonLv(pd.xp || 0);
     if (oldStarterLv < MAX_LV) {
       pd.xp = EVO_THRESH[MAX_LV - 1] || EVO_THRESH[EVO_THRESH.length - 1];
+      const maxStage = getPokeStage(MAX_LV);
+      pd.currentForm = STARTERS[pd.starter].evos[maxStage];
     }
     // Level up team
     var upgraded = [];

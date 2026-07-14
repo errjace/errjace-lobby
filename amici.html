@@ -4586,6 +4586,8 @@
     casinoBalance = data.balance;
     var shopBal = document.getElementById('shopBalance');
     if (shopBal) shopBal.textContent = data.balance.toLocaleString();
+    if (data.img && myPoke) myPoke.img = data.img;
+    if (data.name && myPoke) myPoke.form = data.name;
     var toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #ff6b9d;border-radius:12px;padding:0.6rem 1.2rem;z-index:9999;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#ff6b9d;font-weight:700;animation:fadeIn 0.3s;';
     toast.innerHTML = '🍬 '+data.name+' è salito/a al Livello '+data.newLv+'!';
