@@ -3412,6 +3412,7 @@
         var cp = battleData.players[pIdx2].currentPoke;
         if (battleData.players[pIdx2].team[cp]) {
           battleData.players[pIdx2].team[cp].species = data.megaEffect.species;
+          battleData.players[pIdx2].team[cp].img = data.megaEffect.img;
           battleData.players[pIdx2].team[cp].isMega = true;
         }
       }
@@ -3570,10 +3571,9 @@
     if (myPoke && myPoke.isDynamax) {
       playerSprite.style.transform = 'scale(1.4)';
       playerSprite.style.filter = 'drop-shadow(0 0 16px rgba(239,68,68,0.9)) drop-shadow(0 0 32px rgba(239,68,68,0.5))';
-    } else if (myPoke && myPoke.isMega) {
+    } else     if (myPoke && myPoke.isMega) {
       playerSprite.style.transform = 'scale(1.15)';
       playerSprite.style.filter = 'drop-shadow(0 0 14px rgba(124,58,237,0.9)) drop-shadow(0 0 28px rgba(124,58,237,0.5))';
-      if (playerImg) playerImg.style.filter = 'hue-rotate(30deg) saturate(1.6) brightness(1.15) contrast(1.1)';
     }
     if (oppPoke && oppPoke.isDynamax) {
       opponentSprite.style.transform = 'scale(1.4)';
@@ -3581,7 +3581,6 @@
     } else if (oppPoke && oppPoke.isMega) {
       opponentSprite.style.transform = 'scale(1.15)';
       opponentSprite.style.filter = 'drop-shadow(0 0 14px rgba(124,58,237,0.9)) drop-shadow(0 0 28px rgba(124,58,237,0.5))';
-      if (oppImg) oppImg.style.filter = 'hue-rotate(30deg) saturate(1.6) brightness(1.15) contrast(1.1)';
     }
     // Mega effect: purple glow on species name
     if (myPoke && battleData.megaUsed && battleData.megaUsed[myBattleIdx]) {

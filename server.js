@@ -1060,25 +1060,44 @@ const POKE_TYPES = {
   896:['ice'],897:['ghost'],
   898:['psychic','grass'],
 };
+const MEGA_IMG = 'https://raw.githubusercontent.com/HybridShivam/Pokemon/master/assets/images/';
 const MEGA_MAP = {
-  3:{name:'Mega Venusaur',types:['grass','poison']},6:{name:'Mega Charizard',types:['fire','flying']},
-  9:{name:'Mega Blastoise',types:['water']},65:{name:'Mega Alakazam',types:['psychic']},
-  94:{name:'Mega Gengar',types:['ghost','poison']},130:{name:'Mega Gyarados',types:['water','dark']},
-  181:{name:'Mega Ampharos',types:['electric','dragon']},212:{name:'Mega Scizor',types:['bug','steel']},
-  214:{name:'Mega Heracross',types:['bug','fighting']},229:{name:'Mega Houndoom',types:['dark','fire']},
-  248:{name:'Mega Tyranitar',types:['rock','dark']},257:{name:'Mega Blaziken',types:['fire','fighting']},
-  282:{name:'Mega Gardevoir',types:['psychic','fairy']},306:{name:'Mega Aggron',types:['steel']},
-  308:{name:'Mega Medicham',types:['fighting','psychic']},310:{name:'Mega Manectric',types:['electric']},
-  334:{name:'Mega Altaria',types:['dragon','fairy']},354:{name:'Mega Banette',types:['ghost']},
-  359:{name:'Mega Absol',types:['dark']},373:{name:'Mega Salamence',types:['dragon','flying']},
-  376:{name:'Mega Metagross',types:['steel','psychic']},445:{name:'Mega Garchomp',types:['dragon','ground']},
-  448:{name:'Mega Lucario',types:['fighting','steel']},475:{name:'Mega Gallade',types:['psychic','fighting']},
-  460:{name:'Mega Abomasnow',types:['grass','ice']},142:{name:'Mega Aerodactyl',types:['rock','flying']},
-  254:{name:'Mega Sceptile',types:['grass','dragon']},260:{name:'Mega Swampert',types:['water','ground']},
-  302:{name:'Mega Sableye',types:['dark','ghost']},319:{name:'Mega Sharpedo',types:['water','dark']},
-  323:{name:'Mega Camerupt',types:['fire','ground']},362:{name:'Mega Glalie',types:['ice']},
-  15:{name:'Mega Beedrill',types:['bug','poison']},18:{name:'Mega Pidgeot',types:['normal','flying']},
-  80:{name:'Mega Slowbro',types:['water','psychic']},208:{name:'Mega Steelix',types:['steel','ground']},
+  3:{name:'Mega Venusaur',types:['grass','poison'],img:'0003-Mega.png'},
+  6:{name:'Mega Charizard',types:['fire','flying'],img:'0006-Mega-X.png'},
+  9:{name:'Mega Blastoise',types:['water'],img:'0009-Mega.png'},
+  15:{name:'Mega Beedrill',types:['bug','poison'],img:'0015-Mega.png'},
+  18:{name:'Mega Pidgeot',types:['normal','flying'],img:'0018-Mega.png'},
+  65:{name:'Mega Alakazam',types:['psychic'],img:'0065-Mega.png'},
+  80:{name:'Mega Slowbro',types:['water','psychic'],img:'0080-Mega.png'},
+  94:{name:'Mega Gengar',types:['ghost','poison'],img:'0094-Mega.png'},
+  130:{name:'Mega Gyarados',types:['water','dark'],img:'0130-Mega.png'},
+  142:{name:'Mega Aerodactyl',types:['rock','flying'],img:'0142-Mega.png'},
+  181:{name:'Mega Ampharos',types:['electric','dragon'],img:'0181-Mega.png'},
+  208:{name:'Mega Steelix',types:['steel','ground'],img:'0208-Mega.png'},
+  212:{name:'Mega Scizor',types:['bug','steel'],img:'0212-Mega.png'},
+  214:{name:'Mega Heracross',types:['bug','fighting'],img:'0214-Mega.png'},
+  229:{name:'Mega Houndoom',types:['dark','fire'],img:'0229-Mega.png'},
+  248:{name:'Mega Tyranitar',types:['rock','dark'],img:'0248-Mega.png'},
+  254:{name:'Mega Sceptile',types:['grass','dragon'],img:'0254-Mega.png'},
+  257:{name:'Mega Blaziken',types:['fire','fighting'],img:'0257-Mega.png'},
+  260:{name:'Mega Swampert',types:['water','ground'],img:'0260-Mega.png'},
+  282:{name:'Mega Gardevoir',types:['psychic','fairy'],img:'0282-Mega.png'},
+  302:{name:'Mega Sableye',types:['dark','ghost'],img:'0302-Mega.png'},
+  306:{name:'Mega Aggron',types:['steel'],img:'0306-Mega.png'},
+  308:{name:'Mega Medicham',types:['fighting','psychic'],img:'0308-Mega.png'},
+  310:{name:'Mega Manectric',types:['electric'],img:'0310-Mega.png'},
+  319:{name:'Mega Sharpedo',types:['water','dark'],img:'0319-Mega.png'},
+  323:{name:'Mega Camerupt',types:['fire','ground'],img:'0323-Mega.png'},
+  334:{name:'Mega Altaria',types:['dragon','fairy'],img:'0334-Mega.png'},
+  354:{name:'Mega Banette',types:['ghost'],img:'0354-Mega.png'},
+  359:{name:'Mega Absol',types:['dark'],img:'0359-Mega.png'},
+  362:{name:'Mega Glalie',types:['ice'],img:'0362-Mega.png'},
+  373:{name:'Mega Salamence',types:['dragon','flying'],img:'0373-Mega.png'},
+  376:{name:'Mega Metagross',types:['steel','psychic'],img:'0376-Mega.png'},
+  445:{name:'Mega Garchomp',types:['dragon','ground'],img:'0445-Mega.png'},
+  448:{name:'Mega Lucario',types:['fighting','steel'],img:'0448-Mega.png'},
+  460:{name:'Mega Abomasnow',types:['grass','ice'],img:'0460-Mega.png'},
+  475:{name:'Mega Gallade',types:['psychic','fighting'],img:'0475-Mega.png'},
 };
 const MOVE_POOL = {
   normal:[{n:'Ultraballata',p:40,acc:100,cat:'physical'},{n:'Taglio',p:50,acc:95,cat:'physical'},{n:'Rapata',p:80,acc:100,cat:'physical'},{n:'Colpo',p:70,acc:100,cat:'physical'}],
@@ -2314,6 +2333,7 @@ io.on('connection', (socket) => {
     pk.originalSpecies = pk.species;
     pk.species = mega.name;
     pk.types = mega.types;
+    pk.img = MEGA_IMG + mega.img;
     pk.isMega = true;
     const oldMaxHp = pk.maxHp;
     pk.stats.atk = Math.round(pk.stats.atk * 1.3);
