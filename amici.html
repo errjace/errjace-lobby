@@ -3617,10 +3617,12 @@
     if (myPoke && !myPoke.fainted && b3d && b3d.ready && battleData.state === 'playing') {
       var curDexId = myPoke.imgId || extractDexId(myPoke.img);
       if (myMegaActive && lastPlayerMegaForm !== 'mega') {
+        console.log('[MEGA_3D] TRIGGER mega: imgId='+myPoke.imgId+' curDexId='+curDexId);
         lastPlayerMegaForm = 'mega';
         b3dRemovePoke('player');
         b3dLoadPokeForm('player', myPoke.img, 'mega', curDexId);
       } else if (myDynamaxActive && lastPlayerMegaForm !== 'gmax') {
+        console.log('[MEGA_3D] TRIGGER dynamax: imgId='+myPoke.imgId+' curDexId='+curDexId);
         lastPlayerMegaForm = 'gmax';
         b3dRemovePoke('player');
         b3dLoadPokeForm('player', myPoke.img, 'gmax', curDexId);
@@ -6885,20 +6887,24 @@
   }
 
   function b3dLoadPokeForm(side, imgUrl, form, directDexId) {
-    if (!b3d.ready || !b3d.gltfLoader) return;
+    if (!b3d.ready || !b3d.gltfLoader) { console.log('[MEGA_3D] skip: b3d not ready'); return; }
     b3dRemovePoke(side);
     var xPos = b3dGetXPos(side);
     var dexId = directDexId || extractDexId(imgUrl);
+    console.log('[MEGA_3D] side='+side+' form='+form+' dexId='+dexId+' directDexId='+directDexId);
     if (!dexId) { b3dLoadPoke(side, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/' + (directDexId||'') + '.png'); return; }
     var pokeFallback = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/' + dexId + '.png';
     var formUrl = 'https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/models/opt/' + form + '/' + dexId + '.glb';
+    console.log('[MEGA_3D] loading: ' + formUrl);
     var xhr = new XMLHttpRequest();
     xhr.open('GET', formUrl, true);
     xhr.responseType = 'arraybuffer';
     xhr.onload = function() {
+      console.log('[MEGA_3D] xhr status=' + xhr.status);
       if (xhr.status === 200 && xhr.response) {
         var cleanBuffer = stripUnsupportedGlbExtensions(xhr.response);
         b3d.gltfLoader.parse(cleanBuffer, '', function(gltf) {
+          console.log('[MEGA_3D] GLB parsed OK, scene children: ' + gltf.scene.children.length);
           var model = gltf.scene;
           var scaleBase = form === 'gmax' ? 0.52 : 0.38;
           model.scale.set(scaleBase, scaleBase, scaleBase);
@@ -6915,13 +6921,15 @@
           }
           var obj = { mesh:model, glow:null, origX:xPos, origY:modelY, tex:null, mixer:mixer, gltf:gltf, isGLB:true };
           if (side==='player') b3d.player = obj; else b3d.opp = obj;
+          console.log('[MEGA_3D] model added to scene for ' + side);
           b3dAddFormAura(side, form);
-        }, function() { b3dLoadPoke(side, pokeFallback); });
+        }, function(err) { console.log('[MEGA_3D] GLB parse FAILED, fallback to normal'); b3dLoadPoke(side, pokeFallback); });
       } else {
+        console.log('[MEGA_3D] HTTP ' + xhr.status + ', fallback to normal');
         b3dLoadPoke(side, pokeFallback);
       }
     };
-    xhr.onerror = function() { b3dLoadPoke(side, pokeFallback); };
+    xhr.onerror = function() { console.log('[MEGA_3D] XHR error, fallback to normal'); b3dLoadPoke(side, pokeFallback); };
     xhr.send();
   }
 
