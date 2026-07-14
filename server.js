@@ -2135,6 +2135,19 @@ io.on('connection', (socket) => {
     setTimeout(() => { delete battles[battleId]; }, 5000);
   });
 
+  // BATTLE REACTIONS - Emoji during 1v1
+  socket.on('battle:react', ({ battleId, emoji }) => {
+    const b = battles[battleId];
+    if (!b || b.state !== 'playing') return;
+    const player = b.players.find(p => p.id === socket.id);
+    if (!player) return;
+    const opponent = b.players.find(p => p.id !== socket.id);
+    if (!opponent || opponent.id.startsWith('bot_')) return;
+    const allowed = ['🔥','💪','😂','😢','👏','😡','💀','❤️','🎉'];
+    if (!emoji || allowed.indexOf(emoji) === -1) return;
+    io.to(opponent.id).emit('battle:reaction', { emoji: emoji, from: player.nick });
+  });
+
   // ===== BOT TRAINER (Allenamento 1v1) =====
   const BOT_NAMES = ['Prof. Oak','Gary','Red','Blue','Misty','Brock','Lt. Surge','Erika','Koga','Sabrina','Blaine','Giovanni','Lorelei','Bruno','Agatha','Lance'];
   const BOT_POOL = [
