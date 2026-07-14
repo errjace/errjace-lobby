@@ -1954,6 +1954,10 @@
         <button id="switchBtn" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;">🔄 Cambia Pokémon</button>
         <button id="forfeitBtn" style="flex:1;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;">🏳️ Arrenditi</button>
       </div>
+      <div style="display:flex;gap:6px;margin-top:4px;" id="megaDynamaxRow">
+        <button id="megaBtn" style="display:none;flex:1;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.4);color:#a78bfa;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;font-weight:700;">🔮 Mega Evolve</button>
+        <button id="dynamaxBtn" style="display:none;flex:1;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#f87171;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;font-weight:700;">⭐ Dynamax</button>
+      </div>
     </div>
     <!-- Switch panel -->
     <div id="switchPanel" style="display:none;flex-shrink:0;padding:0.5rem;background:rgba(0,0,0,0.4);border-radius:8px;gap:6px;flex-wrap:wrap;justify-content:center;"></div>
@@ -3337,6 +3341,10 @@
   // Battle start
   socket.on('battle:start', function(data) {
     battleData = data;
+    battleData.megaUsed = data.megaUsed || [false, false];
+    battleData.dynamaxUsed = data.dynamaxUsed || [false, false];
+    battleData.canMega = data.canMega || [false, false];
+    battleData.canDynamax = data.canDynamax || [false, false];
     myBattleIdx = data.myIdx;
     prevLogLen = 0;
     _movePending = false;
@@ -3383,6 +3391,10 @@
           battleData.players[pIdx].team[i].maxHp = pk.maxHp;
           battleData.players[pIdx].team[i].status = pk.status;
           battleData.players[pIdx].team[i].fainted = pk.fainted;
+          if (pk.species) battleData.players[pIdx].team[i].species = pk.species;
+          if (pk.types) battleData.players[pIdx].team[i].types = pk.types;
+          if (pk.isDynamax !== undefined) battleData.players[pIdx].team[i].isDynamax = pk.isDynamax;
+          if (pk.img) battleData.players[pIdx].team[i].img = pk.img;
         }
       });
       battleData.players[pIdx].currentPoke = p.currentPoke;
@@ -3391,6 +3403,28 @@
     battleData.log = data.log;
     battleData.state = data.state;
     battleData.winner = data.winner;
+    if (data.megaUsed) battleData.megaUsed = data.megaUsed;
+    if (data.dynamaxUsed) battleData.dynamaxUsed = data.dynamaxUsed;
+    if (data.megaEffect) {
+      var pIdx2 = data.megaEffect.playerIdx;
+      var myIdx2 = myBattleIdx;
+      if (battleData.players[pIdx2]) {
+        var cp = battleData.players[pIdx2].currentPoke;
+        if (battleData.players[pIdx2].team[cp]) {
+          battleData.players[pIdx2].team[cp].species = data.megaEffect.species;
+          battleData.players[pIdx2].team[cp].img = data.megaEffect.img;
+        }
+      }
+    }
+    if (data.dynamaxEffect) {
+      var dIdx = data.dynamaxEffect.playerIdx;
+      if (battleData.players[dIdx]) {
+        var dp = battleData.players[dIdx].currentPoke;
+        if (battleData.players[dIdx].team[dp]) {
+          battleData.players[dIdx].team[dp].isDynamax = true;
+        }
+      }
+    }
     renderBattle();
     if (data.state === 'ended') {
       var won = data.winner === socket.id;
@@ -3504,6 +3538,53 @@
     document.getElementById('switchBtn').style.display = (battleData.state === 'playing' && isMyTurn) ? 'block' : 'none';
     // Forfeit
     document.getElementById('forfeitBtn').style.display = (battleData.state === 'playing') ? 'block' : 'none';
+    // Mega button
+    var megaBtn = document.getElementById('megaBtn');
+    var canMegaNow = battleData.canMega && battleData.canMega[myBattleIdx] && !battleData.megaUsed[myBattleIdx] && isMyTurn && battleData.state === 'playing' && myPoke && !myPoke.fainted;
+    megaBtn.style.display = canMegaNow ? 'block' : 'none';
+    megaBtn.onclick = function() {
+      if (_movePending) return;
+      socket.emit('battle:mega', { battleId: battleData.battleId });
+    };
+    // Dynamax button
+    var dynBtn = document.getElementById('dynamaxBtn');
+    var canDynNow = battleData.canDynamax && battleData.canDynamax[myBattleIdx] && !battleData.dynamaxUsed[myBattleIdx] && isMyTurn && battleData.state === 'playing' && myPoke && !myPoke.fainted;
+    dynBtn.style.display = canDynNow ? 'block' : 'none';
+    dynBtn.onclick = function() {
+      if (_movePending) return;
+      socket.emit('battle:dynamax', { battleId: battleData.battleId });
+    };
+    // Visual effects: Mega glow / Dynamax size
+    var playerSprite = document.getElementById('playerSprite');
+    var opponentSprite = document.getElementById('opponentSprite');
+    playerSprite.style.filter = '';
+    playerSprite.style.transform = '';
+    opponentSprite.style.filter = '';
+    opponentSprite.style.transform = '';
+    if (myPoke && myPoke.isDynamax) {
+      playerSprite.style.transform = 'scale(1.3)';
+      playerSprite.style.filter = 'drop-shadow(0 0 12px rgba(239,68,68,0.8)) drop-shadow(0 0 24px rgba(239,68,68,0.4))';
+    }
+    if (oppPoke && oppPoke.isDynamax) {
+      opponentSprite.style.transform = 'scale(1.3)';
+      opponentSprite.style.filter = 'drop-shadow(0 0 12px rgba(239,68,68,0.8)) drop-shadow(0 0 24px rgba(239,68,68,0.4))';
+    }
+    // Mega effect: purple glow on species name
+    if (myPoke && battleData.megaUsed && battleData.megaUsed[myBattleIdx]) {
+      document.getElementById('playerName').style.color = '#a78bfa';
+      document.getElementById('playerName').style.textShadow = '0 0 8px rgba(124,58,237,0.6)';
+    } else {
+      document.getElementById('playerName').style.color = '';
+      document.getElementById('playerName').style.textShadow = '';
+    }
+    var oppMegaIdx = 1 - myBattleIdx;
+    if (oppPoke && battleData.megaUsed && battleData.megaUsed[oppMegaIdx]) {
+      document.getElementById('opponentName').style.color = '#a78bfa';
+      document.getElementById('opponentName').style.textShadow = '0 0 8px rgba(124,58,237,0.6)';
+    } else {
+      document.getElementById('opponentName').style.color = '';
+      document.getElementById('opponentName').style.textShadow = '';
+    }
   }
   function getTypeColor(t) {
     var c = { normal:'#a8a878',fire:'#f08030',water:'#6890f0',electric:'#f8d030',grass:'#78c850',ice:'#98d8d8',fighting:'#c03028',poison:'#a040a0',ground:'#e0c068',flying:'#a890f0',psychic:'#f85888',bug:'#a8b820',rock:'#b8a038',ghost:'#705898',dragon:'#7038f8',dark:'#705848',steel:'#b8b8d0',fairy:'#ee99ac' };
@@ -4394,8 +4475,9 @@
     list.forEach(function(p) {
       var card = document.createElement('div');
       var tier = p.price >= 35000 ? '#ef4444' : p.price >= 25000 ? '#f59e0b' : '#22c55e';
-      card.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:10px;padding:6px;text-align:center;border:1px solid '+tier+'33;cursor:pointer;transition:0.2s;';
-      card.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:44px;height:44px;display:block;margin:0 auto;"><div style="font-size:0.68rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.62rem;color:'+tier+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
+      var badge = p.mega ? '<div style="position:absolute;top:2px;right:2px;font-size:0.6rem;background:rgba(124,58,237,0.8);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;">🔮</div>' : '';
+      card.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:10px;padding:6px;text-align:center;border:1px solid '+tier+'33;cursor:pointer;transition:0.2s;position:relative;';
+      card.innerHTML = badge + '<img src="'+POKE_IMG+p.id+'.png" style="width:44px;height:44px;display:block;margin:0 auto;"><div style="font-size:0.68rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.62rem;color:'+tier+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
       card.addEventListener('mouseenter', function() { card.style.background = 'rgba(255,255,255,0.08)'; card.style.borderColor = tier+'66'; });
       card.addEventListener('mouseleave', function() { card.style.background = 'rgba(255,255,255,0.04)'; card.style.borderColor = tier+'33'; });
       card.addEventListener('click', function() {
