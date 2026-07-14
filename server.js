@@ -520,6 +520,45 @@ const LEGENDARY_SHOP = [
   {id:789,name:'Cosmog',price:100000},
 ];
 
+const COMPETITIVE_SHOP = [
+  {id:3,name:'Venusaur',price:20000},{id:6,name:'Charizard',price:20000},
+  {id:9,name:'Blastoise',price:20000},{id:65,name:'Alakazam',price:25000},
+  {id:68,name:'Machamp',price:20000},{id:76,name:'Golem',price:20000},
+  {id:94,name:'Gengar',price:30000},{id:112,name:'Rhydon',price:18000},
+  {id:130,name:'Gyarados',price:22000},{id:131,name:'Lapras',price:20000},
+  {id:143,name:'Snorlax',price:25000},{id:149,name:'Dragonite',price:35000},
+  {id:212,name:'Scizor',price:30000},{id:227,name:'Skarmory',price:28000},
+  {id:230,name:'Kingdra',price:22000},{id:248,name:'Tyranitar',price:35000},
+  {id:330,name:'Flygon',price:20000},{id:334,name:'Altaria',price:18000},
+  {id:350,name:'Milotic',price:25000},{id:373,name:'Salamence',price:35000},
+  {id:376,name:'Metagross',price:35000},{id:392,name:'Infernape',price:22000},
+  {id:395,name:'Empoleon',price:22000},{id:398,name:'Staraptor',price:18000},
+  {id:445,name:'Garchomp',price:35000},{id:448,name:'Lucario',price:30000},
+  {id:461,name:'Weavile',price:25000},{id:462,name:'Magnezone',price:25000},
+  {id:466,name:'Electivire',price:22000},{id:467,name:'Magmortar',price:22000},
+  {id:472,name:'Gliscor',price:28000},{id:473,name:'Mamoswine',price:22000},
+  {id:474,name:'Porygon-Z',price:28000},{id:475,name:'Gallade',price:25000},
+  {id:479,name:'Rotom-Wash',price:30000},{id:530,name:'Excadrill',price:30000},
+  {id:547,name:'Whimsicott',price:20000},{id:598,name:'Ferrothorn',price:30000},
+  {id:609,name:'Chandelure',price:28000},{id:612,name:'Haxorus',price:25000},
+  {id:635,name:'Hydreigon',price:35000},{id:637,name:'Volcarona',price:35000},
+  {id:645,name:'Landorus',price:30000},{id:663,name:'Talonflame',price:20000},
+  {id:681,name:'Aegislash',price:30000},{id:700,name:'Sylveon',price:22000},
+  {id:706,name:'Goodra',price:28000},{id:730,name:'Primarina',price:22000},
+  {id:741,name:'Oricorio',price:18000},{id:745,name:'Lycanroc',price:22000},
+  {id:748,name:'Toxapex',price:30000},{id:784,name:'Kommo-o',price:30000},
+  {id:812,name:'Rillaboom',price:25000},{id:815,name:'Cinderace',price:25000},
+  {id:818,name:'Inteleon',price:25000},{id:823,name:'Corviknight',price:25000},
+  {id:839,name:'Coalossal',price:20000},{id:849,name:'Toxtricity',price:25000},
+  {id:858,name:'Hatterene',price:28000},{id:876,name:'Indeedee',price:22000},
+  {id:884,name:'Duraludon',price:30000},{id:887,name:'Dragapult',price:35000},
+  {id:892,name:'Urshifu',price:35000},{id:904,name:'Barraskewda',price:22000},
+  {id:911,name:'Quaquaval',price:25000},{id:923,name:'Pawmot',price:25000},
+  {id:934,name:'Armarouge',price:30000},{id:936,name:'Ceruledge',price:30000},
+  {id:954,name:'Rabsca',price:22000},{id:962,name:'Palafin',price:35000},
+  {id:978,name:'Kingambit',price:35000},{id:998,name:'Iron Valiant',price:35000},
+];
+
 // ===== BATTAGLIA POKEMON (Showdown-style) =====
 const TYPES = ['normal','fire','water','electric','grass','ice','fighting','poison','ground','flying','psychic','bug','rock','ghost','dragon','dark','steel','fairy'];
 const TYPE_CHART = {
@@ -1744,6 +1783,31 @@ io.on('connection', (socket) => {
     socket.emit('legendary:bought', { name: poke.name });
     io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
     io.emit('chat message', { id:++msgCounter, nick:'🏪 NEGOZIO', avatar:'🏪', msg:`${u.nick} ha acquistato ${poke.name}! ✨`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+  });
+
+  // NEGOZIO COMPETITIVE
+  socket.on('competitive:list', () => {
+    socket.emit('competitive:list', COMPETITIVE_SHOP);
+  });
+
+  socket.on('competitive:buy', ({ id }) => {
+    const u = users[socket.id];
+    if (!u) return;
+    const poke = COMPETITIVE_SHOP.find(p => p.id === id);
+    if (!poke) return;
+    const bal = getBal(socket.id);
+    if (bal < poke.price) { socket.emit('competitive:error', { msg: 'Saldo insufficiente!' }); return; }
+    const pd = pokemonData[socket.id];
+    if (!pd) { socket.emit('competitive:error', { msg: 'Prima scegli un Pokémon starter con ⚡!' }); return; }
+    if (pd.team && pd.team.length >= 5) { socket.emit('competitive:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
+    casinoBals[socket.id] = bal - poke.price;
+    socket.emit('casino:balance', casinoBals[socket.id]);
+    if (!pd.team) pd.team = [];
+    pd.team.push({ name: poke.name, id: poke.id, img: POKE_IMG+poke.id+'.png', competitive: true, lv: 1 });
+    saveNickData(socket.id);
+    socket.emit('competitive:bought', { name: poke.name });
+    io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
+    io.emit('chat message', { id:++msgCounter, nick:'⚔️ NEGOZIO COMP', avatar:'⚔️', msg:`${u.nick} ha acquistato ${poke.name}! 🔥`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
   });
 
   // CARAMMELLA RARA - Buy levels

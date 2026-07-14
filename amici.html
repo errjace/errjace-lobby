@@ -1514,6 +1514,7 @@
       <button class="dama-btn poke-btn" id="pokeBtn" title="Pokémon" style="font-size:0.9rem;">⚡</button>
       <button class="dama-btn" id="portalBtn" title="Overworld" style="font-size:0.9rem;">🌀</button>
       <button class="dama-btn" id="shopBtn" title="Negozio Leggendari" style="font-size:0.9rem;">🏪</button>
+      <button class="dama-btn" id="compShopBtn" title="Negozio Competitive" style="font-size:0.9rem;">⚔️</button>
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <button class="dama-btn" id="targetBtn" title="Sfida 1v1">🎯</button>
       <button class="dama-btn" id="tradeBtn" title="Scambia Pokémon">🔄</button>
@@ -1746,6 +1747,20 @@
     </div>
     <div id="shopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;overflow-y:auto;padding:4px;min-height:200px;max-height:65vh;"></div>
     <div class="nick-error" id="shopError" style="display:none;margin-top:4px;"></div>
+  </div>
+</div>
+
+<!-- NEGOZIO COMPETITIVE -->
+<div class="casino-overlay" id="compShopOverlay" style="z-index:1200;">
+  <div class="casino-box" style="max-width:600px;width:95vw;max-height:85vh;display:flex;flex-direction:column;padding:0.8rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+      <h3 style="font-size:1rem;">⚔️ NEGOZIO COMPETITIVE</h3>
+      <span style="font-size:0.75rem;color:var(--text2);">Saldo: €<b id="compShopBalance">0</b></span>
+      <button id="compShopClose" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:6px;cursor:pointer;">✕</button>
+    </div>
+    <div style="text-align:center;font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:0.5rem;">Pokémon forti per team competitivi</div>
+    <div id="compShopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;overflow-y:auto;padding:4px;min-height:200px;max-height:65vh;"></div>
+    <div class="nick-error" id="compShopError" style="display:none;margin-top:4px;"></div>
   </div>
 </div>
 
@@ -4365,6 +4380,52 @@
     document.getElementById('shopError').textContent = data.msg;
     document.getElementById('shopError').style.display = 'block';
     setTimeout(function() { document.getElementById('shopError').style.display = 'none'; }, 3000);
+  });
+
+  // === NEGOZIO COMPETITIVE ===
+  document.getElementById('compShopBtn').addEventListener('click', function() {
+    socket.emit('competitive:list');
+  });
+
+  socket.on('competitive:list', function(list) {
+    document.getElementById('compShopBalance').textContent = (casinoBalance || 0).toLocaleString();
+    var grid = document.getElementById('compShopGrid');
+    grid.innerHTML = '';
+    list.forEach(function(p) {
+      var card = document.createElement('div');
+      var tier = p.price >= 35000 ? '#ef4444' : p.price >= 25000 ? '#f59e0b' : '#22c55e';
+      card.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:10px;padding:6px;text-align:center;border:1px solid '+tier+'33;cursor:pointer;transition:0.2s;';
+      card.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:44px;height:44px;display:block;margin:0 auto;"><div style="font-size:0.68rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.62rem;color:'+tier+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
+      card.addEventListener('mouseenter', function() { card.style.background = 'rgba(255,255,255,0.08)'; card.style.borderColor = tier+'66'; });
+      card.addEventListener('mouseleave', function() { card.style.background = 'rgba(255,255,255,0.04)'; card.style.borderColor = tier+'33'; });
+      card.addEventListener('click', function() {
+        socket.emit('competitive:buy', { id: p.id });
+      });
+      grid.appendChild(card);
+    });
+    document.getElementById('compShopOverlay').classList.add('active');
+  });
+
+  document.getElementById('compShopClose').addEventListener('click', function() {
+    document.getElementById('compShopOverlay').classList.remove('active');
+  });
+  document.getElementById('compShopOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  socket.on('competitive:bought', function(data) {
+    document.getElementById('compShopOverlay').classList.remove('active');
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #ef4444;border-radius:12px;padding:0.6rem 1.2rem;z-index:9999;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#ef4444;font-weight:700;animation:fadeIn 0.3s;';
+    toast.innerHTML = '⚔️ '+data.name+' aggiunto al team! 🔥';
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; setTimeout(function() { if (toast.parentNode) toast.remove(); }, 500); }, 2500);
+  });
+
+  socket.on('competitive:error', function(data) {
+    document.getElementById('compShopError').textContent = data.msg;
+    document.getElementById('compShopError').style.display = 'block';
+    setTimeout(function() { document.getElementById('compShopError').style.display = 'none'; }, 3000);
   });
 
   // === CARAMMELLA RARA ===
