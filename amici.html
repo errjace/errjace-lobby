@@ -6935,7 +6935,7 @@
     if (!obj || !obj.mesh) return;
     var color = form === 'mega' ? 0xa855f7 : 0xef4444;
     var pos = obj.mesh.position;
-    var light = new THREE.PointLight(color, 2.0, 3.0);
+    var light = new THREE.PointLight(color, 0.8, 2.5);
     light.position.set(pos.x, pos.y + 0.5, pos.z + (side === 'player' ? -0.2 : 0.2));
     b3d.scene.add(light);
     b3dFormAuras[side] = light;
