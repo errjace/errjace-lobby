@@ -3557,25 +3557,31 @@
     // Visual effects: Mega glow / Dynamax size
     var playerSprite = document.getElementById('playerSprite');
     var opponentSprite = document.getElementById('opponentSprite');
+    var playerImg = playerSprite.querySelector('img');
+    var oppImg = opponentSprite.querySelector('img');
     playerSprite.style.filter = '';
     playerSprite.style.transform = '';
     playerSprite.style.transition = 'all 0.4s ease';
     opponentSprite.style.filter = '';
     opponentSprite.style.transform = '';
     opponentSprite.style.transition = 'all 0.4s ease';
+    if (playerImg) playerImg.style.filter = '';
+    if (oppImg) oppImg.style.filter = '';
     if (myPoke && myPoke.isDynamax) {
       playerSprite.style.transform = 'scale(1.4)';
       playerSprite.style.filter = 'drop-shadow(0 0 16px rgba(239,68,68,0.9)) drop-shadow(0 0 32px rgba(239,68,68,0.5))';
     } else if (myPoke && myPoke.isMega) {
       playerSprite.style.transform = 'scale(1.15)';
-      playerSprite.style.filter = 'drop-shadow(0 0 12px rgba(124,58,237,0.9)) drop-shadow(0 0 24px rgba(124,58,237,0.5))';
+      playerSprite.style.filter = 'drop-shadow(0 0 14px rgba(124,58,237,0.9)) drop-shadow(0 0 28px rgba(124,58,237,0.5))';
+      if (playerImg) playerImg.style.filter = 'hue-rotate(30deg) saturate(1.6) brightness(1.15) contrast(1.1)';
     }
     if (oppPoke && oppPoke.isDynamax) {
       opponentSprite.style.transform = 'scale(1.4)';
       opponentSprite.style.filter = 'drop-shadow(0 0 16px rgba(239,68,68,0.9)) drop-shadow(0 0 32px rgba(239,68,68,0.5))';
     } else if (oppPoke && oppPoke.isMega) {
       opponentSprite.style.transform = 'scale(1.15)';
-      opponentSprite.style.filter = 'drop-shadow(0 0 12px rgba(124,58,237,0.9)) drop-shadow(0 0 24px rgba(124,58,237,0.5))';
+      opponentSprite.style.filter = 'drop-shadow(0 0 14px rgba(124,58,237,0.9)) drop-shadow(0 0 28px rgba(124,58,237,0.5))';
+      if (oppImg) oppImg.style.filter = 'hue-rotate(30deg) saturate(1.6) brightness(1.15) contrast(1.1)';
     }
     // Mega effect: purple glow on species name
     if (myPoke && battleData.megaUsed && battleData.megaUsed[myBattleIdx]) {
