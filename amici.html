@@ -4561,7 +4561,7 @@
         card.innerHTML = '<div style="position:absolute;top:2px;right:2px;font-size:0.55rem;background:rgba(124,58,237,0.8);border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;">🔮</div><img src="'+POKE_IMG+p.id+'.png" style="width:44px;height:44px;display:block;margin:0 auto;"><div style="font-size:0.68rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.58rem;color:#a78bfa;margin:1px 0;">'+p.mega.name+'</div><div style="font-size:0.62rem;color:#ffd700;font-weight:700;">€'+p.price.toLocaleString()+'</div>';
         card.addEventListener('mouseenter', function() { card.style.background = 'rgba(124,58,237,0.12)'; card.style.borderColor = '#7c3aed66'; });
         card.addEventListener('mouseleave', function() { card.style.background = 'rgba(124,58,237,0.06)'; card.style.borderColor = '#7c3aed33'; });
-        card.addEventListener('click', function() { socket.emit('competitive:buy', { id: p.id }); });
+        card.addEventListener('click', function() { socket.emit('mega:buy', { id: p.id }); });
         grid.appendChild(card);
       });
     } else if (currentShopTab === 'dynamax') {
@@ -4571,7 +4571,7 @@
         card.innerHTML = '<div style="position:absolute;top:2px;right:2px;font-size:0.55rem;background:rgba(239,68,68,0.8);border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;">⚡</div><img src="'+POKE_IMG+p.id+'.png" style="width:44px;height:44px;display:block;margin:0 auto;"><div style="font-size:0.68rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.58rem;color:#f87171;margin:1px 0;">'+p.gmax.name+'</div><div style="font-size:0.62rem;color:#ffd700;font-weight:700;">€'+p.price.toLocaleString()+'</div>';
         card.addEventListener('mouseenter', function() { card.style.background = 'rgba(239,68,68,0.12)'; card.style.borderColor = '#ef444466'; });
         card.addEventListener('mouseleave', function() { card.style.background = 'rgba(239,68,68,0.06)'; card.style.borderColor = '#ef444433'; });
-        card.addEventListener('click', function() { socket.emit('competitive:buy', { id: p.id }); });
+        card.addEventListener('click', function() { socket.emit('dynamax:buy', { id: p.id }); });
         grid.appendChild(card);
       });
     }
