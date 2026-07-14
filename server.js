@@ -2479,7 +2479,7 @@ io.on('connection', (socket) => {
     if (!player) return;
     const opponent = b.players.find(p => p.id !== socket.id);
     if (!opponent || opponent.id.startsWith('bot_')) return;
-    const allowed = ['🔥','💪','😂','😢','👏','😡','💀','❤️','🎉'];
+    const allowed = ['😂','💀','😤','😭'];
     if (!emoji || allowed.indexOf(emoji) === -1) return;
     io.to(opponent.id).emit('battle:reaction', { emoji: emoji, from: player.nick });
   });
