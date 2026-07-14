@@ -2017,6 +2017,35 @@
   </div>
 </div>
 
+<!-- Admin Remove Money Picker -->
+<div class="poke-overlay" id="removeMoneyPicker">
+  <div class="poke-popup" style="text-align:center;max-width:360px;">
+    <h2>💸 Rimuovi €<span id="removeMoneyAmount">0</span></h2>
+    <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:0.75rem;">Scegli a chi togliere i soldi:</p>
+    <div id="removeMoneyUserList" style="display:flex;flex-direction:column;gap:4px;max-height:250px;overflow-y:auto;"></div>
+    <button id="removeMoneyCancel" style="margin-top:0.75rem;background:rgba(255,255,255,0.05);border:none;padding:0.4rem 1.2rem;border-radius:8px;color:rgba(255,255,255,0.4);cursor:pointer;font-size:0.7rem;">ANNULLA</button>
+  </div>
+</div>
+
+<!-- Admin Balance List -->
+<div class="poke-overlay" id="balListOverlay">
+  <div class="poke-popup" style="text-align:center;max-width:380px;">
+    <h2>💰 Saldi Utenti</h2>
+    <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:0.75rem;">Tutti gli utenti online:</p>
+    <div id="balListContent" style="display:flex;flex-direction:column;gap:4px;max-height:350px;overflow-y:auto;"></div>
+    <button id="balListClose" style="margin-top:0.75rem;background:rgba(255,255,255,0.05);border:none;padding:0.4rem 1.2rem;border-radius:8px;color:rgba(255,255,255,0.4);cursor:pointer;font-size:0.7rem;">CHIUDI</button>
+  </div>
+</div>
+
+<!-- Commands List -->
+<div class="poke-overlay" id="cmdsOverlay">
+  <div class="poke-popup" style="text-align:left;max-width:380px;">
+    <h2 style="text-align:center;">⚡ Comandi</h2>
+    <div id="cmdsContent" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;"></div>
+    <button id="cmdsClose" style="margin-top:0.75rem;background:rgba(255,255,255,0.05);border:none;padding:0.4rem 1.2rem;border-radius:8px;color:rgba(255,255,255,0.4);cursor:pointer;font-size:0.7rem;width:100%;">CHIUDI</button>
+  </div>
+</div>
+
 <!-- Like Toast -->
 <div class="like-toast" id="likeToast">
   <div class="lt-text">Lascia un ❤️ a <strong>ERRJACE</strong>!</div>
@@ -4221,10 +4250,32 @@
     const input = document.getElementById('chatInput');
     const msg = input.value.trim();
     if (!msg) return;
+    // / — mostra comandi disponibili
+    if (msg === '/') {
+      showCommands();
+      input.value = '';
+      socket.emit('typing stop');
+      return;
+    }
     // /send command
     var sendMatch = msg.match(/^\/send\s+(\d+)$/);
     if (sendMatch) {
       showSendPicker(parseInt(sendMatch[1]));
+      input.value = '';
+      socket.emit('typing stop');
+      return;
+    }
+    // /remove money command (admin)
+    var removeMoneyMatch = msg.match(/^\/remove\s+money\s+(\d+)$/i);
+    if (removeMoneyMatch && ADMINS.indexOf(window.myNick) !== -1) {
+      socket.emit('chat message', msg);
+      input.value = '';
+      socket.emit('typing stop');
+      return;
+    }
+    // /bal command (admin)
+    if (msg === '/bal' && ADMINS.indexOf(window.myNick) !== -1) {
+      socket.emit('chat message', msg);
       input.value = '';
       socket.emit('typing stop');
       return;
@@ -5894,6 +5945,100 @@
     document.getElementById('sendPicker').classList.remove('active');
   });
   document.getElementById('sendPicker').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  // ===== ADMIN REMOVE MONEY PICKER =====
+  var removeMoneyAmount = 0;
+  function showRemoveMoneyPicker(amount) {
+    removeMoneyAmount = amount;
+    document.getElementById('removeMoneyAmount').textContent = amount.toLocaleString();
+    var list = document.getElementById('removeMoneyUserList');
+    list.innerHTML = '';
+    onlineUsers.forEach(function(u) {
+      if (u.nick === window.myNick) return;
+      var item = document.createElement('div');
+      item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.03);border-radius:8px;cursor:pointer;transition:0.15s;border:1px solid transparent;';
+      item.innerHTML = '<span>'+u.avatar+'</span><span style="font-weight:600;font-size:0.8rem;">'+u.nick+'</span><span style="margin-left:auto;font-size:0.6rem;color:#ef4444;">-€'+amount.toLocaleString()+'</span>';
+      item.onmouseover = function(){this.style.background='rgba(239,68,68,0.15)';this.style.borderColor='rgba(239,68,68,0.3)';};
+      item.onmouseout = function(){this.style.background='rgba(255,255,255,0.03)';this.style.borderColor='transparent';};
+      item.onclick = function() {
+        document.getElementById('removeMoneyPicker').classList.remove('active');
+        socket.emit('admin:removeMoney', { to: u.id, amount: removeMoneyAmount });
+      };
+      list.appendChild(item);
+    });
+    if (list.children.length === 0) {
+      list.innerHTML = '<div style="font-size:0.7rem;color:rgba(255,255,255,0.2);padding:1rem;">Nessun altro utente online</div>';
+    }
+    document.getElementById('removeMoneyPicker').classList.add('active');
+  }
+  document.getElementById('removeMoneyCancel').addEventListener('click', function() {
+    document.getElementById('removeMoneyPicker').classList.remove('active');
+  });
+  document.getElementById('removeMoneyPicker').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  // Server reply for remove money
+  socket.on('admin:removeMoneyList', function(data) {
+    showRemoveMoneyPicker(data.amount);
+  });
+
+  // ===== ADMIN BALANCE LIST =====
+  socket.on('admin:balList', function(data) {
+    var list = document.getElementById('balListContent');
+    list.innerHTML = '';
+    data.users.forEach(function(u, i) {
+      var item = document.createElement('div');
+      item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid transparent;';
+      var rank = i + 1;
+      var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '  ';
+      item.innerHTML = '<span style="font-size:0.7rem;color:rgba(255,255,255,0.3);width:20px;">'+medal+'</span><span>'+u.avatar+'</span><span style="font-weight:600;font-size:0.8rem;">'+u.nick+'</span><span style="margin-left:auto;font-size:0.7rem;color:#22c55e;font-weight:700;">€'+u.bal.toLocaleString()+'</span>';
+      list.appendChild(item);
+    });
+    document.getElementById('balListOverlay').classList.add('active');
+  });
+  document.getElementById('balListClose').addEventListener('click', function() {
+    document.getElementById('balListOverlay').classList.remove('active');
+  });
+  document.getElementById('balListOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  // ===== COMMANDS LIST =====
+  var CMD_USER = [
+    { cmd: '/release <nome>', desc: 'Rilascia un Pokémon dal team' },
+    { cmd: '/team', desc: 'Mostra il tuo team Pokémon' },
+    { cmd: '/clearchat', desc: 'Pulisce la chat' },
+    { cmd: '/save', desc: 'Salva manualmente i tuoi dati' },
+  ];
+  var CMD_ADMIN = [
+    { cmd: '/money <importo>', desc: 'Setta il tuo saldo' },
+    { cmd: '/remove money <importo>', desc: 'Togli soldi a un utente (picker)' },
+    { cmd: '/bal', desc: 'Vedi i saldi di tutti' },
+    { cmd: '/release <nome>', desc: 'Rilascia un Pokémon' },
+    { cmd: '/team', desc: 'Mostra il tuo team' },
+    { cmd: '/clearchat', desc: 'Pulisce la chat' },
+    { cmd: '/save', desc: 'Salva i dati' },
+  ];
+  function showCommands() {
+    var isAdmin = ADMINS.indexOf(window.myNick) !== -1;
+    var cmds = isAdmin ? CMD_ADMIN : CMD_USER;
+    var list = document.getElementById('cmdsContent');
+    list.innerHTML = '';
+    cmds.forEach(function(c) {
+      var item = document.createElement('div');
+      item.style.cssText = 'padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);';
+      item.innerHTML = '<div style="font-family:monospace;font-size:0.8rem;color:#a78bfa;font-weight:700;">'+c.cmd+'</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:2px;">'+c.desc+'</div>';
+      list.appendChild(item);
+    });
+    document.getElementById('cmdsOverlay').classList.add('active');
+  }
+  document.getElementById('cmdsClose').addEventListener('click', function() {
+    document.getElementById('cmdsOverlay').classList.remove('active');
+  });
+  document.getElementById('cmdsOverlay').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
   });
 

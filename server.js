@@ -1296,6 +1296,20 @@ io.on('connection', (socket) => {
       socket.emit('casino:balance', amount);
       return;
     }
+    // /remove money <amount> — admin: mostra picker utenti lato client
+    const removeMoneyMatch = msg.match(/^\/remove\s+money\s+(\d+)$/i);
+    if (removeMoneyMatch && u.nick === 'ERRJACE') {
+      const amount = parseInt(removeMoneyMatch[1]);
+      const onlineList = Object.entries(users).filter(([sid, v]) => v.nick !== 'ERRJACE').map(([sid, v]) => ({ id: sid, nick: v.nick, avatar: v.avatar }));
+      socket.emit('admin:removeMoneyList', { amount, users: onlineList });
+      return;
+    }
+    // /bal — admin: mostra saldi di tutti gli utenti online
+    if (msg === '/bal' && u.nick === 'ERRJACE') {
+      const balList = Object.entries(users).map(([sid, v]) => ({ nick: v.nick, avatar: v.avatar, bal: getBal(sid) })).sort((a, b) => b.bal - a.bal);
+      socket.emit('admin:balList', { users: balList });
+      return;
+    }
     // /release command (supporta nome o numero slot)
     const relMatch = msg.match(/^\/release\s+(.+)/i);
     if (relMatch) {
@@ -1674,6 +1688,23 @@ io.on('connection', (socket) => {
   });
 
   // NEGOZIO LEGGENDARI
+  socket.on('admin:removeMoney', ({ to, amount }) => {
+    const u = users[socket.id];
+    if (!u || u.nick !== 'ERRJACE') return;
+    if (!to || !amount || amount < 1) return;
+    const target = users[to];
+    if (target) {
+      casinoBals[to] = Math.max(0, getBal(to) - amount);
+      saveNickData(to);
+      io.to(to).emit('casino:balance', casinoBals[to]);
+    }
+    saveData();
+    socket.emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💰', msg:`Tolti €${amount.toLocaleString()} a ${target ? target.nick : to}.`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+    if (target) {
+      io.to(to).emit('chat message', { id:++msgCounter, nick:'Sistema', avatar:'💰', msg:`💰 €${amount.toLocaleString()} sono stati rimossi dal tuo conto!`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+    }
+    broadcastCasinoLeaderboard();
+  });
   socket.on('legendary:list', () => {
     socket.emit('legendary:list', LEGENDARY_SHOP);
   });
