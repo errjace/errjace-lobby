@@ -2503,7 +2503,7 @@
       if (u.pokemon) {
         var xp = u.pokemon.xp || 0;
         var lv = getLv(xp);
-        var thr = [0,30,80,150,250,400,600,900,1300,2000];
+        var thr = [0,30,80,150,250,400,600,900,1300,2000,2800,3800,5000,6500,8500,11000];
         var prev = thr[lv-1] || 0, next = thr[lv] || (prev + 2000);
         var pct = Math.min(100, (xp - prev) / (next - prev) * 100);
         var isMe = window.myNick && u.nick === window.myNick;
@@ -4043,7 +4043,7 @@
   });
 
   // XP → level helper
-  function getLv(xp) { var thr=[0,30,80,150,250,400,600,900,1300,2000]; for(var i=thr.length-1;i>=0;i--) if(xp>=thr[i]) return i+1; return 1; }
+  function getLv(xp) { var thr=[0,30,80,150,250,400,600,900,1300,2000,2800,3800,5000,6500,8500,11000]; for(var i=thr.length-1;i>=0;i--) if(xp>=thr[i]) return i+1; return 1; }
   var POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/';
   var POKE_IDS = { Charmander:4, Charmeleon:5, Charizard:6, Mimikyu:778, Riolu:447, Lucario:448, Swinub:220, Piloswine:221, Mamoswine:473 };
 
@@ -4178,6 +4178,18 @@
     candyCard.addEventListener('mouseenter', function() { candyCard.style.background = 'rgba(255,100,150,0.15)'; });
     candyCard.addEventListener('mouseleave', function() { candyCard.style.background = 'rgba(255,100,150,0.08)'; });
     grid.appendChild(candyCard);
+    // Caramella MAX card
+    var candyMaxCard = document.createElement('div');
+    candyMaxCard.style.cssText = 'background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,100,150,0.1));border-radius:10px;padding:6px;text-align:center;border:1px solid #ffd70044;cursor:pointer;transition:0.2s;grid-column:1/-1;';
+    candyMaxCard.innerHTML = '<div style="font-size:2rem;">🌟🍬</div><div style="font-size:0.75rem;font-weight:700;margin:2px 0;color:#ffd700;">Caramella MAX</div><div style="font-size:0.65rem;color:#ffd700;font-weight:700;">€500.000</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);margin-top:2px;">Porta TUTTI i Pokémon al Lv16!</div>';
+    candyMaxCard.addEventListener('click', function() {
+      if (confirm('🌟 Caramella MAX — €500.000\n\nPorta starter + tutti i Pokémon della squadra al Livello 16!\n\nConfermare?')) {
+        socket.emit('candy:max:buy');
+      }
+    });
+    candyMaxCard.addEventListener('mouseenter', function() { candyMaxCard.style.background = 'linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,100,150,0.2))'; });
+    candyMaxCard.addEventListener('mouseleave', function() { candyMaxCard.style.background = 'linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,100,150,0.1))'; });
+    grid.appendChild(candyMaxCard);
     // Legendary pokemon cards
     list.forEach(function(p) {
       var card = document.createElement('div');
@@ -4228,7 +4240,7 @@
     list.innerHTML = '';
     // Starter card
     var sCard = document.createElement('div');
-    var sMax = data.starterLv >= 10;
+    var sMax = data.starterLv >= 16;
     sCard.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid '+(sMax?'rgba(255,255,255,0.08)':'rgba(34,197,94,0.3)')+';cursor:'+(sMax?'default':'pointer')+';transition:0.2s;opacity:'+(sMax?'0.5':'1')+';';
     sCard.innerHTML = '<img src="'+data.starterImg+'" style="width:36px;height:36px;"><div style="flex:1;"><div style="font-size:0.8rem;font-weight:700;color:#fff;">'+data.starterName+'</div><div style="font-size:0.65rem;color:#22c55e;">Starter · Lv '+data.starterLv+(sMax?' (MAX)':' → '+(data.starterLv+1))+'</div></div>'+(sMax?'<span style="font-size:0.6rem;color:#666;">MAX</span>':'<span style="font-size:0.65rem;color:#ffd700;">€50k</span>');
     if (!sMax) {
@@ -4244,7 +4256,7 @@
     list.appendChild(sCard);
     // Team cards
     data.team.forEach(function(p) {
-      var tMax = p.lv >= 10;
+      var tMax = p.lv >= 16;
       var card = document.createElement('div');
       card.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid '+(tMax?'rgba(255,255,255,0.08)':'rgba(255,100,150,0.3)')+';cursor:'+(tMax?'default':'pointer')+';transition:0.2s;opacity:'+(tMax?'0.5':'1')+';';
       card.innerHTML = '<img src="'+p.img+'" style="width:36px;height:36px;"><div style="flex:1;"><div style="font-size:0.8rem;font-weight:700;color:#fff;">'+p.name+'</div><div style="font-size:0.65rem;color:#ff6b9d;">Team #'+(p.idx+1)+' · Lv '+p.lv+(tMax?' (MAX)':' → '+(p.lv+1))+'</div></div>'+(tMax?'<span style="font-size:0.6rem;color:#666;">MAX</span>':'<span style="font-size:0.65rem;color:#ffd700;">€50k</span>');
@@ -4292,6 +4304,17 @@
     document.getElementById('candyError').textContent = data.msg;
     document.getElementById('candyError').style.display = 'block';
     setTimeout(function() { document.getElementById('candyError').style.display = 'none'; }, 3000);
+  });
+
+  socket.on('candy:max:bought', function(data) {
+    casinoBalance = data.balance;
+    var shopBal = document.getElementById('shopBalance');
+    if (shopBal) shopBal.textContent = data.balance.toLocaleString();
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #ffd700;border-radius:12px;padding:0.8rem 1.5rem;z-index:9999;text-align:center;font-weight:700;animation:fadeIn 0.3s;';
+    toast.innerHTML = '<div style="font-size:1.5rem;margin-bottom:4px;">🌟🍬</div><div style="color:#ffd700;font-size:0.9rem;">Caramella MAX usata!</div><div style="color:#fff;font-size:0.8rem;margin-top:4px;">Starter Lv'+data.starterLv+' · Tutti i Pokémon al Lv16!</div>';
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; setTimeout(function() { if (toast.parentNode) toast.remove(); }, 500); }, 4000);
   });
 
   // ===== MAPPA 2D CANVAS (Stile Pokémon DS) =====

@@ -442,10 +442,11 @@ setInterval(() => {
 }, 30000);
 // =========================
 
-const EVO_THRESH = [0,30,80,150,250,400,600,900,1300,2000];
+const EVO_THRESH = [0,30,80,150,250,400,600,900,1300,2000,2800,3800,5000,6500,8500,11000];
 const POKE_IMG = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/';
 const CLAW_COST = 5000;
 const CANDY_COST = 50000;
+const CANDY_MAX_COST = 500000;
 const CLAW_POOL = [
   {n:'Pidgeotto',i:17,t:0},{n:'Raticate',i:20,t:0},{n:'Fearow',i:22,t:0},{n:'Arbok',i:24,t:0},
   {n:'Sandslash',i:28,t:0},{n:'Golbat',i:42,t:0},{n:'Gloom',i:44,t:0},{n:'Poliwhirl',i:61,t:0},
@@ -466,7 +467,7 @@ const STARTERS = {
   swinub:{name:'Swinub',evos:['Swinub','Piloswine','Mamoswine'],imgs:[220,221,473]},
 };
 function getPokemonLv(xp) { for(let i=EVO_THRESH.length-1;i>=0;i--) if(xp>=EVO_THRESH[i]) return i+1; return 1; }
-function getPokeStage(lv) { return lv>=6?2:lv>=3?1:0; }
+function getPokeStage(lv) { return lv>=10?2:lv>=5?1:0; }
 function addPokeXP(id, amt, reason) {
   const d=pokemonData[id]; if(!d)return;
   migratePokemonData(d);
@@ -1676,7 +1677,7 @@ io.on('connection', (socket) => {
     if (bal < CANDY_COST) { socket.emit('candy:error', { msg: 'Saldo insufficiente! Servono €50.000' }); return; }
     if (target === 'starter') {
       const oldLv = getPokemonLv(pd.xp || 0);
-      if (oldLv >= 10) { socket.emit('candy:error', { msg: 'Lo Starter è già al livello massimo (10)!' }); return; }
+      if (oldLv >= 16) { socket.emit('candy:error', { msg: 'Lo Starter è già al livello massimo (16)!' }); return; }
       const nextXp = EVO_THRESH[oldLv] || (EVO_THRESH[EVO_THRESH.length-1] + 2000);
       pd.xp = nextXp;
       const newLv = getPokemonLv(pd.xp);
@@ -1690,7 +1691,7 @@ io.on('connection', (socket) => {
       if (!pd.team || idx < 0 || idx >= pd.team.length) { socket.emit('candy:error', { msg: 'Pokémon non valido!' }); return; }
       const poke = pd.team[idx];
       const oldLv = poke.lv || 1;
-      if (oldLv >= 10) { socket.emit('candy:error', { msg: poke.name + ' è già al livello massimo (10)!' }); return; }
+      if (oldLv >= 16) { socket.emit('candy:error', { msg: poke.name + ' è già al livello massimo (16)!' }); return; }
       poke.lv = oldLv + 1;
       casinoBals[socket.id] = bal - CANDY_COST;
       saveNickData(socket.id);
@@ -1698,6 +1699,36 @@ io.on('connection', (socket) => {
       io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
       io.emit('chat message', { id:++msgCounter, nick:'🍬 CARAMMELLA', avatar:'🍬', msg:`${u.nick} ha usato una Caramella Rara su ${poke.name}! Lv${oldLv} → Lv${poke.lv}`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
     }
+  });
+
+  // CARAMMELLA MAX - Porta TUTTI i Pokemon al livello max (16)
+  socket.on('candy:max:buy', () => {
+    const u = users[socket.id];
+    if (!u) return;
+    const pd = pokemonData[socket.id];
+    if (!pd) { socket.emit('candy:error', { msg: 'Prima scegli un Pokémon starter!' }); return; }
+    const bal = getBal(socket.id);
+    if (bal < CANDY_MAX_COST) { socket.emit('candy:error', { msg: 'Servono €500.000 per la Caramella Max!' }); return; }
+    const MAX_LV = 16;
+    // Level up starter
+    const oldStarterLv = getPokemonLv(pd.xp || 0);
+    if (oldStarterLv < MAX_LV) {
+      pd.xp = EVO_THRESH[MAX_LV - 1] || EVO_THRESH[EVO_THRESH.length - 1];
+    }
+    // Level up team
+    var upgraded = [];
+    if (pd.team) {
+      pd.team.forEach(function(p) {
+        var olv = p.lv || 1;
+        if (olv < MAX_LV) { p.lv = MAX_LV; upgraded.push(p.name); }
+      });
+    }
+    var starterNewLv = getPokemonLv(pd.xp);
+    casinoBals[socket.id] = bal - CANDY_MAX_COST;
+    saveNickData(socket.id);
+    socket.emit('candy:max:bought', { starterLv: starterNewLv, balance: casinoBals[socket.id], team: pd.team || [] });
+    io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
+    io.emit('chat message', { id:++msgCounter, nick:'🍬 CARAMMELLA MAX', avatar:'🌟', msg:`${u.nick} ha usato una Caramella Max! Tutti i Pokémon sono al Livello ${MAX_LV}! 🔥`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
   });
 
   // QUIZ events
