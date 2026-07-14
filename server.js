@@ -1111,6 +1111,9 @@ function battleTurn(battleId, playerIdx, action) {
     b.log.push(msg);
     p.lastMove = action.type;
     if(killed) {
+      // Reset mega/dynamax for the fainted side
+      b.megaActive[1-playerIdx] = false;
+      b.dynamaxActive[1-playerIdx] = false;
       // Check if opponent has remaining Pokemon
       const aliveIdx = o.team.findIndex(pk=>!pk.fainted);
       if(aliveIdx === -1) { b.state = 'ended'; b.winner = p.id; return; }
@@ -1128,6 +1131,9 @@ function battleTurn(battleId, playerIdx, action) {
     if(!target||target.fainted) return;
     const oldName = pPoke ? pPoke.species : 'nessuno';
     p.currentPoke = idx;
+    // Reset mega/dynamax on switch
+    b.megaActive[playerIdx] = false;
+    b.dynamaxActive[playerIdx] = false;
     b.log.push(`${p.nick} richiama ${oldName} e manda ${target.species}!`);
     b.turnPlayer = 1 - playerIdx;
     p.lastMove = action.type;
@@ -2073,7 +2079,9 @@ io.on('connection', (socket) => {
         { id: from, nick: users[from].nick, team: mkTeam(from), currentPoke: 0 },
         { id: socket.id, nick: users[socket.id].nick, team: mkTeam(socket.id), currentPoke: 0 }
       ],
-      state: 'playing', log: [], winner: null
+      state: 'playing', log: [], winner: null,
+      megaUsed: [false, false], dynamaxUsed: [false, false],
+      megaActive: [false, false], dynamaxActive: [false, false]
     };
     battles[id] = b;
     [from, socket.id].forEach(sid => {
@@ -2081,7 +2089,9 @@ io.on('connection', (socket) => {
       io.to(sid).emit('battle:start', {
         battleId: id, myIdx: b.players.findIndex(p => p.id === sid),
         players: b.players.map(p => ({ id: p.id, nick: p.nick, team: p.team.map(pk => ({ species:pk.species, img:pk.img, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves })), currentPoke: p.currentPoke })),
-        turnPlayer: b.turnPlayer, log: [], state: 'playing'
+        turnPlayer: b.turnPlayer, log: [], state: 'playing',
+        megaUsed: [false, false], dynamaxUsed: [false, false],
+        megaActive: [false, false], dynamaxActive: [false, false]
       });
     });
   });
@@ -2100,7 +2110,9 @@ io.on('connection', (socket) => {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
           team: p2.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
         })),
-        turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner
+        turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
+        megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
       });
     });
     if(b.state === 'ended') {
@@ -2130,7 +2142,9 @@ io.on('connection', (socket) => {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
           team: p2.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
         })),
-        turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner
+        turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
+        megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
       });
     });
     if (b.isBot && b.turnPlayer === 1) {
@@ -2147,7 +2161,9 @@ io.on('connection', (socket) => {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
           team: p2.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
         })),
-        turnPlayer: b.turnPlayer, log: b.log.concat([users[socket.id]?.nick + ' si è arreso!']), state: b.state, winner: b.winner
+        turnPlayer: b.turnPlayer, log: b.log.concat([users[socket.id]?.nick + ' si è arreso!']), state: b.state, winner: b.winner,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
+        megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
       });
     });
     const loserData = pokemonData[socket.id];
@@ -2183,6 +2199,66 @@ io.on('connection', (socket) => {
     const allowed = ['🔥','💪','😂','😢','👏','😡','💀','❤️','🎉'];
     if (!emoji || allowed.indexOf(emoji) === -1) return;
     io.to(opponent.id).emit('battle:reaction', { emoji: emoji, from: player.nick });
+  });
+
+  // BATTLE MEGA EVOLVE — 1 use per battle, cosmetic only
+  socket.on('battle:mega', ({ battleId }) => {
+    const b = battles[battleId];
+    if (!b || b.state !== 'playing') return;
+    const pIdx = b.players.findIndex(p => p.id === socket.id);
+    if (pIdx === -1 || b.turnPlayer !== pIdx) return;
+    if (b.megaUsed[pIdx]) { socket.emit('battle:error', { msg: 'Hai già usato Mega Evolve!' }); return; }
+    if (b.megaActive[pIdx]) { socket.emit('battle:error', { msg: 'Sei già Mega Evolve!' }); return; }
+    const p = b.players[pIdx];
+    const poke = p.team[p.currentPoke];
+    if (!poke || poke.fainted) return;
+    b.megaUsed[pIdx] = true;
+    b.megaActive[pIdx] = true;
+    b.log.push(`✨ ${poke.species} Mega Evolve!`);
+    b.turnPlayer = 1 - pIdx;
+    b.players.forEach((pl) => {
+      io.to(pl.id).emit('battle:state', {
+        players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
+          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
+        })),
+        turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
+        megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
+      });
+    });
+    if (b.isBot && b.turnPlayer === 1) {
+      setTimeout(() => botAutoPlay(battleId), 1200);
+    }
+  });
+
+  // BATTLE DYNAMAX — 1 use per battle, cosmetic only
+  socket.on('battle:dynamax', ({ battleId }) => {
+    const b = battles[battleId];
+    if (!b || b.state !== 'playing') return;
+    const pIdx = b.players.findIndex(p => p.id === socket.id);
+    if (pIdx === -1 || b.turnPlayer !== pIdx) return;
+    if (b.dynamaxUsed[pIdx]) { socket.emit('battle:error', { msg: 'Hai già usato Dynamax!' }); return; }
+    if (b.dynamaxActive[pIdx]) { socket.emit('battle:error', { msg: 'Sei già in Dynamax!' }); return; }
+    const p = b.players[pIdx];
+    const poke = p.team[p.currentPoke];
+    if (!poke || poke.fainted) return;
+    b.dynamaxUsed[pIdx] = true;
+    b.dynamaxActive[pIdx] = true;
+    b.log.push(`🔴 ${poke.species} Dynamax!`);
+    b.turnPlayer = 1 - pIdx;
+    b.players.forEach((pl) => {
+      io.to(pl.id).emit('battle:state', {
+        players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
+          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
+        })),
+        turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
+        megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
+      });
+    });
+    if (b.isBot && b.turnPlayer === 1) {
+      setTimeout(() => botAutoPlay(battleId), 1200);
+    }
   });
 
   // ===== BOT TRAINER (Allenamento 1v1) =====
@@ -2229,7 +2305,9 @@ io.on('connection', (socket) => {
       players: b.players.map(p => ({ id:p.id, nick:p.nick, currentPoke:p.currentPoke,
         team: p.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
       })),
-      turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner
+      turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
+      megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
+      megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
     });
     if (b.state === 'ended') {
       const won = b.winner === realPlayer.id;
@@ -2295,7 +2373,9 @@ io.on('connection', (socket) => {
         { id: socket.id, nick: u.nick, team: mkTeam(socket.id), currentPoke: 0 },
         { id: 'bot_' + id, nick: '🤖 ' + botName, team: botTeam, currentPoke: 0 }
       ],
-      state: 'playing', log: [], winner: null
+      state: 'playing', log: [], winner: null,
+      megaUsed: [false, false], dynamaxUsed: [false, false],
+      megaActive: [false, false], dynamaxActive: [false, false]
     };
     b.log.push('Allenamento: ' + botName + ' ti sfida!');
     battles[id] = b;
@@ -2303,7 +2383,9 @@ io.on('connection', (socket) => {
     io.to(socket.id).emit('battle:start', {
       battleId: id, myIdx: 0, isBot: true,
       players: b.players.map(p => ({ id: p.id, nick: p.nick, team: p.team.map(pk => ({ species:pk.species, img:pk.img, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves })), currentPoke: p.currentPoke })),
-      turnPlayer: b.turnPlayer, log: b.log, state: 'playing'
+      turnPlayer: b.turnPlayer, log: b.log, state: 'playing',
+      megaUsed: [false, false], dynamaxUsed: [false, false],
+      megaActive: [false, false], dynamaxActive: [false, false]
     });
     // If bot goes first, auto-play
     if (b.turnPlayer === 1) {

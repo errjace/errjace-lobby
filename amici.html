@@ -1129,6 +1129,12 @@
   .battle-react-btn:hover { background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25);transform:scale(1.2); }
   .battle-react-btn:active { transform:scale(0.9); }
   .battle-react-btn.sent { opacity:0.3;pointer-events:none; }
+  #megaBtn:not(:disabled):hover { background:linear-gradient(135deg,rgba(124,58,237,0.5),rgba(255,215,0,0.5))!important;border-color:#a855f7!important;box-shadow:0 0 15px rgba(168,85,247,0.5);transform:scale(1.03); }
+  #dynamaxBtn:not(:disabled):hover { background:linear-gradient(135deg,rgba(239,68,68,0.5),rgba(255,100,50,0.5))!important;border-color:#ef4444!important;box-shadow:0 0 15px rgba(239,68,68,0.5);transform:scale(1.03); }
+  #megaBtn:not(:disabled) { animation:pulseMega 2s infinite; }
+  @keyframes pulseMega { 0%,100%{box-shadow:0 0 4px rgba(168,85,247,0.3)} 50%{box-shadow:0 0 12px rgba(168,85,247,0.6)} }
+  #dynamaxBtn:not(:disabled) { animation:pulseDyn 2s infinite; }
+  @keyframes pulseDyn { 0%,100%{box-shadow:0 0 4px rgba(239,68,68,0.3)} 50%{box-shadow:0 0 12px rgba(239,68,68,0.6)} }
   .battle-float-emoji { position:absolute;font-size:2rem;z-index:25;pointer-events:none;animation:floatEmojiUp 2s ease-out forwards;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }
   @keyframes floatEmojiUp { 0%{opacity:1;transform:translateY(0) scale(1);} 60%{opacity:1;transform:translateY(-60px) scale(1.3);} 100%{opacity:0;transform:translateY(-100px) scale(1.5);} }
   #moveTextOverlay.show { opacity:1; }
@@ -1938,6 +1944,10 @@
       <div style="display:flex;gap:6px;margin-top:4px;">
         <button id="switchBtn" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;">🔄 Cambia Pokémon</button>
         <button id="forfeitBtn" style="flex:1;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;">🏳️ Arrenditi</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:4px;">
+        <button id="megaBtn" disabled style="flex:1;background:linear-gradient(135deg,rgba(124,58,237,0.3),rgba(255,215,0,0.3));border:1px solid rgba(124,58,237,0.5);color:#a78bfa;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;font-weight:700;opacity:0.4;transition:all 0.3s;">⚡ MEGA</button>
+        <button id="dynamaxBtn" disabled style="flex:1;background:linear-gradient(135deg,rgba(239,68,68,0.3),rgba(255,100,50,0.3));border:1px solid rgba(239,68,68,0.5);color:#ef4444;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;font-weight:700;opacity:0.4;transition:all 0.3s;">🔴 DYNAMAX</button>
       </div>
     </div>
     <!-- Switch panel -->
@@ -2795,6 +2805,11 @@
   var prevLogLen = 0;
   var lastPlayerPoke = -1;
   var lastOppPoke = -1;
+  var myMegaUsed = false, myDynamaxUsed = false;
+  var myMegaActive = false, myDynamaxActive = false;
+  var oppMegaActive = false, oppDynamaxActive = false;
+  var lastPlayerMegaForm = 'normal';
+  var lastOppMegaForm = 'normal';
   // === BATTLE ANIMATION ENGINE (canvas particelle) ===
   var bParticles = [], bAnimId = null, bShake = 0, bCanvas = null, bCtx = null;
 
@@ -3296,6 +3311,9 @@
     myBattleIdx = data.myIdx;
     prevLogLen = 0;
     _movePending = false;
+    myMegaUsed = false; myDynamaxUsed = false;
+    myMegaActive = false; myDynamaxActive = false;
+    oppMegaActive = false; oppDynamaxActive = false;
     lastPlayerPoke = data.players[myBattleIdx] ? data.players[myBattleIdx].currentPoke : 0;
     lastOppPoke = data.players[1 - myBattleIdx] ? data.players[1 - myBattleIdx].currentPoke : 0;
     document.getElementById('battleOverlay').classList.add('active');
@@ -3347,6 +3365,17 @@
     battleData.log = data.log;
     battleData.state = data.state;
     battleData.winner = data.winner;
+    // Update mega/dynamax state
+    if (data.megaActive) {
+      myMegaActive = data.megaActive[myBattleIdx];
+      oppMegaActive = data.megaActive[1 - myBattleIdx];
+    }
+    if (data.dynamaxActive) {
+      myDynamaxActive = data.dynamaxActive[myBattleIdx];
+      oppDynamaxActive = data.dynamaxActive[1 - myBattleIdx];
+    }
+    if (data.megaUsed) myMegaUsed = data.megaUsed[myBattleIdx];
+    if (data.dynamaxUsed) myDynamaxUsed = data.dynamaxUsed[myBattleIdx];
     renderBattle();
     if (data.state === 'ended') {
       var won = data.winner === socket.id;
@@ -3374,16 +3403,21 @@
     // Update 3D models when currentPoke changes (switch)
     if (me.currentPoke !== lastPlayerPoke && myPoke) {
       lastPlayerPoke = me.currentPoke;
+      lastPlayerMegaForm = 'normal';
+      myMegaActive = false; myDynamaxActive = false;
       if (b3d && b3d.ready) { b3dRemovePoke('player'); b3dLoadPoke('player', myPoke.img); }
     }
     if (opp.currentPoke !== lastOppPoke && oppPoke) {
       lastOppPoke = opp.currentPoke;
+      lastOppMegaForm = 'normal';
+      oppMegaActive = false; oppDynamaxActive = false;
       if (b3d && b3d.ready) { b3dRemovePoke('opponent'); b3dLoadPoke('opponent', oppPoke.img); }
     }
     // Opponent
     if (oppPoke && !oppPoke.fainted) {
       document.getElementById('opponentSprite').querySelector('img').src = oppPoke.img;
-      document.getElementById('opponentName').textContent = oppPoke.species;
+      var oppFormLabel = oppMegaActive ? ' ⚡MEGA' : oppDynamaxActive ? ' 🔴DYN' : '';
+      document.getElementById('opponentName').textContent = oppPoke.species + oppFormLabel;
       document.getElementById('opponentHpText').textContent = 'HP: '+oppPoke.currentHp+'/'+oppPoke.maxHp;
       var oppPct = Math.max(0, oppPoke.currentHp / oppPoke.maxHp * 100);
       var oppFill = document.getElementById('opponentHpFill');
@@ -3402,7 +3436,8 @@
     // Player
     if (myPoke && !myPoke.fainted) {
       document.getElementById('playerSprite').querySelector('img').src = myPoke.img;
-      document.getElementById('playerName').textContent = myPoke.species;
+      var myFormLabel = myMegaActive ? ' ⚡MEGA' : myDynamaxActive ? ' 🔴DYN' : '';
+      document.getElementById('playerName').textContent = myPoke.species + myFormLabel;
       document.getElementById('playerHpText').textContent = 'HP: '+myPoke.currentHp+'/'+myPoke.maxHp;
       var myPct = Math.max(0, myPoke.currentHp / myPoke.maxHp * 100);
       var myFill = document.getElementById('playerHpFill');
@@ -3417,6 +3452,23 @@
       document.getElementById('playerName').textContent = myPoke ? myPoke.species + ' (ESAUSTO)' : '?';
       document.getElementById('playerHpFill').style.width = '0%';
       document.getElementById('playerHpText').textContent = 'ESAUSTO';
+    }
+    // Opponent 3D model form switching (mega/dynamax)
+    if (oppPoke && !oppPoke.fainted && b3d && b3d.ready && battleData.state === 'playing') {
+      var oppImg = oppPoke.img;
+      if (oppMegaActive && lastOppMegaForm !== 'mega') {
+        lastOppMegaForm = 'mega';
+        b3dRemovePoke('opponent');
+        b3dLoadPokeForm('opponent', oppImg, 'mega');
+      } else if (oppDynamaxActive && lastOppMegaForm !== 'gmax') {
+        lastOppMegaForm = 'gmax';
+        b3dRemovePoke('opponent');
+        b3dLoadPokeForm('opponent', oppImg, 'gmax');
+      } else if (!oppMegaActive && !oppDynamaxActive && lastOppMegaForm !== 'normal') {
+        lastOppMegaForm = 'normal';
+        b3dRemovePoke('opponent');
+        b3dLoadPoke('opponent', oppImg);
+      }
     }
     // Turn indicator
     if (isMyTurn) {
@@ -3460,6 +3512,45 @@
     document.getElementById('switchBtn').style.display = (battleData.state === 'playing' && isMyTurn) ? 'block' : 'none';
     // Forfeit
     document.getElementById('forfeitBtn').style.display = (battleData.state === 'playing') ? 'block' : 'none';
+    // Mega button
+    var megaBtn = document.getElementById('megaBtn');
+    if (battleData.state === 'playing' && isMyTurn && !myMegaUsed && !myMegaActive && myPoke && !myPoke.fainted) {
+      megaBtn.disabled = false;
+      megaBtn.style.opacity = '1';
+      megaBtn.style.display = 'block';
+    } else {
+      megaBtn.disabled = true;
+      megaBtn.style.opacity = '0.3';
+      megaBtn.style.display = battleData.state === 'playing' ? 'block' : 'none';
+    }
+    // Dynamax button
+    var dynBtn = document.getElementById('dynamaxBtn');
+    if (battleData.state === 'playing' && isMyTurn && !myDynamaxUsed && !myDynamaxActive && myPoke && !myPoke.fainted) {
+      dynBtn.disabled = false;
+      dynBtn.style.opacity = '1';
+      dynBtn.style.display = 'block';
+    } else {
+      dynBtn.disabled = true;
+      dynBtn.style.opacity = '0.3';
+      dynBtn.style.display = battleData.state === 'playing' ? 'block' : 'none';
+    }
+    // 3D model form switching (mega/dynamax active → load alternate model)
+    if (myPoke && !myPoke.fainted && b3d && b3d.ready && battleData.state === 'playing') {
+      var curImg = myPoke.img;
+      if (myMegaActive && lastPlayerMegaForm !== 'mega') {
+        lastPlayerMegaForm = 'mega';
+        b3dRemovePoke('player');
+        b3dLoadPokeForm('player', curImg, 'mega');
+      } else if (myDynamaxActive && lastPlayerMegaForm !== 'gmax') {
+        lastPlayerMegaForm = 'gmax';
+        b3dRemovePoke('player');
+        b3dLoadPokeForm('player', curImg, 'gmax');
+      } else if (!myMegaActive && !myDynamaxActive && lastPlayerMegaForm !== 'normal') {
+        lastPlayerMegaForm = 'normal';
+        b3dRemovePoke('player');
+        b3dLoadPoke('player', curImg);
+      }
+    }
   }
   function getTypeColor(t) {
     var c = { normal:'#a8a878',fire:'#f08030',water:'#6890f0',electric:'#f8d030',grass:'#78c850',ice:'#98d8d8',fighting:'#c03028',poison:'#a040a0',ground:'#e0c068',flying:'#a890f0',psychic:'#f85888',bug:'#a8b820',rock:'#b8a038',ghost:'#705898',dragon:'#7038f8',dark:'#705848',steel:'#b8b8d0',fairy:'#ee99ac' };
@@ -3491,6 +3582,24 @@
     socket.emit('battle:forfeit', { battleId: battleData.battleId });
     document.getElementById('battleOverlay').classList.remove('active');
     battleData = null;
+  });
+  // Mega Evolve
+  document.getElementById('megaBtn').addEventListener('click', function() {
+    if (!battleData || this.disabled) return;
+    socket.emit('battle:mega', { battleId: battleData.battleId });
+    this.disabled = true;
+    this.style.opacity = '0.3';
+  });
+  // Dynamax
+  document.getElementById('dynamaxBtn').addEventListener('click', function() {
+    if (!battleData || this.disabled) return;
+    socket.emit('battle:dynamax', { battleId: battleData.battleId });
+    this.disabled = true;
+    this.style.opacity = '0.3';
+  });
+  // Battle error handler
+  socket.on('battle:error', function(data) {
+    showChatMsg('Pokémon', '⚠️', data.msg || 'Errore', 'system');
   });
   // Close battle overlay on backdrop click
   document.getElementById('battleOverlay').addEventListener('click', function(e) {
@@ -6487,6 +6596,65 @@
     }
   }
 
+  function b3dLoadPokeForm(side, imgUrl, form) {
+    if (!b3d.ready || !b3d.gltfLoader) return;
+    b3dRemovePoke(side);
+    var xPos = b3dGetXPos(side);
+    var dexId = extractDexId(imgUrl);
+    if (!dexId) { b3dLoadPoke(side, imgUrl); return; }
+    var formUrl = 'https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/models/opt/' + form + '/' + dexId + '.glb';
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', formUrl, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function() {
+      if (xhr.status === 200 && xhr.response) {
+        var cleanBuffer = stripUnsupportedGlbExtensions(xhr.response);
+        b3d.gltfLoader.parse(cleanBuffer, '', function(gltf) {
+          var model = gltf.scene;
+          var scaleBase = form === 'gmax' ? 0.52 : 0.38;
+          model.scale.set(scaleBase, scaleBase, scaleBase);
+          var modelY = side==='player' ? -1.2 : -0.9;
+          var modelZ = side==='player' ? 0.3 : -0.8;
+          model.position.set(xPos, modelY, modelZ);
+          model.rotation.y = side==='player' ? -0.3 : 0.3;
+          b3d.scene.add(model);
+          var mixer = null;
+          if (gltf.animations && gltf.animations.length > 0) {
+            mixer = new THREE.AnimationMixer(model);
+            var action = mixer.clipAction(gltf.animations[0]);
+            action.play();
+          }
+          var obj = { mesh:model, glow:null, origX:xPos, origY:modelY, tex:null, mixer:mixer, gltf:gltf, isGLB:true };
+          if (side==='player') b3d.player = obj; else b3d.opp = obj;
+          b3dAddFormAura(side, form);
+        }, function() { b3dLoadPoke(side, imgUrl); });
+      } else {
+        b3dLoadPoke(side, imgUrl);
+      }
+    };
+    xhr.onerror = function() { b3dLoadPoke(side, imgUrl); };
+    xhr.send();
+  }
+
+  var b3dFormAuras = { player: null, opponent: null };
+  function b3dAddFormAura(side, form) {
+    b3dRemoveFormAura(side);
+    var obj = side === 'player' ? b3d.player : b3d.opp;
+    if (!obj || !obj.mesh) return;
+    var color = form === 'mega' ? 0xa855f7 : 0xef4444;
+    var pos = obj.mesh.position;
+    var light = new THREE.PointLight(color, 2.0, 3.0);
+    light.position.set(pos.x, pos.y + 0.5, pos.z + (side === 'player' ? -0.2 : 0.2));
+    b3d.scene.add(light);
+    b3dFormAuras[side] = light;
+  }
+  function b3dRemoveFormAura(side) {
+    if (b3dFormAuras[side]) {
+      b3d.scene.remove(b3dFormAuras[side]);
+      b3dFormAuras[side] = null;
+    }
+  }
+
   function b3dLoadPokeBillboard(side, imgUrl, xPos, cb) {
     if (!b3d.ready) return;
     var loader = new THREE.TextureLoader();
@@ -6512,6 +6680,7 @@
   function b3dRemovePoke(side) {
     var obj = side === 'player' ? b3d.player : b3d.opp;
     if (!obj) return;
+    b3dRemoveFormAura(side);
     if (obj.mesh) { b3d.scene.remove(obj.mesh); if (obj.mesh.geometry) obj.mesh.geometry.dispose(); if (obj.mesh.material) { if (obj.mesh.material.map) obj.mesh.material.map.dispose(); obj.mesh.material.dispose(); } }
     if (obj.glow) { b3d.scene.remove(obj.glow); if (obj.glow.geometry) obj.glow.geometry.dispose(); if (obj.glow.material) obj.glow.material.dispose(); }
     if (obj.gltf && obj.gltf.scene) { obj.gltf.scene.traverse(function(ch){ if (ch.isMesh){ if (ch.geometry) ch.geometry.dispose(); if (ch.material){ if (ch.material.map) ch.material.map.dispose(); ch.material.dispose(); }}}); }
@@ -6545,6 +6714,17 @@
     // Smoke wisps
     b3d.scene.children.forEach(function(c) {
       if (c.userData && c.userData.vy) { c.position.y += c.userData.vy; c.position.x += c.userData.vx; if (c.position.y>2) c.position.y=-1.5; }
+    });
+    // Mega/Dynamax aura pulse
+    ['player','opponent'].forEach(function(side) {
+      var a = b3dFormAuras[side];
+      if (a) {
+        var obj = side === 'player' ? b3d.player : b3d.opp;
+        if (obj && obj.mesh) {
+          a.position.set(obj.mesh.position.x, obj.mesh.position.y + 0.5, obj.mesh.position.z + (side === 'player' ? -0.2 : 0.2));
+        }
+        a.intensity = 1.5 + Math.sin(t * 0.005) * 1.0;
+      }
     });
     // Particles
     for (var i=b3d.particles.length-1;i>=0;i--) {
@@ -10869,9 +11049,12 @@
     if (b3d.animId) cancelAnimationFrame(b3d.animId);
     if (b3d.renderer) { b3d.renderer.dispose(); }
     if (b3d.dynLights) { b3d.dynLights.forEach(function(dl){ b3d.scene.remove(dl.light); }); }
+    b3dRemoveFormAura('player');
+    b3dRemoveFormAura('opponent');
     b3d.scene = null; b3d.camera = null; b3d.renderer = null;
     b3d.player = null; b3d.opp = null; b3d.particles = []; b3d.dynLights = [];
     b3d.camDefault = null; b3d.camGoal = null; b3d.camLookGoal = null; b3d.shake = 0;
+    lastPlayerMegaForm = 'normal'; lastOppMegaForm = 'normal';
     var c = document.getElementById('battle3d');
     if (c) c.innerHTML = '';
   }
