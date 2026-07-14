@@ -1274,6 +1274,18 @@ io.on('connection', (socket) => {
       });
       return;
     }
+    // /save command — salva manualmente i dati del giocatore
+    if (msg === '/save') {
+      saveNickData(socket.id);
+      saveData();
+      socket.emit('chat message', {
+        id: ++msgCounter, nick: 'Sistema', avatar: '💾',
+        msg: `Dati di ${u.nick} salvati!`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        system: true, reactions: {},
+      });
+      return;
+    }
     // /money command (solo admin ERRJACE, silenzioso)
     const moneyMatch = msg.match(/^\/money\s+(\d+)$/i);
     if (moneyMatch && u.nick === 'ERRJACE') {
