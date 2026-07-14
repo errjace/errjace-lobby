@@ -1196,6 +1196,34 @@ io.on('connection', (socket) => {
       system: true,
       reactions: {},
     });
+
+    // === BATTLE RECONNECTION ===
+    Object.keys(battles).forEach(bid => {
+      const b = battles[bid];
+      const pIdx = b.players.findIndex(p => p.id !== socket.id && p.disconnected);
+      if (pIdx !== -1 && b.players[pIdx].nick === nick) {
+        // This is the returning player — restore their socket id
+        clearTimeout(b.players[pIdx].discTimer);
+        b.players[pIdx].id = socket.id;
+        b.players[pIdx].disconnected = false;
+        b.players[pIdx].discTimer = null;
+        // Send current battle state to the reconnected player
+        const myIdx = b.players.findIndex(p => p.id === socket.id);
+        socket.emit('battle:start', {
+          battleId: bid, myIdx: myIdx,
+          players: b.players.map(p => ({ id: p.id, nick: p.nick, currentPoke: p.currentPoke,
+            team: p.team.map(pk => ({ species:pk.species, img:pk.img, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves }))
+          })),
+          turnPlayer: b.turnPlayer, log: b.log, state: b.state
+        });
+        // Notify opponent
+        const other = b.players[1 - myIdx];
+        if (other && !other.id.startsWith('bot_')) {
+          io.to(other.id).emit('battle:opponentReconnect', { nick: nick });
+        }
+        console.log(`[Battle] ${nick} riconnesso alla battaglia ${bid}`);
+      }
+    });
   });
 
   socket.on('change nick', ({ nick }) => {
@@ -2491,13 +2519,21 @@ io.on('connection', (socket) => {
         delete targetGames[gid];
       }
     }
-    // Clean up battle challenges
+    // Clean up battle challenges (with 10s grace period for mobile reconnection)
     Object.keys(battles).forEach(bid => {
       const b = battles[bid];
-      if (b.players[0].id === socket.id || b.players[1].id === socket.id) {
-        const other = b.players[0].id === socket.id ? b.players[1] : b.players[0];
-        delete battles[bid];
-        io.to(other.id).emit('battle:end', { reason: 'Avversario disconnesso', winner: other.id });
+      const pIdx = b.players.findIndex(p => p.id === socket.id);
+      if (pIdx !== -1) {
+        const other = b.players[1 - pIdx];
+        if (other.id.startsWith('bot_')) return;
+        b.players[pIdx].disconnected = true;
+        b.players[pIdx].discTimer = setTimeout(() => {
+          if (battles[bid] && b.players[pIdx].disconnected) {
+            delete battles[bid];
+            io.to(other.id).emit('battle:end', { reason: 'Avversario disconnesso (10s)', winner: other.id });
+          }
+        }, 10000);
+        io.to(other.id).emit('battle:opponentDisconnect', { nick: b.players[pIdx].nick, seconds: 10 });
       }
     });
     if (mapPlayers[socket.id]) { delete mapPlayers[socket.id]; io.emit('map:playerLeave', { id: socket.id }); }

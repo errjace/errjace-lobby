@@ -1101,8 +1101,9 @@
   .bp-name { font-family:'Black Ops One',monospace; }
   .bp-hp-fill.low { background:linear-gradient(90deg,#ef4444,#f87171)!important; }
   .bp-hp-fill.mid { background:linear-gradient(90deg,#eab308,#facc15)!important; }
-  .move-btn { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:0.4rem 0.5rem;color:#fff;cursor:pointer;transition:0.15s;text-align:left;font-size:0.65rem;display:flex;flex-direction:column;gap:2px; }
+  .move-btn { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:0.4rem 0.5rem;color:#fff;cursor:pointer;transition:0.15s;text-align:left;font-size:0.65rem;display:flex;flex-direction:column;gap:2px;touch-action:manipulation;-webkit-tap-highlight-color:transparent; }
   .move-btn:hover { background:rgba(124,58,237,0.2);border-color:#7c3aed; }
+  .move-btn:active:not(:disabled) { background:rgba(124,58,237,0.35);transform:scale(0.97); }
   .move-btn:disabled { opacity:0.3;cursor:default; }
   .move-btn .mb-type { font-size:0.5rem;padding:1px 4px;border-radius:3px;display:inline-block;width:fit-content; }
   .move-btn .mb-pp { font-size:0.5rem;color:rgba(255,255,255,0.3); }
@@ -2766,6 +2767,7 @@
   }
   var battleData = null;
   var myBattleIdx = -1;
+  var _movePending = false;
   var prevLogLen = 0;
   var lastPlayerPoke = -1;
   var lastOppPoke = -1;
@@ -3215,6 +3217,44 @@
   socket.on('battle:decline', function(data) {
     showChatMsg('Sistema', '💬', data.nick + ' ha rifiutato la sfida Pokémon.', 'system');
   });
+  socket.on('battle:opponentDisconnect', function(data) {
+    if (!data || !battleData) return;
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #f59e0b;border-radius:12px;padding:0.5rem 1rem;z-index:9999;font-size:0.8rem;color:#f59e0b;font-weight:600;animation:fadeIn 0.3s;';
+    toast.textContent = '⏳ ' + data.nick + ' si è disconnesso... (' + data.seconds + 's)';
+    toast.id = 'discToast';
+    document.body.appendChild(toast);
+    var count = data.seconds;
+    var intv = setInterval(function() {
+      count--;
+      if (toast.parentNode) toast.textContent = '⏳ ' + data.nick + ' si è disconnesso... (' + count + 's)';
+      if (count <= 0) { clearInterval(intv); if (toast.parentNode) toast.remove(); }
+    }, 1000);
+  });
+  socket.on('battle:opponentReconnect', function(data) {
+    if (!data) return;
+    var old = document.getElementById('discToast');
+    if (old) old.remove();
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #22c55e;border-radius:12px;padding:0.5rem 1rem;z-index:9999;font-size:0.8rem;color:#22c55e;font-weight:600;animation:fadeIn 0.3s;';
+    toast.textContent = '✅ ' + data.nick + ' è tornato!';
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; setTimeout(function() { if (toast.parentNode) toast.remove(); }, 500); }, 2000);
+  });
+  socket.on('battle:end', function(data) {
+    _movePending = false;
+    if (data && data.reason) {
+      var toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #fbbf24;border-radius:12px;padding:0.6rem 1.2rem;z-index:9999;font-size:0.85rem;color:#fbbf24;font-weight:700;animation:fadeIn 0.3s;';
+      toast.textContent = '⚔️ ' + data.reason;
+      document.body.appendChild(toast);
+      setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; setTimeout(function() { if (toast.parentNode) toast.remove(); }, 500); }, 3000);
+    }
+    setTimeout(function() {
+      document.getElementById('battleOverlay').classList.remove('active');
+      battleData = null;
+    }, 1500);
+  });
   socket.on('target:challenge', function(data) {
     showChallenge(data.nick, data.from, 'target', function() {
       socket.emit('target:accept', { from: data.from });
@@ -3231,6 +3271,7 @@
     battleData = data;
     myBattleIdx = data.myIdx;
     prevLogLen = 0;
+    _movePending = false;
     lastPlayerPoke = data.players[myBattleIdx] ? data.players[myBattleIdx].currentPoke : 0;
     lastOppPoke = data.players[1 - myBattleIdx] ? data.players[1 - myBattleIdx].currentPoke : 0;
     document.getElementById('battleOverlay').classList.add('active');
@@ -3249,6 +3290,7 @@
   // Battle state update
   socket.on('battle:state', function(data) {
     if (!battleData) return;
+    _movePending = false;
     // Detect new moves for animation
     if (data.log && data.log.length > prevLogLen) {
       var newLogs = data.log.slice(prevLogLen);
@@ -3377,8 +3419,14 @@
         var btn = document.createElement('button');
         btn.className = 'move-btn';
         btn.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;"><span><b>'+move.n+'</b></span><span class="mb-pp">PP '+move.pp+'/'+move.maxPp+'</span></div><span class="mb-type" style="background:'+getTypeColor(move.t)+'">'+move.t+'</span>';
-        btn.disabled = !isMyTurn || move.pp <= 0;
-        btn.onclick = function() { socket.emit('battle:move', { battleId: battleData.battleId, index: idx }); };
+        btn.disabled = !isMyTurn || move.pp <= 0 || _movePending;
+        btn.onclick = function() {
+          if (_movePending) return;
+          _movePending = true;
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+          socket.emit('battle:move', { battleId: battleData.battleId, index: idx });
+        };
         moveGrid.appendChild(btn);
       });
     } else {
@@ -3415,6 +3463,7 @@
   // Forfeit
   document.getElementById('forfeitBtn').addEventListener('click', function() {
     if (!battleData) return;
+    _movePending = false;
     socket.emit('battle:forfeit', { battleId: battleData.battleId });
     document.getElementById('battleOverlay').classList.remove('active');
     battleData = null;
