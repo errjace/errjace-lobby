@@ -1861,12 +1861,11 @@ io.on('connection', (socket) => {
     if (!poke) return;
     const bal = getBal(socket.id);
     if (bal < poke.price) { socket.emit('legendary:error', { msg: 'Saldo insufficiente!' }); return; }
+    if (!pokemonData[socket.id]) { pokemonData[socket.id] = { starter:null, currentForm:null, xp:0, team:[] }; }
     const pd = pokemonData[socket.id];
-    if (!pd) { socket.emit('legendary:error', { msg: 'Prima scegli un Pokémon starter con ⚡!' }); return; }
     if (pd.team && pd.team.length >= 5) { socket.emit('legendary:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
     casinoBals[socket.id] = bal - poke.price;
     socket.emit('casino:balance', casinoBals[socket.id]);
-    if (!pd.team) pd.team = [];
     pd.team.push({ name: poke.name, id: poke.id, img: POKE_IMG+poke.id+'.png', legendary: true, lv: 1 });
     saveNickData(socket.id);
     socket.emit('legendary:bought', { name: poke.name });
@@ -1887,12 +1886,11 @@ io.on('connection', (socket) => {
     if (!poke) return;
     const bal = getBal(socket.id);
     if (bal < poke.price) { socket.emit('competitive:error', { msg: 'Saldo insufficiente!' }); return; }
+    if (!pokemonData[socket.id]) { pokemonData[socket.id] = { starter:null, currentForm:null, xp:0, team:[] }; }
     const pd = pokemonData[socket.id];
-    if (!pd) { socket.emit('competitive:error', { msg: 'Prima scegli un Pokémon starter con ⚡!' }); return; }
     if (pd.team && pd.team.length >= 5) { socket.emit('competitive:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
     casinoBals[socket.id] = bal - poke.price;
     socket.emit('casino:balance', casinoBals[socket.id]);
-    if (!pd.team) pd.team = [];
     pd.team.push({ name: poke.name, id: poke.id, img: POKE_IMG+poke.id+'.png', competitive: true, lv: 1 });
     saveNickData(socket.id);
     socket.emit('competitive:bought', { name: poke.name });
