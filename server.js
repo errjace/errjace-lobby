@@ -1713,7 +1713,6 @@ io.on('connection', (socket) => {
       saveNickData(socket.id);
       socket.emit('candy:bought', { name: pd.currentForm, oldLv: oldLv, newLv: newLv, balance: casinoBals[socket.id] });
       io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
-      io.emit('chat message', { id:++msgCounter, nick:'🍬 CARAMMELLA', avatar:'🍬', msg:`${u.nick} ha usato una Caramella Rara su ${pd.currentForm}! Lv${oldLv} → Lv${newLv}`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
     } else if (target === 'team') {
       const idx = parseInt(index);
       if (!pd.team || idx < 0 || idx >= pd.team.length) { socket.emit('candy:error', { msg: 'Pokémon non valido!' }); return; }
@@ -1725,7 +1724,6 @@ io.on('connection', (socket) => {
       saveNickData(socket.id);
       socket.emit('candy:bought', { name: poke.name, oldLv: oldLv, newLv: poke.lv, balance: casinoBals[socket.id] });
       io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
-      io.emit('chat message', { id:++msgCounter, nick:'🍬 CARAMMELLA', avatar:'🍬', msg:`${u.nick} ha usato una Caramella Rara su ${poke.name}! Lv${oldLv} → Lv${poke.lv}`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
     }
   });
 
@@ -1756,7 +1754,6 @@ io.on('connection', (socket) => {
     saveNickData(socket.id);
     socket.emit('candy:max:bought', { starterLv: starterNewLv, balance: casinoBals[socket.id], team: pd.team || [] });
     io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
-    io.emit('chat message', { id:++msgCounter, nick:'🍬 CARAMMELLA MAX', avatar:'🌟', msg:`${u.nick} ha usato una Caramella Max! Tutti i Pokémon sono al Livello ${MAX_LV}! 🔥`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
   });
 
   // QUIZ events
