@@ -1355,6 +1355,8 @@ io.on('connection', (socket) => {
       const oldStarter = pd.currentForm || pd.starter;
       delete pokemonData[socket.id];
       saveNickData(socket.id);
+      if (!nickData[u.nick]) nickData[u.nick] = {};
+      nickData[u.nick].starterLocked = true;
       socket.emit('pokemon:status', { hasPokemon: false });
       socket.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '🔄', msg: `${u.nick} ha resettato il team! Arrivederci ${oldStarter}!`, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} });
       io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
@@ -1896,6 +1898,7 @@ io.on('connection', (socket) => {
   socket.on('pokemon:pick', ({ starter }) => {
     const u = users[socket.id];
     if (!STARTERS[starter] || pokemonData[socket.id]) { socket.emit('pokemon:picked',{error:'Già scelto o non valido'}); return; }
+    if (u && nickData[u.nick] && nickData[u.nick].starterLocked) { socket.emit('pokemon:picked',{error:'Hai già usato /reset team. Non puoi scegliere un nuovo starter!'}); return; }
     const d = { starter, currentForm: STARTERS[starter].evos[0], xp: 0, nick: u?u.nick:'', team: [] };
     pokemonData[socket.id] = d;
     saveNickData(socket.id);
