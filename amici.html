@@ -6729,6 +6729,7 @@
     b3d.renderer.outputEncoding = THREE.sRGBEncoding;
     b3d.renderer.toneMappingExposure = 1.0;
     container.appendChild(b3d.renderer.domElement);
+    b3d.renderer.domElement.style.cssText = 'filter: saturate(1.4) contrast(1.15) brightness(1.05);';
     // Lights — low to preserve original Pokemon colors
     b3d.scene.add(new THREE.AmbientLight(0xffffff, 0.35));
     var dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
