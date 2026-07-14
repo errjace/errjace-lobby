@@ -1732,6 +1732,31 @@
   </div>
 </div>
 
+<!-- CARAMMELLA RARA PICKER -->
+<div class="casino-overlay" id="candyOverlay" style="z-index:1250;">
+  <div class="casino-box" style="max-width:400px;width:90vw;padding:0.8rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+      <h3 style="font-size:1rem;">🍬 Caramella Rara</h3>
+      <button id="candyClose" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:6px;cursor:pointer;">✕</button>
+    </div>
+    <div style="text-align:center;font-size:0.75rem;color:var(--text2);margin-bottom:0.5rem;">Scegli quale Pokémon livellare (€50.000)</div>
+    <div id="candyList" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto;"></div>
+    <div class="nick-error" id="candyError" style="display:none;margin-top:6px;"></div>
+  </div>
+</div>
+
+<!-- CARAMMELLA CONFERMA -->
+<div class="casino-overlay" id="candyConfirmOverlay" style="z-index:1260;">
+  <div class="casino-box" style="max-width:350px;width:85vw;padding:1rem;text-align:center;">
+    <div style="font-size:2rem;margin-bottom:0.3rem;">🍬</div>
+    <div id="candyConfirmText" style="font-size:0.85rem;color:#fff;margin-bottom:0.8rem;"></div>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button id="candyConfirmYes" style="background:#22c55e;color:#fff;border:none;padding:0.4rem 1.2rem;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.85rem;">Conferma</button>
+      <button id="candyConfirmNo" style="background:rgba(255,255,255,0.1);color:#fff;border:none;padding:0.4rem 1.2rem;border-radius:8px;cursor:pointer;font-size:0.85rem;">Annulla</button>
+    </div>
+  </div>
+</div>
+
 <!-- TIRO AL BERSAGLIO 1v1 -->
 <div class="overlay" id="target1v1Overlay" style="z-index:3000;background:rgba(5,5,10,0.92);backdrop-filter:blur(6px);">
   <div class="battle-container" style="width:100%;max-width:550px;height:90vh;display:flex;flex-direction:column;margin:auto;padding:0.5rem;">
@@ -4131,7 +4156,7 @@
     if (e.target === this) this.classList.remove('active');
   });
 
-  // === NEGOZIO LEGGENDARI ===
+  // === NEGOZIO LEGGENDARI + CARAMMELLA ===
   var shopData = [];
 
   document.getElementById('shopBtn').addEventListener('click', function() {
@@ -4143,9 +4168,19 @@
     document.getElementById('shopBalance').textContent = (casinoBalance || 0).toLocaleString();
     var grid = document.getElementById('shopGrid');
     grid.innerHTML = '';
+    // Caramella Rara card (always first)
+    var candyCard = document.createElement('div');
+    candyCard.style.cssText = 'background:rgba(255,100,150,0.08);border-radius:10px;padding:6px;text-align:center;border:1px solid #ff6b9d44;cursor:pointer;transition:0.2s;grid-column:1/-1;';
+    candyCard.innerHTML = '<div style="font-size:2rem;">🍬</div><div style="font-size:0.75rem;font-weight:700;margin:2px 0;color:#ff6b9d;">Caramella Rara</div><div style="font-size:0.65rem;color:#ffd700;font-weight:700;">€50.000</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);margin-top:2px;">+1 livello a un Pokémon</div>';
+    candyCard.addEventListener('click', function() {
+      socket.emit('candy:list');
+    });
+    candyCard.addEventListener('mouseenter', function() { candyCard.style.background = 'rgba(255,100,150,0.15)'; });
+    candyCard.addEventListener('mouseleave', function() { candyCard.style.background = 'rgba(255,100,150,0.08)'; });
+    grid.appendChild(candyCard);
+    // Legendary pokemon cards
     list.forEach(function(p) {
       var card = document.createElement('div');
-      var priceClass = p.price >= 100000 ? 'gold' : 'silver';
       card.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:10px;padding:6px;text-align:center;border:1px solid '+(p.price>=100000?'#ffd70044':'#c0c0c044')+';cursor:pointer;transition:0.2s;';
       card.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:48px;height:48px;display:block;margin:0 auto;"><div style="font-size:0.7rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.65rem;color:'+(p.price>=100000?'#ffd700':'#c0c0c0')+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
       card.addEventListener('click', function() {
@@ -4165,7 +4200,6 @@
 
   socket.on('legendary:bought', function(data) {
     document.getElementById('shopOverlay').classList.remove('active');
-    // Show a toast notification
     var toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #ffd700;border-radius:12px;padding:0.6rem 1.2rem;z-index:9999;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#ffd700;font-weight:700;animation:fadeIn 0.3s;';
     toast.innerHTML = '✨ '+data.name+' aggiunto al team! ✨';
@@ -4177,6 +4211,87 @@
     document.getElementById('shopError').textContent = data.msg;
     document.getElementById('shopError').style.display = 'block';
     setTimeout(function() { document.getElementById('shopError').style.display = 'none'; }, 3000);
+  });
+
+  // === CARAMMELLA RARA ===
+  var candyPending = null; // { target:'starter'|'team', index:N, name, oldLv }
+
+  document.getElementById('candyClose').addEventListener('click', function() {
+    document.getElementById('candyOverlay').classList.remove('active');
+  });
+  document.getElementById('candyOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  socket.on('candy:list', function(data) {
+    var list = document.getElementById('candyList');
+    list.innerHTML = '';
+    // Starter card
+    var sCard = document.createElement('div');
+    var sMax = data.starterLv >= 10;
+    sCard.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid '+(sMax?'rgba(255,255,255,0.08)':'rgba(34,197,94,0.3)')+';cursor:'+(sMax?'default':'pointer')+';transition:0.2s;opacity:'+(sMax?'0.5':'1')+';';
+    sCard.innerHTML = '<img src="'+data.starterImg+'" style="width:36px;height:36px;"><div style="flex:1;"><div style="font-size:0.8rem;font-weight:700;color:#fff;">'+data.starterName+'</div><div style="font-size:0.65rem;color:#22c55e;">Starter · Lv '+data.starterLv+(sMax?' (MAX)':' → '+(data.starterLv+1))+'</div></div>'+(sMax?'<span style="font-size:0.6rem;color:#666;">MAX</span>':'<span style="font-size:0.65rem;color:#ffd700;">€50k</span>');
+    if (!sMax) {
+      sCard.addEventListener('click', function() {
+        candyPending = { target:'starter', index:0, name:data.starterName, oldLv:data.starterLv };
+        document.getElementById('candyConfirmText').innerHTML = 'Livellare <b>'+data.starterName+'</b> da Lv '+data.starterLv+' a <b>Lv '+(data.starterLv+1)+'</b>?<br><span style="font-size:0.75rem;color:#ffd700;">Costo: €50.000</span>';
+        document.getElementById('candyOverlay').classList.remove('active');
+        document.getElementById('candyConfirmOverlay').classList.add('active');
+      });
+      sCard.addEventListener('mouseenter', function() { if (!sMax) sCard.style.background = 'rgba(34,197,94,0.1)'; });
+      sCard.addEventListener('mouseleave', function() { sCard.style.background = 'rgba(255,255,255,0.04)'; });
+    }
+    list.appendChild(sCard);
+    // Team cards
+    data.team.forEach(function(p) {
+      var tMax = p.lv >= 10;
+      var card = document.createElement('div');
+      card.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid '+(tMax?'rgba(255,255,255,0.08)':'rgba(255,100,150,0.3)')+';cursor:'+(tMax?'default':'pointer')+';transition:0.2s;opacity:'+(tMax?'0.5':'1')+';';
+      card.innerHTML = '<img src="'+p.img+'" style="width:36px;height:36px;"><div style="flex:1;"><div style="font-size:0.8rem;font-weight:700;color:#fff;">'+p.name+'</div><div style="font-size:0.65rem;color:#ff6b9d;">Team #'+(p.idx+1)+' · Lv '+p.lv+(tMax?' (MAX)':' → '+(p.lv+1))+'</div></div>'+(tMax?'<span style="font-size:0.6rem;color:#666;">MAX</span>':'<span style="font-size:0.65rem;color:#ffd700;">€50k</span>');
+      if (!tMax) {
+        card.addEventListener('click', function() {
+          candyPending = { target:'team', index:p.idx, name:p.name, oldLv:p.lv };
+          document.getElementById('candyConfirmText').innerHTML = 'Livellare <b>'+p.name+'</b> da Lv '+p.lv+' a <b>Lv '+(p.lv+1)+'</b>?<br><span style="font-size:0.75rem;color:#ffd700;">Costo: €50.000</span>';
+          document.getElementById('candyOverlay').classList.remove('active');
+          document.getElementById('candyConfirmOverlay').classList.add('active');
+        });
+        card.addEventListener('mouseenter', function() { if (!tMax) card.style.background = 'rgba(255,100,150,0.08)'; });
+        card.addEventListener('mouseleave', function() { card.style.background = 'rgba(255,255,255,0.04)'; });
+      }
+      list.appendChild(card);
+    });
+    document.getElementById('candyOverlay').classList.add('active');
+  });
+
+  document.getElementById('candyConfirmYes').addEventListener('click', function() {
+    if (!candyPending) return;
+    socket.emit('candy:buy', { target: candyPending.target, index: candyPending.index });
+    document.getElementById('candyConfirmOverlay').classList.remove('active');
+    candyPending = null;
+  });
+  document.getElementById('candyConfirmNo').addEventListener('click', function() {
+    document.getElementById('candyConfirmOverlay').classList.remove('active');
+    candyPending = null;
+  });
+  document.getElementById('candyConfirmOverlay').addEventListener('click', function(e) {
+    if (e.target === this) { this.classList.remove('active'); candyPending = null; }
+  });
+
+  socket.on('candy:bought', function(data) {
+    casinoBalance = data.balance;
+    var shopBal = document.getElementById('shopBalance');
+    if (shopBal) shopBal.textContent = data.balance.toLocaleString();
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #ff6b9d;border-radius:12px;padding:0.6rem 1.2rem;z-index:9999;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#ff6b9d;font-weight:700;animation:fadeIn 0.3s;';
+    toast.innerHTML = '🍬 '+data.name+' è salito/a al Livello '+data.newLv+'!';
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; setTimeout(function() { if (toast.parentNode) toast.remove(); }, 500); }, 3000);
+  });
+
+  socket.on('candy:error', function(data) {
+    document.getElementById('candyError').textContent = data.msg;
+    document.getElementById('candyError').style.display = 'block';
+    setTimeout(function() { document.getElementById('candyError').style.display = 'none'; }, 3000);
   });
 
   // ===== MAPPA 2D CANVAS (Stile Pokémon DS) =====
