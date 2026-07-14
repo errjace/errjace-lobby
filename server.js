@@ -2341,6 +2341,7 @@ io.on('connection', (socket) => {
     const pk = p.team[p.currentPoke];
     if(!pk || pk.fainted || !MEGA_MAP[pk.imgId]) return;
     b.megaUsed[pIdx] = true;
+    b.megaActive[pIdx] = true;
     const mega = MEGA_MAP[pk.imgId];
     pk.originalSpecies = pk.species;
     pk.species = mega.name;
@@ -2362,6 +2363,7 @@ io.on('connection', (socket) => {
         })),
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
         megaEffect: { playerIdx: pIdx, species: pk.species, img: pk.img }
       });
     });
@@ -2377,6 +2379,7 @@ io.on('connection', (socket) => {
     const pk = p.team[p.currentPoke];
     if(!pk || pk.fainted) return;
     b.dynamaxUsed[pIdx] = true;
+    b.dynamaxActive[pIdx] = true;
     b.dynamaxTurns[pIdx] = 3;
     pk.isDynamax = true;
     pk.originalMaxHp = pk.maxHp;
@@ -2392,6 +2395,7 @@ io.on('connection', (socket) => {
         })),
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
         dynamaxEffect: { playerIdx: pIdx, species: pk.species, img: pk.img, turnsLeft: 3 }
       });
     });
