@@ -6726,11 +6726,12 @@
     b3d.renderer.setSize(w, h);
     b3d.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     b3d.renderer.toneMapping = THREE.NoToneMapping;
+    b3d.renderer.outputEncoding = THREE.sRGBEncoding;
     b3d.renderer.toneMappingExposure = 1.0;
     container.appendChild(b3d.renderer.domElement);
-    // Lights — neutral, preserve original Pokemon colors
-    b3d.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    var dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    // Lights — low to preserve original Pokemon colors
+    b3d.scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+    var dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
     dirLight.position.set(2, 5, 3);
     b3d.scene.add(dirLight);
     // Ground circle under each Pokemon
