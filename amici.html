@@ -1517,7 +1517,7 @@
       <button class="dama-btn" id="casinoBtn" title="Casinò" style="font-size:0.8rem;">💰</button>
       <button class="dama-btn" id="portalBtn" title="Overworld" style="font-size:0.9rem;">🌀</button>
       <button class="dama-btn" id="shopBtn" title="Negozio Leggendari" style="font-size:0.9rem;">🏪</button>
-      <button class="dama-btn" id="compShopBtn" title="Negozio Competitive" style="font-size:0.9rem;">⚔️</button>
+
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <button class="dama-btn" id="targetBtn" title="Sfida 1v1">🎯</button>
       <button class="dama-btn" id="tradeBtn" title="Scambia Pokémon">🔄</button>
@@ -1753,29 +1753,11 @@
       <button class="shop-tab" data-tab="mega" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);padding:6px 4px;border-radius:8px;font-size:0.72rem;font-weight:700;cursor:pointer;transition:0.2s;">🔮 Mega</button>
       <button class="shop-tab" data-tab="dynamax" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);padding:6px 4px;border-radius:8px;font-size:0.72rem;font-weight:700;cursor:pointer;transition:0.2s;">⚡ Dynamax</button>
     </div>
-    <div id="shopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;overflow-y:auto;padding:4px;min-height:200px;max-height:60vh;"></div>
+    <div id="shopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;overflow-y:auto;padding:4px;flex:1;min-height:0;"></div>
     <div class="nick-error" id="shopError" style="display:none;margin-top:4px;"></div>
   </div>
 </div>
 
-<!-- NEGOZIO COMPETITIVE -->
-<div class="casino-overlay" id="compShopOverlay" style="z-index:1200;">
-  <div class="casino-box" style="max-width:600px;width:95vw;max-height:85vh;display:flex;flex-direction:column;padding:0.8rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-      <h3 style="font-size:1rem;">⚔️ NEGOZIO COMPETITIVE</h3>
-      <span style="font-size:0.75rem;color:var(--text2);">Saldo: €<b id="compShopBalance">0</b></span>
-      <button id="compShopClose" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:6px;cursor:pointer;">✕</button>
-    </div>
-    <div style="text-align:center;font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:0.5rem;">Pokémon forti per team competitivi</div>
-    <div id="compShopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;overflow-y:auto;padding:4px;min-height:200px;max-height:58vh;"></div>
-    <div id="compShopPager" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;">
-      <button id="compPrevPage" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.75rem;">◀</button>
-      <span id="compPageInfo" style="font-size:0.72rem;color:var(--text2);">1 / 1</span>
-      <button id="compNextPage" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.75rem;">▶</button>
-    </div>
-    <div class="nick-error" id="compShopError" style="display:none;margin-top:4px;"></div>
-  </div>
-</div>
 
 <!-- CARAMMELLA RARA PICKER -->
 <div class="casino-overlay" id="candyOverlay" style="z-index:1250;">
@@ -4619,78 +4601,6 @@
     setTimeout(function() { document.getElementById('shopError').style.display = 'none'; }, 3000);
   });
 
-  // === NEGOZIO COMPETITIVE (PAGINATO) ===
-  var compShopData = [];
-  var compShopPage = 1;
-  var compPerPage = 12;
-
-  function renderCompShop() {
-    var grid = document.getElementById('compShopGrid');
-    grid.innerHTML = '';
-    var totalPages = Math.max(1, Math.ceil(compShopData.length / compPerPage));
-    if (compShopPage > totalPages) compShopPage = totalPages;
-    var start = (compShopPage - 1) * compPerPage;
-    var slice = compShopData.slice(start, start + compPerPage);
-    slice.forEach(function(p) {
-      var card = document.createElement('div');
-      var tier = p.price >= 35000 ? '#ef4444' : p.price >= 25000 ? '#f59e0b' : '#22c55e';
-      var badges = '';
-      if (p.mega) badges += '<div style="position:absolute;top:2px;right:2px;font-size:0.55rem;background:rgba(124,58,237,0.8);border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;">🔮</div>';
-      if (p.gmax) badges += '<div style="position:absolute;top:2px;left:2px;font-size:0.55rem;background:rgba(239,68,68,0.8);border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;">⚡</div>';
-      card.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:10px;padding:6px;text-align:center;border:1px solid '+tier+'33;cursor:pointer;transition:0.2s;position:relative;';
-      card.innerHTML = badges + '<img src="'+POKE_IMG+p.id+'.png" style="width:44px;height:44px;display:block;margin:0 auto;"><div style="font-size:0.68rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.62rem;color:'+tier+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
-      card.addEventListener('mouseenter', function() { card.style.background = 'rgba(255,255,255,0.08)'; card.style.borderColor = tier+'66'; });
-      card.addEventListener('mouseleave', function() { card.style.background = 'rgba(255,255,255,0.04)'; card.style.borderColor = tier+'33'; });
-      card.addEventListener('click', function() { socket.emit('competitive:buy', { id: p.id }); });
-      grid.appendChild(card);
-    });
-    document.getElementById('compPageInfo').textContent = compShopPage + ' / ' + totalPages;
-    document.getElementById('compPrevPage').style.opacity = compShopPage <= 1 ? '0.3' : '1';
-    document.getElementById('compNextPage').style.opacity = compShopPage >= totalPages ? '0.3' : '1';
-  }
-
-  document.getElementById('compShopBtn').addEventListener('click', function() {
-    socket.emit('competitive:all');
-  });
-
-  socket.on('competitive:all', function(list) {
-    compShopData = list;
-    compShopPage = 1;
-    document.getElementById('compShopBalance').textContent = (casinoBalance || 0).toLocaleString();
-    renderCompShop();
-    document.getElementById('compShopOverlay').classList.add('active');
-  });
-
-  document.getElementById('compPrevPage').addEventListener('click', function() {
-    if (compShopPage > 1) { compShopPage--; renderCompShop(); }
-  });
-  document.getElementById('compNextPage').addEventListener('click', function() {
-    var totalPages = Math.ceil(compShopData.length / compPerPage);
-    if (compShopPage < totalPages) { compShopPage++; renderCompShop(); }
-  });
-
-  document.getElementById('compShopClose').addEventListener('click', function() {
-    document.getElementById('compShopOverlay').classList.remove('active');
-  });
-  document.getElementById('compShopOverlay').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('active');
-  });
-
-  socket.on('competitive:bought', function(data) {
-    document.getElementById('compShopOverlay').classList.remove('active');
-    var toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #ef4444;border-radius:12px;padding:0.6rem 1.2rem;z-index:9999;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#ef4444;font-weight:700;animation:fadeIn 0.3s;';
-    toast.innerHTML = '⚔️ '+data.name+' aggiunto al team! 🔥';
-    document.body.appendChild(toast);
-    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; setTimeout(function() { if (toast.parentNode) toast.remove(); }, 500); }, 2500);
-  });
-
-  socket.on('competitive:error', function(data) {
-    document.getElementById('compShopError').textContent = data.msg;
-    document.getElementById('compShopError').style.display = 'block';
-    setTimeout(function() { document.getElementById('compShopError').style.display = 'none'; }, 3000);
-  });
-
   // === CARAMMELLA RARA ===
   var candyPending = null; // { target:'starter'|'team', index:N, name, oldLv }
 
@@ -4759,8 +4669,6 @@
     casinoBalance = data.balance;
     var shopBal = document.getElementById('shopBalance');
     if (shopBal) shopBal.textContent = data.balance.toLocaleString();
-    var compShopBal = document.getElementById('compShopBalance');
-    if (compShopBal) compShopBal.textContent = data.balance.toLocaleString();
     if (data.img && myPoke) myPoke.img = data.img;
     if (data.name && myPoke) myPoke.form = data.name;
     var toast = document.createElement('div');
@@ -4780,8 +4688,6 @@
     casinoBalance = data.balance;
     var shopBal = document.getElementById('shopBalance');
     if (shopBal) shopBal.textContent = data.balance.toLocaleString();
-    var compShopBal = document.getElementById('compShopBalance');
-    if (compShopBal) compShopBal.textContent = data.balance.toLocaleString();
     var toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #ffd700;border-radius:12px;padding:0.8rem 1.5rem;z-index:9999;text-align:center;font-weight:700;animation:fadeIn 0.3s;';
     toast.innerHTML = '<div style="font-size:1.5rem;margin-bottom:4px;">🌟🍬</div><div style="color:#ffd700;font-size:0.9rem;">Caramella MAX usata!</div><div style="color:#fff;font-size:0.8rem;margin-top:4px;">Starter Lv'+data.starterLv+' · Tutti i Pokémon al Lv16!</div>';
@@ -5952,8 +5858,6 @@
     document.getElementById('casinoBalance').textContent = balance.toLocaleString();
     var shopBal = document.getElementById('shopBalance');
     if (shopBal) shopBal.textContent = balance.toLocaleString();
-    var compShopBal = document.getElementById('compShopBalance');
-    if (compShopBal) compShopBal.textContent = balance.toLocaleString();
     // Update bet buttons
     document.querySelectorAll('#slotBets .sb-btn').forEach(function(btn) {
       var b = parseInt(btn.dataset.bet);
