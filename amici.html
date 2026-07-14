@@ -3535,19 +3535,16 @@
       document.getElementById('playerHpText').textContent = 'ESAUSTO';
     }
     // Opponent 3D model form switching (mega/dynamax)
-    if (oppPoke && !oppPoke.fainted && b3d && b3d.ready && battleData.state === 'playing') {
+    if (oppPoke && !oppPoke.fainted && b3d && b3d.ready && b3d.gltfLoader && battleData.state === 'playing') {
       var oppDexId = oppPoke.imgId || extractDexId(oppPoke.img);
       if (oppMegaActive && lastOppMegaForm !== 'mega') {
         lastOppMegaForm = 'mega';
-        b3dRemovePoke('opponent');
         b3dLoadPokeForm('opponent', oppPoke.img, 'mega', oppDexId);
       } else if (oppDynamaxActive && lastOppMegaForm !== 'gmax') {
         lastOppMegaForm = 'gmax';
-        b3dRemovePoke('opponent');
         b3dLoadPokeForm('opponent', oppPoke.img, 'gmax', oppDexId);
       } else if (!oppMegaActive && !oppDynamaxActive && lastOppMegaForm !== 'normal') {
         lastOppMegaForm = 'normal';
-        b3dRemovePoke('opponent');
         b3dLoadPoke('opponent', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/' + oppDexId + '.png');
       }
     }
@@ -3614,21 +3611,18 @@
       socket.emit('battle:dynamax', { battleId: battleData.battleId });
     };
     // 3D model form switching (mega/dynamax active → load alternate model)
-    if (myPoke && !myPoke.fainted && b3d && b3d.ready && battleData.state === 'playing') {
+    if (myPoke && !myPoke.fainted && b3d && b3d.ready && b3d.gltfLoader && battleData.state === 'playing') {
       var curDexId = myPoke.imgId || extractDexId(myPoke.img);
       if (myMegaActive && lastPlayerMegaForm !== 'mega') {
         console.log('[MEGA_3D] TRIGGER mega: imgId='+myPoke.imgId+' curDexId='+curDexId);
         lastPlayerMegaForm = 'mega';
-        b3dRemovePoke('player');
         b3dLoadPokeForm('player', myPoke.img, 'mega', curDexId);
       } else if (myDynamaxActive && lastPlayerMegaForm !== 'gmax') {
         console.log('[MEGA_3D] TRIGGER dynamax: imgId='+myPoke.imgId+' curDexId='+curDexId);
         lastPlayerMegaForm = 'gmax';
-        b3dRemovePoke('player');
         b3dLoadPokeForm('player', myPoke.img, 'gmax', curDexId);
       } else if (!myMegaActive && !myDynamaxActive && lastPlayerMegaForm !== 'normal') {
         lastPlayerMegaForm = 'normal';
-        b3dRemovePoke('player');
         b3dLoadPoke('player', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/' + curDexId + '.png');
       }
     }
@@ -6887,7 +6881,7 @@
   }
 
   function b3dLoadPokeForm(side, imgUrl, form, directDexId) {
-    if (!b3d.ready || !b3d.gltfLoader) { console.log('[MEGA_3D] skip: b3d not ready'); return; }
+    if (!b3d.ready || !b3d.gltfLoader) { console.log('[MEGA_3D] skip: ready='+b3d.ready+' gltfLoader='+(!!b3d.gltfLoader)); return; }
     b3dRemovePoke(side);
     var xPos = b3dGetXPos(side);
     var dexId = directDexId || extractDexId(imgUrl);
