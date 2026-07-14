@@ -766,6 +766,15 @@
     transition:background 0.2s;
   }
   .ytp-minimize:hover { background:rgba(255,255,255,0.2); }
+  .ytp-close {
+    position:absolute;top:4px;right:32px;z-index:10;
+    width:24px;height:24px;border-radius:50%;
+    background:rgba(0,0,0,0.5);border:1px solid rgba(255,100,100,0.25);
+    color:#ff6b6b;font-size:0.7rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background 0.2s;
+  }
+  .ytp-close:hover { background:rgba(255,60,60,0.4); }
   .ytp-restore {
     display:none;font-size:0.6rem;color:rgba(255,255,255,0.3);cursor:pointer;
     padding:2px 6px;margin-bottom:2px;
@@ -1544,6 +1553,7 @@
         <div class="music-results" id="musicResults"></div>
         <div class="yt-player-wrap" id="ytPlayerWrap">
           <button class="ytp-minimize" id="ytpMinimize" title="Minimizza">−</button>
+          <button class="ytp-close" id="ytpClose" title="Chiudi video">✕</button>
           <div id="ytPlayer"></div>
         </div>
         <div class="ytp-restore" id="ytpRestore" style="display:none;">▶ Mostra video</div>
@@ -2359,6 +2369,20 @@
     document.getElementById('ytPlayerWrap').classList.remove('active');
     document.getElementById('progressWrap').style.display = 'none';
     document.getElementById('musicResults').classList.add('active');
+  });
+
+  document.getElementById('ytpClose').addEventListener('click', function() {
+    if (ytPlayer) ytPlayer.stopVideo();
+    socket.emit('music stop');
+    isPlaying = false;
+    currentVideo = null;
+    document.getElementById('musicPlayBtn').textContent = '▶';
+    document.getElementById('musicTitle').textContent = 'Nessun video in riproduzione';
+    document.getElementById('musicArtist').textContent = 'Cerca un video per iniziare';
+    document.getElementById('ytPlayerWrap').classList.remove('active');
+    document.getElementById('progressWrap').style.display = 'none';
+    document.getElementById('musicResults').classList.remove('active');
+    document.getElementById('vizWrap').style.display = 'none';
   });
 
   document.getElementById('musicMuteBtn').addEventListener('click', function(e) {
