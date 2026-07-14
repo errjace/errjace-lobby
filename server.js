@@ -1345,6 +1345,21 @@ io.on('connection', (socket) => {
       socket.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '💬', msg: `📋 ${total}`, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} });
       return;
     }
+    // /reset team — resetta starter e team Pokémon
+    if (msg === '/reset team') {
+      const pd = pokemonData[socket.id];
+      if (!pd) {
+        socket.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '💬', msg: 'Non hai nessun Pokémon da resettare!', time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} });
+        return;
+      }
+      const oldStarter = pd.currentForm || pd.starter;
+      delete pokemonData[socket.id];
+      saveNickData(socket.id);
+      socket.emit('pokemon:status', { hasPokemon: false });
+      socket.emit('chat message', { id: ++msgCounter, nick: 'Sistema', avatar: '🔄', msg: `${u.nick} ha resettato il team! Arrivederci ${oldStarter}!`, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system: true, reactions: {} });
+      io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
+      return;
+    }
     addPokeXP(socket.id, 2, 'chat');
     io.emit('chat message', {
       id: ++msgCounter,
