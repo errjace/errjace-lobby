@@ -6889,7 +6889,8 @@
     b3dRemovePoke(side);
     var xPos = b3dGetXPos(side);
     var dexId = directDexId || extractDexId(imgUrl);
-    if (!dexId) { b3dLoadPoke(side, imgUrl); return; }
+    if (!dexId) { b3dLoadPoke(side, 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/' + (directDexId||'') + '.png'); return; }
+    var pokeFallback = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/' + dexId + '.png';
     var formUrl = 'https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/models/opt/' + form + '/' + dexId + '.glb';
     var xhr = new XMLHttpRequest();
     xhr.open('GET', formUrl, true);
@@ -6915,12 +6916,12 @@
           var obj = { mesh:model, glow:null, origX:xPos, origY:modelY, tex:null, mixer:mixer, gltf:gltf, isGLB:true };
           if (side==='player') b3d.player = obj; else b3d.opp = obj;
           b3dAddFormAura(side, form);
-        }, function() { b3dLoadPoke(side, imgUrl); });
+        }, function() { b3dLoadPoke(side, pokeFallback); });
       } else {
-        b3dLoadPoke(side, imgUrl);
+        b3dLoadPoke(side, pokeFallback);
       }
     };
-    xhr.onerror = function() { b3dLoadPoke(side, imgUrl); };
+    xhr.onerror = function() { b3dLoadPoke(side, pokeFallback); };
     xhr.send();
   }
 
