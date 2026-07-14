@@ -3495,7 +3495,6 @@
     }
     // Opponent
     if (oppPoke && !oppPoke.fainted) {
-      document.getElementById('opponentSprite').style.display = 'flex';
       document.getElementById('opponentSprite').querySelector('img').src = oppPoke.img;
       var oppFormLabel = oppMegaActive ? ' ⚡MEGA' : oppDynamaxActive ? ' 🔴DYN' : '';
       document.getElementById('opponentName').textContent = oppPoke.species + oppFormLabel;
@@ -3509,7 +3508,6 @@
       document.getElementById('opponentTypes').innerHTML = oppTypes;
       document.getElementById('opponentStatus').textContent = oppPoke.status || '';
     } else {
-      document.getElementById('opponentSprite').style.display = 'none';
       document.getElementById('opponentSprite').querySelector('img').src = '';
       document.getElementById('opponentName').textContent = oppPoke ? oppPoke.species + ' (ESAUSTO)' : '?';
       document.getElementById('opponentHpFill').style.width = '0%';
@@ -3517,7 +3515,6 @@
     }
     // Player
     if (myPoke && !myPoke.fainted) {
-      document.getElementById('playerSprite').style.display = 'flex';
       document.getElementById('playerSprite').querySelector('img').src = myPoke.img;
       var myFormLabel = myMegaActive ? ' ⚡MEGA' : myDynamaxActive ? ' 🔴DYN' : '';
       document.getElementById('playerName').textContent = myPoke.species + myFormLabel;
@@ -3531,7 +3528,6 @@
       document.getElementById('playerTypes').innerHTML = myTypes;
       document.getElementById('playerStatus').textContent = myPoke.status || '';
     } else {
-      document.getElementById('playerSprite').style.display = 'none';
       document.getElementById('playerSprite').querySelector('img').src = '';
       document.getElementById('playerName').textContent = myPoke ? myPoke.species + ' (ESAUSTO)' : '?';
       document.getElementById('playerHpFill').style.width = '0%';
