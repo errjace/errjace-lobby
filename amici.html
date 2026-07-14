@@ -1520,6 +1520,7 @@
       <button class="dama-btn poke-btn" id="pokeBtn" title="Pokémon" style="font-size:0.9rem;">⚡</button>
       <button class="dama-btn" id="portalBtn" title="Overworld" style="font-size:0.9rem;">🌀</button>
       <button class="dama-btn" id="shopBtn" title="Negozio Leggendari" style="font-size:0.9rem;">🏪</button>
+      <button class="dama-btn" id="compShopBtn" title="Negozio Competitive" style="font-size:0.9rem;">⚔️</button>
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <button class="dama-btn" id="targetBtn" title="Sfida 1v1">🎯</button>
       <button class="dama-btn" id="tradeBtn" title="Scambia Pokémon">🔄</button>
@@ -1755,6 +1756,20 @@
   </div>
 </div>
 
+<!-- NEGOZIO COMPETITIVE -->
+<div class="casino-overlay" id="compShopOverlay" style="z-index:1200;">
+  <div class="casino-box" style="max-width:600px;width:95vw;max-height:85vh;display:flex;flex-direction:column;padding:0.8rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+      <h3 style="font-size:1rem;">⚔️ NEGOZIO COMPETITIVE</h3>
+      <span style="font-size:0.75rem;color:var(--text2);">Saldo: €<b id="compShopBalance">0</b></span>
+      <button id="compShopClose" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:6px;cursor:pointer;">✕</button>
+    </div>
+    <div style="text-align:center;font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:0.5rem;">Pokémon forti per team competitivi</div>
+    <div id="compShopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;overflow-y:auto;padding:4px;min-height:200px;max-height:65vh;"></div>
+    <div class="nick-error" id="compShopError" style="display:none;margin-top:4px;"></div>
+  </div>
+</div>
+
 <!-- CARAMMELLA RARA PICKER -->
 <div class="casino-overlay" id="candyOverlay" style="z-index:1250;">
   <div class="casino-box" style="max-width:400px;width:90vw;padding:0.8rem;">
@@ -1945,7 +1960,7 @@
         <button id="switchBtn" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;">🔄 Cambia Pokémon</button>
         <button id="forfeitBtn" style="flex:1;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;">🏳️ Arrenditi</button>
       </div>
-      <div style="display:flex;gap:6px;margin-top:4px;">
+      <div style="display:flex;gap:6px;margin-top:4px;" id="megaDynamaxRow">
         <button id="megaBtn" disabled style="flex:1;background:linear-gradient(135deg,rgba(124,58,237,0.3),rgba(255,215,0,0.3));border:1px solid rgba(124,58,237,0.5);color:#a78bfa;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;font-weight:700;opacity:0.4;transition:all 0.3s;">⚡ MEGA</button>
         <button id="dynamaxBtn" disabled style="flex:1;background:linear-gradient(135deg,rgba(239,68,68,0.3),rgba(255,100,50,0.3));border:1px solid rgba(239,68,68,0.5);color:#ef4444;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;font-weight:700;opacity:0.4;transition:all 0.3s;">🔴 DYNAMAX</button>
       </div>
@@ -2024,6 +2039,35 @@
     <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:0.75rem;">Scegli a chi inviare i soldi:</p>
     <div id="sendUserList" style="display:flex;flex-direction:column;gap:4px;max-height:250px;overflow-y:auto;"></div>
     <button id="sendCancel" style="margin-top:0.75rem;background:rgba(255,255,255,0.05);border:none;padding:0.4rem 1.2rem;border-radius:8px;color:rgba(255,255,255,0.4);cursor:pointer;font-size:0.7rem;">ANNULLA</button>
+  </div>
+</div>
+
+<!-- Admin Remove Money Picker -->
+<div class="poke-overlay" id="removeMoneyPicker">
+  <div class="poke-popup" style="text-align:center;max-width:360px;">
+    <h2>💸 Rimuovi €<span id="removeMoneyAmount">0</span></h2>
+    <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:0.75rem;">Scegli a chi togliere i soldi:</p>
+    <div id="removeMoneyUserList" style="display:flex;flex-direction:column;gap:4px;max-height:250px;overflow-y:auto;"></div>
+    <button id="removeMoneyCancel" style="margin-top:0.75rem;background:rgba(255,255,255,0.05);border:none;padding:0.4rem 1.2rem;border-radius:8px;color:rgba(255,255,255,0.4);cursor:pointer;font-size:0.7rem;">ANNULLA</button>
+  </div>
+</div>
+
+<!-- Admin Balance List -->
+<div class="poke-overlay" id="balListOverlay">
+  <div class="poke-popup" style="text-align:center;max-width:380px;">
+    <h2>💰 Saldi Utenti</h2>
+    <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:0.75rem;">Tutti gli utenti online:</p>
+    <div id="balListContent" style="display:flex;flex-direction:column;gap:4px;max-height:350px;overflow-y:auto;"></div>
+    <button id="balListClose" style="margin-top:0.75rem;background:rgba(255,255,255,0.05);border:none;padding:0.4rem 1.2rem;border-radius:8px;color:rgba(255,255,255,0.4);cursor:pointer;font-size:0.7rem;">CHIUDI</button>
+  </div>
+</div>
+
+<!-- Commands List -->
+<div class="poke-overlay" id="cmdsOverlay">
+  <div class="poke-popup" style="text-align:left;max-width:380px;">
+    <h2 style="text-align:center;">⚡ Comandi</h2>
+    <div id="cmdsContent" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;"></div>
+    <button id="cmdsClose" style="margin-top:0.75rem;background:rgba(255,255,255,0.05);border:none;padding:0.4rem 1.2rem;border-radius:8px;color:rgba(255,255,255,0.4);cursor:pointer;font-size:0.7rem;width:100%;">CHIUDI</button>
   </div>
 </div>
 
@@ -3308,6 +3352,10 @@
   // Battle start
   socket.on('battle:start', function(data) {
     battleData = data;
+    battleData.megaUsed = data.megaUsed || [false, false];
+    battleData.dynamaxUsed = data.dynamaxUsed || [false, false];
+    battleData.canMega = data.canMega || [false, false];
+    battleData.canDynamax = data.canDynamax || [false, false];
     myBattleIdx = data.myIdx;
     prevLogLen = 0;
     _movePending = false;
@@ -3357,6 +3405,11 @@
           battleData.players[pIdx].team[i].maxHp = pk.maxHp;
           battleData.players[pIdx].team[i].status = pk.status;
           battleData.players[pIdx].team[i].fainted = pk.fainted;
+          if (pk.species) battleData.players[pIdx].team[i].species = pk.species;
+          if (pk.types) battleData.players[pIdx].team[i].types = pk.types;
+          if (pk.isMega !== undefined) battleData.players[pIdx].team[i].isMega = pk.isMega;
+          if (pk.isDynamax !== undefined) battleData.players[pIdx].team[i].isDynamax = pk.isDynamax;
+          if (pk.img) battleData.players[pIdx].team[i].img = pk.img;
         }
       });
       battleData.players[pIdx].currentPoke = p.currentPoke;
@@ -3374,8 +3427,34 @@
       myDynamaxActive = data.dynamaxActive[myBattleIdx];
       oppDynamaxActive = data.dynamaxActive[1 - myBattleIdx];
     }
-    if (data.megaUsed) myMegaUsed = data.megaUsed[myBattleIdx];
-    if (data.dynamaxUsed) myDynamaxUsed = data.dynamaxUsed[myBattleIdx];
+    if (data.megaUsed) {
+      myMegaUsed = data.megaUsed[myBattleIdx];
+      battleData.megaUsed = data.megaUsed;
+    }
+    if (data.dynamaxUsed) {
+      myDynamaxUsed = data.dynamaxUsed[myBattleIdx];
+      battleData.dynamaxUsed = data.dynamaxUsed;
+    }
+    if (data.megaEffect) {
+      var pIdx2 = data.megaEffect.playerIdx;
+      if (battleData.players[pIdx2]) {
+        var cp = battleData.players[pIdx2].currentPoke;
+        if (battleData.players[pIdx2].team[cp]) {
+          battleData.players[pIdx2].team[cp].species = data.megaEffect.species;
+          battleData.players[pIdx2].team[cp].img = data.megaEffect.img;
+          battleData.players[pIdx2].team[cp].isMega = true;
+        }
+      }
+    }
+    if (data.dynamaxEffect) {
+      var dIdx = data.dynamaxEffect.playerIdx;
+      if (battleData.players[dIdx]) {
+        var dp = battleData.players[dIdx].currentPoke;
+        if (battleData.players[dIdx].team[dp]) {
+          battleData.players[dIdx].team[dp].isDynamax = true;
+        }
+      }
+    }
     renderBattle();
     if (data.state === 'ended') {
       var won = data.winner === socket.id;
@@ -3514,26 +3593,24 @@
     document.getElementById('forfeitBtn').style.display = (battleData.state === 'playing') ? 'block' : 'none';
     // Mega button
     var megaBtn = document.getElementById('megaBtn');
-    if (battleData.state === 'playing' && isMyTurn && !myMegaUsed && !myMegaActive && myPoke && !myPoke.fainted) {
-      megaBtn.disabled = false;
-      megaBtn.style.opacity = '1';
-      megaBtn.style.display = 'block';
-    } else {
-      megaBtn.disabled = true;
-      megaBtn.style.opacity = '0.3';
-      megaBtn.style.display = battleData.state === 'playing' ? 'block' : 'none';
-    }
+    var canMegaNow = battleData.canMega && battleData.canMega[myBattleIdx] && !battleData.megaUsed[myBattleIdx] && isMyTurn && battleData.state === 'playing' && myPoke && !myPoke.fainted;
+    megaBtn.style.display = canMegaNow ? 'block' : 'none';
+    megaBtn.disabled = !canMegaNow;
+    megaBtn.style.opacity = canMegaNow ? '1' : '0.3';
+    megaBtn.onclick = function() {
+      if (_movePending) return;
+      socket.emit('battle:mega', { battleId: battleData.battleId });
+    };
     // Dynamax button
     var dynBtn = document.getElementById('dynamaxBtn');
-    if (battleData.state === 'playing' && isMyTurn && !myDynamaxUsed && !myDynamaxActive && myPoke && !myPoke.fainted) {
-      dynBtn.disabled = false;
-      dynBtn.style.opacity = '1';
-      dynBtn.style.display = 'block';
-    } else {
-      dynBtn.disabled = true;
-      dynBtn.style.opacity = '0.3';
-      dynBtn.style.display = battleData.state === 'playing' ? 'block' : 'none';
-    }
+    var canDynNow = battleData.canDynamax && battleData.canDynamax[myBattleIdx] && !battleData.dynamaxUsed[myBattleIdx] && isMyTurn && battleData.state === 'playing' && myPoke && !myPoke.fainted;
+    dynBtn.style.display = canDynNow ? 'block' : 'none';
+    dynBtn.disabled = !canDynNow;
+    dynBtn.style.opacity = canDynNow ? '1' : '0.3';
+    dynBtn.onclick = function() {
+      if (_movePending) return;
+      socket.emit('battle:dynamax', { battleId: battleData.battleId });
+    };
     // 3D model form switching (mega/dynamax active → load alternate model)
     if (myPoke && !myPoke.fainted && b3d && b3d.ready && battleData.state === 'playing') {
       var curImg = myPoke.img;
@@ -3550,6 +3627,50 @@
         b3dRemovePoke('player');
         b3dLoadPoke('player', curImg);
       }
+    }
+    // Visual effects: Mega glow / Dynamax size
+    var playerSprite = document.getElementById('playerSprite');
+    var opponentSprite = document.getElementById('opponentSprite');
+    var playerImg = playerSprite.querySelector('img');
+    var oppImg = opponentSprite.querySelector('img');
+    playerSprite.style.filter = '';
+    playerSprite.style.transform = '';
+    playerSprite.style.transition = 'all 0.4s ease';
+    opponentSprite.style.filter = '';
+    opponentSprite.style.transform = '';
+    opponentSprite.style.transition = 'all 0.4s ease';
+    if (playerImg) playerImg.style.filter = '';
+    if (oppImg) oppImg.style.filter = '';
+    if (myPoke && myPoke.isDynamax) {
+      playerSprite.style.transform = 'scale(1.4)';
+      playerSprite.style.filter = 'drop-shadow(0 0 16px rgba(239,68,68,0.9)) drop-shadow(0 0 32px rgba(239,68,68,0.5))';
+    } else if (myPoke && myPoke.isMega) {
+      playerSprite.style.transform = 'scale(1.15)';
+      playerSprite.style.filter = 'drop-shadow(0 0 14px rgba(124,58,237,0.9)) drop-shadow(0 0 28px rgba(124,58,237,0.5))';
+    }
+    if (oppPoke && oppPoke.isDynamax) {
+      opponentSprite.style.transform = 'scale(1.4)';
+      opponentSprite.style.filter = 'drop-shadow(0 0 16px rgba(239,68,68,0.9)) drop-shadow(0 0 32px rgba(239,68,68,0.5))';
+    } else if (oppPoke && oppPoke.isMega) {
+      opponentSprite.style.transform = 'scale(1.15)';
+      opponentSprite.style.filter = 'drop-shadow(0 0 14px rgba(124,58,237,0.9)) drop-shadow(0 0 28px rgba(124,58,237,0.5))';
+    }
+    // Mega effect: purple glow on species name
+    if (myPoke && battleData.megaUsed && battleData.megaUsed[myBattleIdx]) {
+      document.getElementById('playerName').style.color = '#a78bfa';
+      document.getElementById('playerName').style.textShadow = '0 0 8px rgba(124,58,237,0.6)';
+    } else {
+      document.getElementById('playerName').style.color = '';
+      document.getElementById('playerName').style.textShadow = '';
+    }
+    var oppMegaIdx = 1 - myBattleIdx;
+    if (oppPoke && battleData.megaUsed && battleData.megaUsed[oppMegaIdx]) {
+      document.getElementById('opponentName').style.color = '#a78bfa';
+      document.getElementById('opponentName').style.textShadow = '0 0 8px rgba(124,58,237,0.6)';
+    } else {
+      document.getElementById('opponentName').style.color = '';
+      document.getElementById('opponentName').style.textShadow = '';
+    }
     }
   }
   function getTypeColor(t) {
@@ -4330,10 +4451,32 @@
     const input = document.getElementById('chatInput');
     const msg = input.value.trim();
     if (!msg) return;
+    // / — mostra comandi disponibili
+    if (msg === '/') {
+      showCommands();
+      input.value = '';
+      socket.emit('typing stop');
+      return;
+    }
     // /send command
     var sendMatch = msg.match(/^\/send\s+(\d+)$/);
     if (sendMatch) {
       showSendPicker(parseInt(sendMatch[1]));
+      input.value = '';
+      socket.emit('typing stop');
+      return;
+    }
+    // /remove money command (admin)
+    var removeMoneyMatch = msg.match(/^\/remove\s+money\s+(\d+)$/i);
+    if (removeMoneyMatch && ADMINS.indexOf(window.myNick) !== -1) {
+      socket.emit('chat message', msg);
+      input.value = '';
+      socket.emit('typing stop');
+      return;
+    }
+    // /bal command (admin)
+    if (msg === '/bal' && ADMINS.indexOf(window.myNick) !== -1) {
+      socket.emit('chat message', msg);
       input.value = '';
       socket.emit('typing stop');
       return;
@@ -4425,6 +4568,53 @@
     setTimeout(function() { document.getElementById('shopError').style.display = 'none'; }, 3000);
   });
 
+  // === NEGOZIO COMPETITIVE ===
+  document.getElementById('compShopBtn').addEventListener('click', function() {
+    socket.emit('competitive:list');
+  });
+
+  socket.on('competitive:list', function(list) {
+    document.getElementById('compShopBalance').textContent = (casinoBalance || 0).toLocaleString();
+    var grid = document.getElementById('compShopGrid');
+    grid.innerHTML = '';
+    list.forEach(function(p) {
+      var card = document.createElement('div');
+      var tier = p.price >= 35000 ? '#ef4444' : p.price >= 25000 ? '#f59e0b' : '#22c55e';
+      var badge = p.mega ? '<div style="position:absolute;top:2px;right:2px;font-size:0.6rem;background:rgba(124,58,237,0.8);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;">🔮</div>' : '';
+      card.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:10px;padding:6px;text-align:center;border:1px solid '+tier+'33;cursor:pointer;transition:0.2s;position:relative;';
+      card.innerHTML = badge + '<img src="'+POKE_IMG+p.id+'.png" style="width:44px;height:44px;display:block;margin:0 auto;"><div style="font-size:0.68rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.62rem;color:'+tier+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
+      card.addEventListener('mouseenter', function() { card.style.background = 'rgba(255,255,255,0.08)'; card.style.borderColor = tier+'66'; });
+      card.addEventListener('mouseleave', function() { card.style.background = 'rgba(255,255,255,0.04)'; card.style.borderColor = tier+'33'; });
+      card.addEventListener('click', function() {
+        socket.emit('competitive:buy', { id: p.id });
+      });
+      grid.appendChild(card);
+    });
+    document.getElementById('compShopOverlay').classList.add('active');
+  });
+
+  document.getElementById('compShopClose').addEventListener('click', function() {
+    document.getElementById('compShopOverlay').classList.remove('active');
+  });
+  document.getElementById('compShopOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  socket.on('competitive:bought', function(data) {
+    document.getElementById('compShopOverlay').classList.remove('active');
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #ef4444;border-radius:12px;padding:0.6rem 1.2rem;z-index:9999;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#ef4444;font-weight:700;animation:fadeIn 0.3s;';
+    toast.innerHTML = '⚔️ '+data.name+' aggiunto al team! 🔥';
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; setTimeout(function() { if (toast.parentNode) toast.remove(); }, 500); }, 2500);
+  });
+
+  socket.on('competitive:error', function(data) {
+    document.getElementById('compShopError').textContent = data.msg;
+    document.getElementById('compShopError').style.display = 'block';
+    setTimeout(function() { document.getElementById('compShopError').style.display = 'none'; }, 3000);
+  });
+
   // === CARAMMELLA RARA ===
   var candyPending = null; // { target:'starter'|'team', index:N, name, oldLv }
 
@@ -4493,6 +4683,8 @@
     casinoBalance = data.balance;
     var shopBal = document.getElementById('shopBalance');
     if (shopBal) shopBal.textContent = data.balance.toLocaleString();
+    if (data.img && myPoke) myPoke.img = data.img;
+    if (data.name && myPoke) myPoke.form = data.name;
     var toast = document.createElement('div');
     toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #ff6b9d;border-radius:12px;padding:0.6rem 1.2rem;z-index:9999;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#ff6b9d;font-weight:700;animation:fadeIn 0.3s;';
     toast.innerHTML = '🍬 '+data.name+' è salito/a al Livello '+data.newLv+'!';
@@ -5943,7 +6135,6 @@
   // POKEMON Socket handlers
   var myPoke = null;
   socket.on('pokemon:status', function(data) {
-    if (!data.hasPokemon) setTimeout(function() { document.getElementById('pokePicker').classList.add('active'); }, 500);
   });
   socket.on('pokemon:picked', function(data) {
     if (data.error) return;
@@ -6003,6 +6194,102 @@
     document.getElementById('sendPicker').classList.remove('active');
   });
   document.getElementById('sendPicker').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  // ===== ADMIN REMOVE MONEY PICKER =====
+  var removeMoneyAmount = 0;
+  function showRemoveMoneyPicker(amount) {
+    removeMoneyAmount = amount;
+    document.getElementById('removeMoneyAmount').textContent = amount.toLocaleString();
+    var list = document.getElementById('removeMoneyUserList');
+    list.innerHTML = '';
+    onlineUsers.forEach(function(u) {
+      if (u.nick === window.myNick) return;
+      var item = document.createElement('div');
+      item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.03);border-radius:8px;cursor:pointer;transition:0.15s;border:1px solid transparent;';
+      item.innerHTML = '<span>'+u.avatar+'</span><span style="font-weight:600;font-size:0.8rem;">'+u.nick+'</span><span style="margin-left:auto;font-size:0.6rem;color:#ef4444;">-€'+amount.toLocaleString()+'</span>';
+      item.onmouseover = function(){this.style.background='rgba(239,68,68,0.15)';this.style.borderColor='rgba(239,68,68,0.3)';};
+      item.onmouseout = function(){this.style.background='rgba(255,255,255,0.03)';this.style.borderColor='transparent';};
+      item.onclick = function() {
+        document.getElementById('removeMoneyPicker').classList.remove('active');
+        socket.emit('admin:removeMoney', { to: u.id, amount: removeMoneyAmount });
+      };
+      list.appendChild(item);
+    });
+    if (list.children.length === 0) {
+      list.innerHTML = '<div style="font-size:0.7rem;color:rgba(255,255,255,0.2);padding:1rem;">Nessun altro utente online</div>';
+    }
+    document.getElementById('removeMoneyPicker').classList.add('active');
+  }
+  document.getElementById('removeMoneyCancel').addEventListener('click', function() {
+    document.getElementById('removeMoneyPicker').classList.remove('active');
+  });
+  document.getElementById('removeMoneyPicker').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  // Server reply for remove money
+  socket.on('admin:removeMoneyList', function(data) {
+    showRemoveMoneyPicker(data.amount);
+  });
+
+  // ===== ADMIN BALANCE LIST =====
+  socket.on('admin:balList', function(data) {
+    var list = document.getElementById('balListContent');
+    list.innerHTML = '';
+    data.users.forEach(function(u, i) {
+      var item = document.createElement('div');
+      item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid transparent;';
+      var rank = i + 1;
+      var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '  ';
+      item.innerHTML = '<span style="font-size:0.7rem;color:rgba(255,255,255,0.3);width:20px;">'+medal+'</span><span>'+u.avatar+'</span><span style="font-weight:600;font-size:0.8rem;">'+u.nick+'</span><span style="margin-left:auto;font-size:0.7rem;color:#22c55e;font-weight:700;">€'+u.bal.toLocaleString()+'</span>';
+      list.appendChild(item);
+    });
+    document.getElementById('balListOverlay').classList.add('active');
+  });
+  document.getElementById('balListClose').addEventListener('click', function() {
+    document.getElementById('balListOverlay').classList.remove('active');
+  });
+  document.getElementById('balListOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+
+  // ===== COMMANDS LIST =====
+  var CMD_USER = [
+    { cmd: '/release <nome>', desc: 'Rilascia un Pokémon dal team' },
+    { cmd: '/team', desc: 'Mostra il tuo team Pokémon' },
+    { cmd: '/reset team', desc: 'Resetta starter e team (cancella tutto)' },
+    { cmd: '/clearchat', desc: 'Pulisce la chat' },
+    { cmd: '/save', desc: 'Salva manualmente i tuoi dati' },
+  ];
+  var CMD_ADMIN = [
+    { cmd: '/money <importo>', desc: 'Setta il tuo saldo' },
+    { cmd: '/remove money <importo>', desc: 'Togli soldi a un utente (picker)' },
+    { cmd: '/bal', desc: 'Vedi i saldi di tutti' },
+    { cmd: '/release <nome>', desc: 'Rilascia un Pokémon' },
+    { cmd: '/team', desc: 'Mostra il tuo team' },
+    { cmd: '/reset team', desc: 'Resetta starter e team' },
+    { cmd: '/clearchat', desc: 'Pulisce la chat' },
+    { cmd: '/save', desc: 'Salva i dati' },
+  ];
+  function showCommands() {
+    var isAdmin = ADMINS.indexOf(window.myNick) !== -1;
+    var cmds = isAdmin ? CMD_ADMIN : CMD_USER;
+    var list = document.getElementById('cmdsContent');
+    list.innerHTML = '';
+    cmds.forEach(function(c) {
+      var item = document.createElement('div');
+      item.style.cssText = 'padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);';
+      item.innerHTML = '<div style="font-family:monospace;font-size:0.8rem;color:#a78bfa;font-weight:700;">'+c.cmd+'</div><div style="font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:2px;">'+c.desc+'</div>';
+      list.appendChild(item);
+    });
+    document.getElementById('cmdsOverlay').classList.add('active');
+  }
+  document.getElementById('cmdsClose').addEventListener('click', function() {
+    document.getElementById('cmdsOverlay').classList.remove('active');
+  });
+  document.getElementById('cmdsOverlay').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
   });
 
