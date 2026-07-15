@@ -1129,6 +1129,12 @@
   .battle-react-btn:hover { background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25);transform:scale(1.2); }
   .battle-react-btn:active { transform:scale(0.9); }
   .battle-react-btn.sent { opacity:0.3;pointer-events:none; }
+  #megaBtn:not(:disabled):hover { background:linear-gradient(135deg,rgba(124,58,237,0.5),rgba(255,215,0,0.5))!important;border-color:#a855f7!important;box-shadow:0 0 15px rgba(168,85,247,0.5);transform:scale(1.03); }
+  #dynamaxBtn:not(:disabled):hover { background:linear-gradient(135deg,rgba(239,68,68,0.5),rgba(255,100,50,0.5))!important;border-color:#ef4444!important;box-shadow:0 0 15px rgba(239,68,68,0.5);transform:scale(1.03); }
+  #megaBtn:not(:disabled) { animation:pulseMega 2s infinite; }
+  @keyframes pulseMega { 0%,100%{box-shadow:0 0 4px rgba(168,85,247,0.3)} 50%{box-shadow:0 0 12px rgba(168,85,247,0.6)} }
+  #dynamaxBtn:not(:disabled) { animation:pulseDyn 2s infinite; }
+  @keyframes pulseDyn { 0%,100%{box-shadow:0 0 4px rgba(239,68,68,0.3)} 50%{box-shadow:0 0 12px rgba(239,68,68,0.6)} }
   .battle-float-emoji { position:absolute;font-size:2rem;z-index:25;pointer-events:none;animation:floatEmojiUp 2s ease-out forwards;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }
   @keyframes floatEmojiUp { 0%{opacity:1;transform:translateY(0) scale(1);} 60%{opacity:1;transform:translateY(-60px) scale(1.3);} 100%{opacity:0;transform:translateY(-100px) scale(1.5);} }
   #moveTextOverlay.show { opacity:1; }
@@ -1453,11 +1459,9 @@
 <div class="overlay" id="nickOverlay">
   <div class="popup">
     <h2>Benvenuto/a! 🎉</h2>
-    <p>Scegli il tuo nickname e avatar</p>
+    <p>Scegli il tuo nickname</p>
     <input type="text" id="nickInput" placeholder="Il tuo nickname" maxlength="20" autocomplete="off">
     <input type="password" id="pinInput" placeholder="PIN (opzionale per nuovi, richiesto per account esistenti)" maxlength="10" autocomplete="off" style="display:none;">
-    <div class="avatar-label">Scegli il tuo profilo</div>
-    <div class="avatar-grid" id="avatarGrid"></div>
     <div class="nick-error" id="nickError">Inserisci un nickname valido.</div>
     <div class="nick-error" id="pinError" style="display:none;"></div>
     <button id="enterLobbyBtn">Entra in lobby</button>
@@ -1511,10 +1515,9 @@
       <button class="dama-btn" id="damaBtn" title="Sfida a Dama">♟</button>
       <button class="uno-btn" id="unoBtn" title="UNO">🃏</button>
       <button class="dama-btn" id="casinoBtn" title="Casinò" style="font-size:0.8rem;">💰</button>
-      <button class="dama-btn poke-btn" id="pokeBtn" title="Pokémon" style="font-size:0.9rem;">⚡</button>
       <button class="dama-btn" id="portalBtn" title="Overworld" style="font-size:0.9rem;">🌀</button>
       <button class="dama-btn" id="shopBtn" title="Negozio Leggendari" style="font-size:0.9rem;">🏪</button>
-      <button class="dama-btn" id="compShopBtn" title="Negozio Competitive" style="font-size:0.9rem;">⚔️</button>
+
       <button class="dama-btn" id="voiceBtn" title="Chiamata vocale" style="position:relative;">📞</button>
       <button class="dama-btn" id="targetBtn" title="Sfida 1v1">🎯</button>
       <button class="dama-btn" id="tradeBtn" title="Scambia Pokémon">🔄</button>
@@ -1741,28 +1744,20 @@
 <div class="casino-overlay" id="shopOverlay" style="z-index:1200;">
   <div class="casino-box" style="max-width:600px;width:95vw;max-height:85vh;display:flex;flex-direction:column;padding:0.8rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-      <h3 style="font-size:1rem;">🏪 NEGOZIO LEGGENDARI</h3>
+      <h3 style="font-size:1rem;">🏪 NEGOZIO</h3>
       <span style="font-size:0.75rem;color:var(--text2);">Saldo: €<b id="shopBalance">0</b></span>
       <button id="shopClose" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:6px;cursor:pointer;">✕</button>
     </div>
-    <div id="shopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;overflow-y:auto;padding:4px;min-height:200px;max-height:65vh;"></div>
+    <div id="shopTabs" style="display:flex;gap:4px;margin-bottom:8px;">
+      <button class="shop-tab active" data-tab="legendaries" style="flex:1;background:rgba(255,215,0,0.15);border:1px solid #ffd70066;color:#ffd700;padding:6px 4px;border-radius:8px;font-size:0.72rem;font-weight:700;cursor:pointer;transition:0.2s;">🌟 Leggendari</button>
+      <button class="shop-tab" data-tab="mega" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);padding:6px 4px;border-radius:8px;font-size:0.72rem;font-weight:700;cursor:pointer;transition:0.2s;">🔮 Mega</button>
+      <button class="shop-tab" data-tab="dynamax" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);padding:6px 4px;border-radius:8px;font-size:0.72rem;font-weight:700;cursor:pointer;transition:0.2s;">⚡ Dynamax</button>
+    </div>
+    <div id="shopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;overflow-y:auto;padding:4px;flex:1;min-height:0;"></div>
     <div class="nick-error" id="shopError" style="display:none;margin-top:4px;"></div>
   </div>
 </div>
 
-<!-- NEGOZIO COMPETITIVE -->
-<div class="casino-overlay" id="compShopOverlay" style="z-index:1200;">
-  <div class="casino-box" style="max-width:600px;width:95vw;max-height:85vh;display:flex;flex-direction:column;padding:0.8rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-      <h3 style="font-size:1rem;">⚔️ NEGOZIO COMPETITIVE</h3>
-      <span style="font-size:0.75rem;color:var(--text2);">Saldo: €<b id="compShopBalance">0</b></span>
-      <button id="compShopClose" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:0.2rem 0.6rem;border-radius:6px;cursor:pointer;">✕</button>
-    </div>
-    <div style="text-align:center;font-size:0.7rem;color:rgba(255,255,255,0.4);margin-bottom:0.5rem;">Pokémon forti per team competitivi</div>
-    <div id="compShopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;overflow-y:auto;padding:4px;min-height:200px;max-height:65vh;"></div>
-    <div class="nick-error" id="compShopError" style="display:none;margin-top:4px;"></div>
-  </div>
-</div>
 
 <!-- CARAMMELLA RARA PICKER -->
 <div class="casino-overlay" id="candyOverlay" style="z-index:1250;">
@@ -1940,23 +1935,18 @@
       <div class="move-grid" id="moveGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;"></div>
       <!-- Battle reaction bar -->
       <div id="battleReactBar" style="display:flex;justify-content:center;gap:4px;margin-top:6px;padding:4px 0;">
-        <button class="battle-react-btn" data-emoji="🔥" title="Fuoco!">🔥</button>
-        <button class="battle-react-btn" data-emoji="💪" title="Forza!">💪</button>
         <button class="battle-react-btn" data-emoji="😂" title="Risata">😂</button>
-        <button class="battle-react-btn" data-emoji="😢" title="Tristezza">😢</button>
-        <button class="battle-react-btn" data-emoji="👏" title="Applauso">👏</button>
-        <button class="battle-react-btn" data-emoji="😡" title="Rabbia">😡</button>
-        <button class="battle-react-btn" data-emoji="💀" title="Morte">💀</button>
-        <button class="battle-react-btn" data-emoji="❤️" title="Cuore">❤️</button>
-        <button class="battle-react-btn" data-emoji="🎉" title="Festa">🎉</button>
+        <button class="battle-react-btn" data-emoji="💀" title="F">💀</button>
+        <button class="battle-react-btn" data-emoji="😤" title="Minchia">😤</button>
+        <button class="battle-react-btn" data-emoji="😭" title="Nooo">😭</button>
       </div>
       <div style="display:flex;gap:6px;margin-top:4px;">
         <button id="switchBtn" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;">🔄 Cambia Pokémon</button>
         <button id="forfeitBtn" style="flex:1;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;">🏳️ Arrenditi</button>
       </div>
       <div style="display:flex;gap:6px;margin-top:4px;" id="megaDynamaxRow">
-        <button id="megaBtn" style="display:none;flex:1;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.4);color:#a78bfa;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;font-weight:700;">🔮 Mega Evolve</button>
-        <button id="dynamaxBtn" style="display:none;flex:1;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#f87171;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;font-weight:700;">⭐ Dynamax</button>
+        <button id="megaBtn" disabled style="flex:1;background:linear-gradient(135deg,rgba(124,58,237,0.3),rgba(255,215,0,0.3));border:1px solid rgba(124,58,237,0.5);color:#a78bfa;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;font-weight:700;opacity:0.4;transition:all 0.3s;">⚡ MEGA</button>
+        <button id="dynamaxBtn" disabled style="flex:1;background:linear-gradient(135deg,rgba(239,68,68,0.3),rgba(255,100,50,0.3));border:1px solid rgba(239,68,68,0.5);color:#ef4444;padding:0.4rem;border-radius:6px;cursor:pointer;font-size:0.65rem;font-weight:700;opacity:0.4;transition:all 0.3s;">🔴 DYNAMAX</button>
       </div>
     </div>
     <!-- Switch panel -->
@@ -2859,6 +2849,11 @@
   var prevLogLen = 0;
   var lastPlayerPoke = -1;
   var lastOppPoke = -1;
+  var myMegaUsed = false, myDynamaxUsed = false;
+  var myMegaActive = false, myDynamaxActive = false;
+  var oppMegaActive = false, oppDynamaxActive = false;
+  var lastPlayerMegaForm = 'normal';
+  var lastOppMegaForm = 'normal';
   // === BATTLE ANIMATION ENGINE (canvas particelle) ===
   var bParticles = [], bAnimId = null, bShake = 0, bCanvas = null, bCtx = null;
 
@@ -3364,6 +3359,10 @@
     myBattleIdx = data.myIdx;
     prevLogLen = 0;
     _movePending = false;
+    myMegaUsed = false; myDynamaxUsed = false;
+    myMegaActive = false; myDynamaxActive = false;
+    oppMegaActive = false; oppDynamaxActive = false;
+    lastPlayerMegaForm = 'normal'; lastOppMegaForm = 'normal';
     lastPlayerPoke = data.players[myBattleIdx] ? data.players[myBattleIdx].currentPoke : 0;
     lastOppPoke = data.players[1 - myBattleIdx] ? data.players[1 - myBattleIdx].currentPoke : 0;
     document.getElementById('battleOverlay').classList.add('active');
@@ -3373,11 +3372,13 @@
     bInitCanvas();
     renderBattle();
     // === 3D BATTLE ===
-    b3dInit();
-    var me = battleData.players[myBattleIdx];
-    var opp = battleData.players[1 - myBattleIdx];
-    if (me && me.team[me.currentPoke]) b3dLoadPoke('player', me.team[me.currentPoke].img);
-    if (opp && opp.team[opp.currentPoke]) b3dLoadPoke('opponent', opp.team[opp.currentPoke].img);
+    setTimeout(function() {
+      b3dInit();
+      var me = battleData.players[myBattleIdx];
+      var opp = battleData.players[1 - myBattleIdx];
+      if (me && me.team[me.currentPoke]) b3dLoadPoke('player', me.team[me.currentPoke].img);
+      if (opp && opp.team[opp.currentPoke]) b3dLoadPoke('opponent', opp.team[opp.currentPoke].img);
+    }, 50);
   });
   // Battle state update
   socket.on('battle:state', function(data) {
@@ -3412,6 +3413,7 @@
           if (pk.isMega !== undefined) battleData.players[pIdx].team[i].isMega = pk.isMega;
           if (pk.isDynamax !== undefined) battleData.players[pIdx].team[i].isDynamax = pk.isDynamax;
           if (pk.img) battleData.players[pIdx].team[i].img = pk.img;
+          if (pk.imgId) battleData.players[pIdx].team[i].imgId = pk.imgId;
         }
       });
       battleData.players[pIdx].currentPoke = p.currentPoke;
@@ -3420,8 +3422,23 @@
     battleData.log = data.log;
     battleData.state = data.state;
     battleData.winner = data.winner;
-    if (data.megaUsed) battleData.megaUsed = data.megaUsed;
-    if (data.dynamaxUsed) battleData.dynamaxUsed = data.dynamaxUsed;
+    // Update mega/dynamax state
+    if (data.megaActive) {
+      myMegaActive = data.megaActive[myBattleIdx];
+      oppMegaActive = data.megaActive[1 - myBattleIdx];
+    }
+    if (data.dynamaxActive) {
+      myDynamaxActive = data.dynamaxActive[myBattleIdx];
+      oppDynamaxActive = data.dynamaxActive[1 - myBattleIdx];
+    }
+    if (data.megaUsed) {
+      myMegaUsed = data.megaUsed[myBattleIdx];
+      battleData.megaUsed = data.megaUsed;
+    }
+    if (data.dynamaxUsed) {
+      myDynamaxUsed = data.dynamaxUsed[myBattleIdx];
+      battleData.dynamaxUsed = data.dynamaxUsed;
+    }
     if (data.megaEffect) {
       var pIdx2 = data.megaEffect.playerIdx;
       if (battleData.players[pIdx2]) {
@@ -3438,6 +3455,8 @@
       if (battleData.players[dIdx]) {
         var dp = battleData.players[dIdx].currentPoke;
         if (battleData.players[dIdx].team[dp]) {
+          battleData.players[dIdx].team[dp].species = data.dynamaxEffect.species;
+          battleData.players[dIdx].team[dp].img = data.dynamaxEffect.img;
           battleData.players[dIdx].team[dp].isDynamax = true;
         }
       }
@@ -3469,16 +3488,21 @@
     // Update 3D models when currentPoke changes (switch)
     if (me.currentPoke !== lastPlayerPoke && myPoke) {
       lastPlayerPoke = me.currentPoke;
+      lastPlayerMegaForm = 'normal';
+      myMegaActive = false; myDynamaxActive = false;
       if (b3d && b3d.ready) { b3dRemovePoke('player'); b3dLoadPoke('player', myPoke.img); }
     }
     if (opp.currentPoke !== lastOppPoke && oppPoke) {
       lastOppPoke = opp.currentPoke;
+      lastOppMegaForm = 'normal';
+      oppMegaActive = false; oppDynamaxActive = false;
       if (b3d && b3d.ready) { b3dRemovePoke('opponent'); b3dLoadPoke('opponent', oppPoke.img); }
     }
     // Opponent
     if (oppPoke && !oppPoke.fainted) {
       document.getElementById('opponentSprite').querySelector('img').src = oppPoke.img;
-      document.getElementById('opponentName').textContent = oppPoke.species;
+      var oppFormLabel = oppMegaActive ? ' ⚡MEGA' : oppDynamaxActive ? ' 🔴DYN' : '';
+      document.getElementById('opponentName').textContent = oppPoke.species + oppFormLabel;
       document.getElementById('opponentHpText').textContent = 'HP: '+oppPoke.currentHp+'/'+oppPoke.maxHp;
       var oppPct = Math.max(0, oppPoke.currentHp / oppPoke.maxHp * 100);
       var oppFill = document.getElementById('opponentHpFill');
@@ -3497,7 +3521,8 @@
     // Player
     if (myPoke && !myPoke.fainted) {
       document.getElementById('playerSprite').querySelector('img').src = myPoke.img;
-      document.getElementById('playerName').textContent = myPoke.species;
+      var myFormLabel = myMegaActive ? ' ⚡MEGA' : myDynamaxActive ? ' 🔴DYN' : '';
+      document.getElementById('playerName').textContent = myPoke.species + myFormLabel;
       document.getElementById('playerHpText').textContent = 'HP: '+myPoke.currentHp+'/'+myPoke.maxHp;
       var myPct = Math.max(0, myPoke.currentHp / myPoke.maxHp * 100);
       var myFill = document.getElementById('playerHpFill');
@@ -3512,6 +3537,20 @@
       document.getElementById('playerName').textContent = myPoke ? myPoke.species + ' (ESAUSTO)' : '?';
       document.getElementById('playerHpFill').style.width = '0%';
       document.getElementById('playerHpText').textContent = 'ESAUSTO';
+    }
+    // Opponent 3D model form switching (mega/dynamax)
+    if (oppPoke && !oppPoke.fainted && b3d && b3d.ready && battleData.state === 'playing') {
+      var oppDexId = oppPoke.imgId || extractDexId(oppPoke.img);
+      if (oppMegaActive && lastOppMegaForm !== 'mega') {
+        lastOppMegaForm = 'mega';
+        b3dLoadPokeForm('opponent', oppPoke.img, 'mega', oppDexId);
+      } else if (oppDynamaxActive && lastOppMegaForm !== 'gmax') {
+        lastOppMegaForm = 'gmax';
+        b3dLoadPokeForm('opponent', oppPoke.img, 'gmax', oppDexId);
+      } else if (!oppMegaActive && !oppDynamaxActive && lastOppMegaForm !== 'normal') {
+        lastOppMegaForm = 'normal';
+        b3dLoadPoke('opponent', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/' + oppDexId + '.png');
+      }
     }
     // Turn indicator
     if (isMyTurn) {
@@ -3559,6 +3598,8 @@
     var megaBtn = document.getElementById('megaBtn');
     var canMegaNow = battleData.canMega && battleData.canMega[myBattleIdx] && !battleData.megaUsed[myBattleIdx] && isMyTurn && battleData.state === 'playing' && myPoke && !myPoke.fainted;
     megaBtn.style.display = canMegaNow ? 'block' : 'none';
+    megaBtn.disabled = !canMegaNow;
+    megaBtn.style.opacity = canMegaNow ? '1' : '0.3';
     megaBtn.onclick = function() {
       if (_movePending) return;
       socket.emit('battle:mega', { battleId: battleData.battleId });
@@ -3567,10 +3608,28 @@
     var dynBtn = document.getElementById('dynamaxBtn');
     var canDynNow = battleData.canDynamax && battleData.canDynamax[myBattleIdx] && !battleData.dynamaxUsed[myBattleIdx] && isMyTurn && battleData.state === 'playing' && myPoke && !myPoke.fainted;
     dynBtn.style.display = canDynNow ? 'block' : 'none';
+    dynBtn.disabled = !canDynNow;
+    dynBtn.style.opacity = canDynNow ? '1' : '0.3';
     dynBtn.onclick = function() {
       if (_movePending) return;
       socket.emit('battle:dynamax', { battleId: battleData.battleId });
     };
+    // 3D model form switching (mega/dynamax active → load alternate model)
+    if (myPoke && !myPoke.fainted && b3d && b3d.ready && battleData.state === 'playing') {
+      var curDexId = myPoke.imgId || extractDexId(myPoke.img);
+      if (myMegaActive && lastPlayerMegaForm !== 'mega') {
+        console.log('[MEGA_3D] TRIGGER mega: imgId='+myPoke.imgId+' curDexId='+curDexId);
+        lastPlayerMegaForm = 'mega';
+        b3dLoadPokeForm('player', myPoke.img, 'mega', curDexId);
+      } else if (myDynamaxActive && lastPlayerMegaForm !== 'gmax') {
+        console.log('[MEGA_3D] TRIGGER dynamax: imgId='+myPoke.imgId+' curDexId='+curDexId);
+        lastPlayerMegaForm = 'gmax';
+        b3dLoadPokeForm('player', myPoke.img, 'gmax', curDexId);
+      } else if (!myMegaActive && !myDynamaxActive && lastPlayerMegaForm !== 'normal') {
+        lastPlayerMegaForm = 'normal';
+        b3dLoadPoke('player', 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/' + curDexId + '.png');
+      }
+    }
     // Visual effects: Mega glow / Dynamax size
     var playerSprite = document.getElementById('playerSprite');
     var opponentSprite = document.getElementById('opponentSprite');
@@ -3587,7 +3646,7 @@
     if (myPoke && myPoke.isDynamax) {
       playerSprite.style.transform = 'scale(1.4)';
       playerSprite.style.filter = 'drop-shadow(0 0 16px rgba(239,68,68,0.9)) drop-shadow(0 0 32px rgba(239,68,68,0.5))';
-    } else     if (myPoke && myPoke.isMega) {
+    } else if (myPoke && myPoke.isMega) {
       playerSprite.style.transform = 'scale(1.15)';
       playerSprite.style.filter = 'drop-shadow(0 0 14px rgba(124,58,237,0.9)) drop-shadow(0 0 28px rgba(124,58,237,0.5))';
     }
@@ -3645,6 +3704,24 @@
     socket.emit('battle:forfeit', { battleId: battleData.battleId });
     document.getElementById('battleOverlay').classList.remove('active');
     battleData = null;
+  });
+  // Mega Evolve
+  document.getElementById('megaBtn').addEventListener('click', function() {
+    if (!battleData || this.disabled) return;
+    socket.emit('battle:mega', { battleId: battleData.battleId });
+    this.disabled = true;
+    this.style.opacity = '0.3';
+  });
+  // Dynamax
+  document.getElementById('dynamaxBtn').addEventListener('click', function() {
+    if (!battleData || this.disabled) return;
+    socket.emit('battle:dynamax', { battleId: battleData.battleId });
+    this.disabled = true;
+    this.style.opacity = '0.3';
+  });
+  // Battle error handler
+  socket.on('battle:error', function(data) {
+    showChatMsg('Pokémon', '⚠️', data.msg || 'Errore', 'system');
   });
   // Close battle overlay on backdrop click
   document.getElementById('battleOverlay').addEventListener('click', function(e) {
@@ -4040,10 +4117,10 @@
     { emoji: '❤️', name: 'Heart', bg: 'linear-gradient(135deg,#e11d48,#be123c)' },
   ];
 
-  let selectedAvatar = avatars[0].emoji;
+  let selectedAvatar = avatars[Math.floor(Math.random() * avatars.length)].emoji;
 
   const grid = document.getElementById('avatarGrid');
-  avatars.forEach((a, i) => {
+  if (grid) avatars.forEach((a, i) => {
     const div = document.createElement('div');
     div.className = 'avatar-opt' + (i === 0 ? ' selected' : '');
     div.textContent = a.emoji;
@@ -4423,52 +4500,100 @@
     if (e.target === this) this.classList.remove('active');
   });
 
-  // === NEGOZIO LEGGENDARI + CARAMMELLA ===
+  // === NEGOZIO LEGGENDARI + CARAMMELLA + MEGA + DYNAMAX ===
   var shopData = [];
+  var megaData = [];
+  var dynamaxData = [];
+  var currentShopTab = 'legendaries';
+
+  function updateShopTabs(activeTab) {
+    currentShopTab = activeTab;
+    document.querySelectorAll('.shop-tab').forEach(function(t) {
+      if (t.dataset.tab === activeTab) {
+        t.style.background = 'rgba(255,215,0,0.15)';
+        t.style.borderColor = '#ffd70066';
+        t.style.color = '#ffd700';
+      } else {
+        t.style.background = 'rgba(255,255,255,0.05)';
+        t.style.borderColor = 'rgba(255,255,255,0.1)';
+        t.style.color = 'rgba(255,255,255,0.5)';
+      }
+    });
+    renderShopTab();
+  }
+
+  function renderShopTab() {
+    var grid = document.getElementById('shopGrid');
+    grid.innerHTML = '';
+    if (currentShopTab === 'legendaries') {
+      // Caramella Rara
+      var candyCard = document.createElement('div');
+      candyCard.style.cssText = 'background:rgba(255,100,150,0.08);border-radius:10px;padding:6px;text-align:center;border:1px solid #ff6b9d44;cursor:pointer;transition:0.2s;grid-column:1/-1;';
+      candyCard.innerHTML = '<div style="font-size:2rem;">🍬</div><div style="font-size:0.75rem;font-weight:700;margin:2px 0;color:#ff6b9d;">Caramella Rara</div><div style="font-size:0.65rem;color:#ffd700;font-weight:700;">€50.000</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);margin-top:2px;">+1 livello a un Pokémon</div>';
+      candyCard.addEventListener('click', function() { socket.emit('candy:list'); });
+      candyCard.addEventListener('mouseenter', function() { candyCard.style.background = 'rgba(255,100,150,0.15)'; });
+      candyCard.addEventListener('mouseleave', function() { candyCard.style.background = 'rgba(255,100,150,0.08)'; });
+      grid.appendChild(candyCard);
+      // Caramella MAX
+      var candyMaxCard = document.createElement('div');
+      candyMaxCard.style.cssText = 'background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,100,150,0.1));border-radius:10px;padding:6px;text-align:center;border:1px solid #ffd70044;cursor:pointer;transition:0.2s;grid-column:1/-1;';
+      candyMaxCard.innerHTML = '<div style="font-size:2rem;">🌟🍬</div><div style="font-size:0.75rem;font-weight:700;margin:2px 0;color:#ffd700;">Caramella MAX</div><div style="font-size:0.65rem;color:#ffd700;font-weight:700;">€500.000</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);margin-top:2px;">Porta TUTTI i Pokémon al Lv16!</div>';
+      candyMaxCard.addEventListener('click', function() {
+        if (confirm('🌟 Caramella MAX — €500.000\n\nPorta starter + tutti i Pokémon della squadra al Livello 16!\n\nConfermare?')) { socket.emit('candy:max:buy'); }
+      });
+      candyMaxCard.addEventListener('mouseenter', function() { candyMaxCard.style.background = 'linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,100,150,0.2))'; });
+      candyMaxCard.addEventListener('mouseleave', function() { candyMaxCard.style.background = 'linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,100,150,0.1))'; });
+      grid.appendChild(candyMaxCard);
+      // Legendary cards
+      shopData.forEach(function(p) {
+        var card = document.createElement('div');
+        card.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:10px;padding:6px;text-align:center;border:1px solid '+(p.price>=100000?'#ffd70044':'#c0c0c044')+';cursor:pointer;transition:0.2s;';
+        card.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:48px;height:48px;display:block;margin:0 auto;"><div style="font-size:0.7rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.65rem;color:'+(p.price>=100000?'#ffd700':'#c0c0c0')+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
+        card.addEventListener('click', function() { socket.emit('legendary:buy', { id: p.id }); });
+        grid.appendChild(card);
+      });
+    } else if (currentShopTab === 'mega') {
+      megaData.forEach(function(p) {
+        var card = document.createElement('div');
+        card.style.cssText = 'background:rgba(124,58,237,0.06);border-radius:10px;padding:6px;text-align:center;border:1px solid #7c3aed33;cursor:pointer;transition:0.2s;position:relative;';
+        card.innerHTML = '<div style="position:absolute;top:2px;right:2px;font-size:0.55rem;background:rgba(124,58,237,0.8);border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;">🔮</div><img src="'+POKE_IMG+p.id+'.png" style="width:44px;height:44px;display:block;margin:0 auto;"><div style="font-size:0.68rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.58rem;color:#a78bfa;margin:1px 0;">'+p.mega.name+'</div><div style="font-size:0.62rem;color:#ffd700;font-weight:700;">€'+p.price.toLocaleString()+'</div>';
+        card.addEventListener('mouseenter', function() { card.style.background = 'rgba(124,58,237,0.12)'; card.style.borderColor = '#7c3aed66'; });
+        card.addEventListener('mouseleave', function() { card.style.background = 'rgba(124,58,237,0.06)'; card.style.borderColor = '#7c3aed33'; });
+        card.addEventListener('click', function() { socket.emit('mega:buy', { id: p.id }); });
+        grid.appendChild(card);
+      });
+    } else if (currentShopTab === 'dynamax') {
+      dynamaxData.forEach(function(p) {
+        var card = document.createElement('div');
+        card.style.cssText = 'background:rgba(239,68,68,0.06);border-radius:10px;padding:6px;text-align:center;border:1px solid #ef444433;cursor:pointer;transition:0.2s;position:relative;';
+        card.innerHTML = '<div style="position:absolute;top:2px;right:2px;font-size:0.55rem;background:rgba(239,68,68,0.8);border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;">⚡</div><img src="'+POKE_IMG+p.id+'.png" style="width:44px;height:44px;display:block;margin:0 auto;"><div style="font-size:0.68rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.58rem;color:#f87171;margin:1px 0;">'+p.gmax.name+'</div><div style="font-size:0.62rem;color:#ffd700;font-weight:700;">€'+p.price.toLocaleString()+'</div>';
+        card.addEventListener('mouseenter', function() { card.style.background = 'rgba(239,68,68,0.12)'; card.style.borderColor = '#ef444466'; });
+        card.addEventListener('mouseleave', function() { card.style.background = 'rgba(239,68,68,0.06)'; card.style.borderColor = '#ef444433'; });
+        card.addEventListener('click', function() { socket.emit('dynamax:buy', { id: p.id }); });
+        grid.appendChild(card);
+      });
+    }
+  }
+
+  document.querySelectorAll('.shop-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() { updateShopTabs(this.dataset.tab); });
+  });
 
   document.getElementById('shopBtn').addEventListener('click', function() {
     socket.emit('legendary:list');
+    socket.emit('mega:list');
+    socket.emit('dynamax:list');
   });
 
   socket.on('legendary:list', function(list) {
     shopData = list;
     document.getElementById('shopBalance').textContent = (casinoBalance || 0).toLocaleString();
-    var grid = document.getElementById('shopGrid');
-    grid.innerHTML = '';
-    // Caramella Rara card (always first)
-    var candyCard = document.createElement('div');
-    candyCard.style.cssText = 'background:rgba(255,100,150,0.08);border-radius:10px;padding:6px;text-align:center;border:1px solid #ff6b9d44;cursor:pointer;transition:0.2s;grid-column:1/-1;';
-    candyCard.innerHTML = '<div style="font-size:2rem;">🍬</div><div style="font-size:0.75rem;font-weight:700;margin:2px 0;color:#ff6b9d;">Caramella Rara</div><div style="font-size:0.65rem;color:#ffd700;font-weight:700;">€50.000</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);margin-top:2px;">+1 livello a un Pokémon</div>';
-    candyCard.addEventListener('click', function() {
-      socket.emit('candy:list');
-    });
-    candyCard.addEventListener('mouseenter', function() { candyCard.style.background = 'rgba(255,100,150,0.15)'; });
-    candyCard.addEventListener('mouseleave', function() { candyCard.style.background = 'rgba(255,100,150,0.08)'; });
-    grid.appendChild(candyCard);
-    // Caramella MAX card
-    var candyMaxCard = document.createElement('div');
-    candyMaxCard.style.cssText = 'background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,100,150,0.1));border-radius:10px;padding:6px;text-align:center;border:1px solid #ffd70044;cursor:pointer;transition:0.2s;grid-column:1/-1;';
-    candyMaxCard.innerHTML = '<div style="font-size:2rem;">🌟🍬</div><div style="font-size:0.75rem;font-weight:700;margin:2px 0;color:#ffd700;">Caramella MAX</div><div style="font-size:0.65rem;color:#ffd700;font-weight:700;">€500.000</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.4);margin-top:2px;">Porta TUTTI i Pokémon al Lv16!</div>';
-    candyMaxCard.addEventListener('click', function() {
-      if (confirm('🌟 Caramella MAX — €500.000\n\nPorta starter + tutti i Pokémon della squadra al Livello 16!\n\nConfermare?')) {
-        socket.emit('candy:max:buy');
-      }
-    });
-    candyMaxCard.addEventListener('mouseenter', function() { candyMaxCard.style.background = 'linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,100,150,0.2))'; });
-    candyMaxCard.addEventListener('mouseleave', function() { candyMaxCard.style.background = 'linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,100,150,0.1))'; });
-    grid.appendChild(candyMaxCard);
-    // Legendary pokemon cards
-    list.forEach(function(p) {
-      var card = document.createElement('div');
-      card.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:10px;padding:6px;text-align:center;border:1px solid '+(p.price>=100000?'#ffd70044':'#c0c0c044')+';cursor:pointer;transition:0.2s;';
-      card.innerHTML = '<img src="'+POKE_IMG+p.id+'.png" style="width:48px;height:48px;display:block;margin:0 auto;"><div style="font-size:0.7rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.65rem;color:'+(p.price>=100000?'#ffd700':'#c0c0c0')+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
-      card.addEventListener('click', function() {
-        socket.emit('legendary:buy', { id: p.id });
-      });
-      grid.appendChild(card);
-    });
+    updateShopTabs('legendaries');
     document.getElementById('shopOverlay').classList.add('active');
   });
+
+  socket.on('mega:list', function(list) { megaData = list; });
+  socket.on('dynamax:list', function(list) { dynamaxData = list; });
 
   document.getElementById('shopClose').addEventListener('click', function() {
     document.getElementById('shopOverlay').classList.remove('active');
@@ -4490,53 +4615,6 @@
     document.getElementById('shopError').textContent = data.msg;
     document.getElementById('shopError').style.display = 'block';
     setTimeout(function() { document.getElementById('shopError').style.display = 'none'; }, 3000);
-  });
-
-  // === NEGOZIO COMPETITIVE ===
-  document.getElementById('compShopBtn').addEventListener('click', function() {
-    socket.emit('competitive:list');
-  });
-
-  socket.on('competitive:list', function(list) {
-    document.getElementById('compShopBalance').textContent = (casinoBalance || 0).toLocaleString();
-    var grid = document.getElementById('compShopGrid');
-    grid.innerHTML = '';
-    list.forEach(function(p) {
-      var card = document.createElement('div');
-      var tier = p.price >= 35000 ? '#ef4444' : p.price >= 25000 ? '#f59e0b' : '#22c55e';
-      var badge = p.mega ? '<div style="position:absolute;top:2px;right:2px;font-size:0.6rem;background:rgba(124,58,237,0.8);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;">🔮</div>' : '';
-      card.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:10px;padding:6px;text-align:center;border:1px solid '+tier+'33;cursor:pointer;transition:0.2s;position:relative;';
-      card.innerHTML = badge + '<img src="'+POKE_IMG+p.id+'.png" style="width:44px;height:44px;display:block;margin:0 auto;"><div style="font-size:0.68rem;font-weight:600;margin:2px 0;color:#fff;">'+p.name+'</div><div style="font-size:0.62rem;color:'+tier+';font-weight:700;">€'+p.price.toLocaleString()+'</div>';
-      card.addEventListener('mouseenter', function() { card.style.background = 'rgba(255,255,255,0.08)'; card.style.borderColor = tier+'66'; });
-      card.addEventListener('mouseleave', function() { card.style.background = 'rgba(255,255,255,0.04)'; card.style.borderColor = tier+'33'; });
-      card.addEventListener('click', function() {
-        socket.emit('competitive:buy', { id: p.id });
-      });
-      grid.appendChild(card);
-    });
-    document.getElementById('compShopOverlay').classList.add('active');
-  });
-
-  document.getElementById('compShopClose').addEventListener('click', function() {
-    document.getElementById('compShopOverlay').classList.remove('active');
-  });
-  document.getElementById('compShopOverlay').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('active');
-  });
-
-  socket.on('competitive:bought', function(data) {
-    document.getElementById('compShopOverlay').classList.remove('active');
-    var toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #ef4444;border-radius:12px;padding:0.6rem 1.2rem;z-index:9999;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#ef4444;font-weight:700;animation:fadeIn 0.3s;';
-    toast.innerHTML = '⚔️ '+data.name+' aggiunto al team! 🔥';
-    document.body.appendChild(toast);
-    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; setTimeout(function() { if (toast.parentNode) toast.remove(); }, 500); }, 2500);
-  });
-
-  socket.on('competitive:error', function(data) {
-    document.getElementById('compShopError').textContent = data.msg;
-    document.getElementById('compShopError').style.display = 'block';
-    setTimeout(function() { document.getElementById('compShopError').style.display = 'none'; }, 3000);
   });
 
   // === CARAMMELLA RARA ===
@@ -6651,21 +6729,23 @@
     b3d.renderer.setSize(w, h);
     b3d.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     b3d.renderer.toneMapping = THREE.NoToneMapping;
+    b3d.renderer.outputEncoding = THREE.sRGBEncoding;
     b3d.renderer.toneMappingExposure = 1.0;
     container.appendChild(b3d.renderer.domElement);
-    // Lights — neutral, preserve original Pokemon colors
-    b3d.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    var dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    b3d.renderer.domElement.style.filter = 'saturate(1.4) contrast(1.15) brightness(1.05)';
+    // Lights — low to preserve original Pokemon colors
+    b3d.scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+    var dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
     dirLight.position.set(2, 5, 3);
     b3d.scene.add(dirLight);
     // Ground circle under each Pokemon
     var groundMat = new THREE.MeshBasicMaterial({ color:0x2a5a1e, transparent:true, opacity:0.18, side:THREE.DoubleSide });
     var pg = new THREE.Mesh(new THREE.CircleGeometry(0.6, 24), groundMat);
-    pg.rotation.x = -Math.PI/2; pg.position.set(-1.8, -1.45, 0);
+    pg.rotation.x = -Math.PI/2; pg.position.set(-1.5, -1.45, 0);
     b3d.scene.add(pg);
     var og = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), groundMat.clone());
     og.material.opacity = 0.14;
-    og.rotation.x = -Math.PI/2; og.position.set(1.8, -1.45, -0.8);
+    og.rotation.x = -Math.PI/2; og.position.set(1.5, -1.45, -0.8);
     b3d.scene.add(og);
     // Ambient smoke wisps
     for (var s=0;s<6;s++) {
@@ -6701,9 +6781,9 @@
     var cw = container ? container.offsetWidth : 400;
     var ch = container ? container.offsetHeight : 300;
     var aspect = cw / ch;
-    if (aspect < 0.8) return side==='player' ? -1.2 : 1.2;
-    if (aspect < 1.2) return side==='player' ? -1.8 : 1.8;
-    return side==='player' ? -2.4 : 2.4;
+    if (aspect < 0.8) return side==='player' ? -1.0 : 1.0;
+    if (aspect < 1.2) return side==='player' ? -1.5 : 1.5;
+    return side==='player' ? -1.8 : 1.8;
   }
 
   function extractDexId(imgUrl) {
@@ -6807,6 +6887,73 @@
     }
   }
 
+  function b3dLoadPokeForm(side, imgUrl, form, directDexId) {
+    if (!b3d.ready) { console.log('[MEGA_3D] skip: b3d not initialized'); return; }
+    b3dRemovePoke(side);
+    var xPos = b3dGetXPos(side);
+    var dexId = directDexId || extractDexId(imgUrl);
+    console.log('[MEGA_3D] side='+side+' form='+form+' dexId='+dexId+' imgUrl='+imgUrl);
+    if (b3d.gltfLoader && dexId) {
+      var formUrl = 'https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/models/opt/' + form + '/' + dexId + '.glb';
+      console.log('[MEGA_3D] loading GLB: ' + formUrl);
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', formUrl, true);
+      xhr.responseType = 'arraybuffer';
+      xhr.onload = function() {
+        if (xhr.status === 200 && xhr.response) {
+          var cleanBuffer = stripUnsupportedGlbExtensions(xhr.response);
+          b3d.gltfLoader.parse(cleanBuffer, '', function(gltf) {
+            console.log('[MEGA_3D] GLB parsed OK');
+            var model = gltf.scene;
+            var scaleBase = form === 'gmax' ? 0.52 : 0.38;
+            model.scale.set(scaleBase, scaleBase, scaleBase);
+            var modelY = side==='player' ? -1.2 : -0.9;
+            var modelZ = side==='player' ? 0.3 : -0.8;
+            model.position.set(xPos, modelY, modelZ);
+            model.rotation.y = side==='player' ? -0.3 : 0.3;
+            b3d.scene.add(model);
+            var mixer = null;
+            if (gltf.animations && gltf.animations.length > 0) {
+              mixer = new THREE.AnimationMixer(model);
+              var action = mixer.clipAction(gltf.animations[0]);
+              action.play();
+            }
+            var obj = { mesh:model, glow:null, origX:xPos, origY:modelY, tex:null, mixer:mixer, gltf:gltf, isGLB:true };
+            if (side==='player') b3d.player = obj; else b3d.opp = obj;
+            b3dAddFormAura(side, form);
+          }, function() { console.log('[MEGA_3D] GLB parse FAILED'); b3dLoadPokeBillboard(side, imgUrl, xPos, function(){ b3dAddFormAura(side, form); }); });
+        } else {
+          console.log('[MEGA_3D] GLB HTTP ' + xhr.status + ', billboard fallback');
+          b3dLoadPokeBillboard(side, imgUrl, xPos, function(){ b3dAddFormAura(side, form); });
+        }
+      };
+      xhr.onerror = function() { console.log('[MEGA_3D] GLB XHR error'); b3dLoadPokeBillboard(side, imgUrl, xPos, function(){ b3dAddFormAura(side, form); }); };
+      xhr.send();
+    } else {
+      console.log('[MEGA_3D] billboard mode, imgUrl: ' + imgUrl);
+      b3dLoadPokeBillboard(side, imgUrl, xPos, function(){ b3dAddFormAura(side, form); });
+    }
+  }
+
+  var b3dFormAuras = { player: null, opponent: null };
+  function b3dAddFormAura(side, form) {
+    b3dRemoveFormAura(side);
+    var obj = side === 'player' ? b3d.player : b3d.opp;
+    if (!obj || !obj.mesh) return;
+    var color = form === 'mega' ? 0xa855f7 : 0xef4444;
+    var pos = obj.mesh.position;
+    var light = new THREE.PointLight(color, 0.8, 2.5);
+    light.position.set(pos.x, pos.y + 0.5, pos.z + (side === 'player' ? -0.2 : 0.2));
+    b3d.scene.add(light);
+    b3dFormAuras[side] = light;
+  }
+  function b3dRemoveFormAura(side) {
+    if (b3dFormAuras[side]) {
+      b3d.scene.remove(b3dFormAuras[side]);
+      b3dFormAuras[side] = null;
+    }
+  }
+
   function b3dLoadPokeBillboard(side, imgUrl, xPos, cb) {
     if (!b3d.ready) return;
     var loader = new THREE.TextureLoader();
@@ -6819,19 +6966,24 @@
       if (h2 > maxH) { h2 = maxH; w2 = h2 * asp; }
       var mat = new THREE.MeshBasicMaterial({ map:tex, transparent:true, side:THREE.DoubleSide, depthWrite:false });
       var mesh = new THREE.Mesh(new THREE.PlaneGeometry(w2, h2), mat);
-      var billY = side==='player' ? -1.2 + h2/2 : -0.9 + h2/2;
+      var groundY = -1.45;
+      var billY = side==='player' ? groundY + h2/2 : groundY + h2/2;
       var billZ = side==='player' ? 0.3 : -0.8;
       mesh.position.set(xPos, billY, billZ);
       b3d.scene.add(mesh);
       var obj = { mesh:mesh, glow:null, origX:xPos, origY:billY, tex:tex, mixer:null, gltf:null, isGLB:false };
       if (side==='player') b3d.player = obj; else b3d.opp = obj;
       if (cb) cb();
+    }, undefined, function() {
+      var spriteEl = document.getElementById(side === 'player' ? 'playerSprite' : 'opponentSprite');
+      if (spriteEl) spriteEl.style.display = 'flex';
     });
   }
 
   function b3dRemovePoke(side) {
     var obj = side === 'player' ? b3d.player : b3d.opp;
     if (!obj) return;
+    b3dRemoveFormAura(side);
     if (obj.mesh) { b3d.scene.remove(obj.mesh); if (obj.mesh.geometry) obj.mesh.geometry.dispose(); if (obj.mesh.material) { if (obj.mesh.material.map) obj.mesh.material.map.dispose(); obj.mesh.material.dispose(); } }
     if (obj.glow) { b3d.scene.remove(obj.glow); if (obj.glow.geometry) obj.glow.geometry.dispose(); if (obj.glow.material) obj.glow.material.dispose(); }
     if (obj.gltf && obj.gltf.scene) { obj.gltf.scene.traverse(function(ch){ if (ch.isMesh){ if (ch.geometry) ch.geometry.dispose(); if (ch.material){ if (ch.material.map) ch.material.map.dispose(); ch.material.dispose(); }}}); }
@@ -6865,6 +7017,17 @@
     // Smoke wisps
     b3d.scene.children.forEach(function(c) {
       if (c.userData && c.userData.vy) { c.position.y += c.userData.vy; c.position.x += c.userData.vx; if (c.position.y>2) c.position.y=-1.5; }
+    });
+    // Mega/Dynamax aura pulse
+    ['player','opponent'].forEach(function(side) {
+      var a = b3dFormAuras[side];
+      if (a) {
+        var obj = side === 'player' ? b3d.player : b3d.opp;
+        if (obj && obj.mesh) {
+          a.position.set(obj.mesh.position.x, obj.mesh.position.y + 0.5, obj.mesh.position.z + (side === 'player' ? -0.2 : 0.2));
+        }
+        a.intensity = 1.5 + Math.sin(t * 0.005) * 1.0;
+      }
     });
     // Particles
     for (var i=b3d.particles.length-1;i>=0;i--) {
@@ -11189,9 +11352,12 @@
     if (b3d.animId) cancelAnimationFrame(b3d.animId);
     if (b3d.renderer) { b3d.renderer.dispose(); }
     if (b3d.dynLights) { b3d.dynLights.forEach(function(dl){ b3d.scene.remove(dl.light); }); }
+    b3dRemoveFormAura('player');
+    b3dRemoveFormAura('opponent');
     b3d.scene = null; b3d.camera = null; b3d.renderer = null;
     b3d.player = null; b3d.opp = null; b3d.particles = []; b3d.dynLights = [];
     b3d.camDefault = null; b3d.camGoal = null; b3d.camLookGoal = null; b3d.shake = 0;
+    lastPlayerMegaForm = 'normal'; lastOppMegaForm = 'normal';
     var c = document.getElementById('battle3d');
     if (c) c.innerHTML = '';
   }

@@ -561,6 +561,53 @@ const COMPETITIVE_SHOP = [
   {id:978,name:'Kingambit',price:35000},{id:998,name:'Iron Valiant',price:35000},
 ];
 
+// === NEGOZIO MEGA EVOLUZIONE ===
+const MEGA_SHOP = [
+  {id:3,name:'Venusaur',price:20000},{id:6,name:'Charizard',price:25000},
+  {id:9,name:'Blastoise',price:20000},{id:15,name:'Beedrill',price:15000},
+  {id:18,name:'Pidgeot',price:15000},{id:65,name:'Alakazam',price:25000},
+  {id:80,name:'Slowbro',price:20000},{id:94,name:'Gengar',price:30000},
+  {id:115,name:'Kangaskhan',price:20000},{id:127,name:'Pinsir',price:18000},
+  {id:130,name:'Gyarados',price:22000},{id:142,name:'Aerodactyl',price:18000},
+  {id:150,name:'Mewtwo',price:50000},{id:181,name:'Ampharos',price:18000},
+  {id:208,name:'Steelix',price:18000},{id:212,name:'Scizor',price:30000},
+  {id:214,name:'Heracross',price:20000},{id:229,name:'Houndoom',price:22000},
+  {id:248,name:'Tyranitar',price:35000},{id:254,name:'Sceptile',price:22000},
+  {id:257,name:'Blaziken',price:25000},{id:260,name:'Swampert',price:22000},
+  {id:282,name:'Gardevoir',price:25000},{id:302,name:'Sableye',price:18000},
+  {id:303,name:'Mawile',price:18000},{id:306,name:'Aggron',price:22000},
+  {id:308,name:'Medicham',price:20000},{id:310,name:'Manectric',price:18000},
+  {id:319,name:'Sharpedo',price:18000},{id:323,name:'Camerupt',price:15000},
+  {id:330,name:'Flygon',price:20000},{id:334,name:'Altaria',price:18000},
+  {id:350,name:'Milotic',price:25000},{id:354,name:'Banette',price:15000},
+  {id:359,name:'Absol',price:18000},{id:362,name:'Glalie',price:15000},
+  {id:373,name:'Salamence',price:35000},{id:376,name:'Metagross',price:35000},
+  {id:380,name:'Latias',price:40000},{id:381,name:'Latios',price:40000},
+  {id:384,name:'Rayquaza',price:50000},{id:428,name:'Lopunny',price:20000},
+  {id:445,name:'Garchomp',price:35000},{id:448,name:'Lucario',price:30000},
+  {id:460,name:'Abomasnow',price:15000},{id:475,name:'Gallade',price:25000},
+  {id:531,name:'Audino',price:15000},{id:719,name:'Diancie',price:40000},
+];
+
+// === NEGOZIO DYNAMAX ===
+const DYNAMAX_SHOP = [
+  {id:3,name:'Venusaur',price:25000},{id:6,name:'Charizard',price:30000},
+  {id:9,name:'Blastoise',price:25000},{id:12,name:'Butterfree',price:15000},
+  {id:25,name:'Pikachu',price:20000},{id:52,name:'Meowth',price:15000},
+  {id:99,name:'Kingler',price:15000},{id:131,name:'Lapras',price:20000},
+  {id:133,name:'Eevee',price:18000},{id:143,name:'Snorlax',price:22000},
+  {id:809,name:'Melmetal',price:35000},{id:812,name:'Rillaboom',price:22000},
+  {id:815,name:'Cinderace',price:22000},{id:818,name:'Inteleon',price:22000},
+  {id:823,name:'Corviknight',price:22000},{id:825,name:'Orbeetle',price:18000},
+  {id:826,name:'Toxtricity',price:25000},{id:827,name:'Garbodor',price:15000},
+  {id:834,name:'Drednaw',price:18000},{id:839,name:'Coalossal',price:18000},
+  {id:841,name:'Flapple',price:20000},{id:842,name:'Appletun',price:20000},
+  {id:849,name:'Toxtricity',price:25000},{id:851,name:'Centiskorch',price:22000},
+  {id:858,name:'Hatterene',price:25000},{id:861,name:'Grimmsnarl',price:22000},
+  {id:868,name:'Alcremie',price:18000},{id:879,name:'Copperajah',price:22000},
+  {id:884,name:'Duraludon',price:30000},
+];
+
 // ===== BATTAGLIA POKEMON (Showdown-style) =====
 const TYPES = ['normal','fire','water','electric','grass','ice','fighting','poison','ground','flying','psychic','bug','rock','ghost','dragon','dark','steel','fairy'];
 const TYPE_CHART = {
@@ -1065,15 +1112,18 @@ const POKE_TYPES = {
 const MEGA_IMG = 'https://raw.githubusercontent.com/HybridShivam/Pokemon/master/assets/images/';
 const MEGA_MAP = {
   3:{name:'Mega Venusaur',types:['grass','poison'],img:'0003-Mega.png'},
-  6:{name:'Mega Charizard',types:['fire','flying'],img:'0006-Mega-X.png'},
+  6:{name:'Mega Charizard X',types:['fire','dragon'],img:'0006-Mega-X.png'},
   9:{name:'Mega Blastoise',types:['water'],img:'0009-Mega.png'},
   15:{name:'Mega Beedrill',types:['bug','poison'],img:'0015-Mega.png'},
   18:{name:'Mega Pidgeot',types:['normal','flying'],img:'0018-Mega.png'},
   65:{name:'Mega Alakazam',types:['psychic'],img:'0065-Mega.png'},
   80:{name:'Mega Slowbro',types:['water','psychic'],img:'0080-Mega.png'},
   94:{name:'Mega Gengar',types:['ghost','poison'],img:'0094-Mega.png'},
+  115:{name:'Mega Kangaskhan',types:['normal'],img:'0115-Mega.png'},
+  127:{name:'Mega Pinsir',types:['bug','flying'],img:'0127-Mega.png'},
   130:{name:'Mega Gyarados',types:['water','dark'],img:'0130-Mega.png'},
   142:{name:'Mega Aerodactyl',types:['rock','flying'],img:'0142-Mega.png'},
+  150:{name:'Mega Mewtwo X',types:['psychic','fighting'],img:'0150-Mega-X.png'},
   181:{name:'Mega Ampharos',types:['electric','dragon'],img:'0181-Mega.png'},
   208:{name:'Mega Steelix',types:['steel','ground'],img:'0208-Mega.png'},
   212:{name:'Mega Scizor',types:['bug','steel'],img:'0212-Mega.png'},
@@ -1085,21 +1135,62 @@ const MEGA_MAP = {
   260:{name:'Mega Swampert',types:['water','ground'],img:'0260-Mega.png'},
   282:{name:'Mega Gardevoir',types:['psychic','fairy'],img:'0282-Mega.png'},
   302:{name:'Mega Sableye',types:['dark','ghost'],img:'0302-Mega.png'},
+  303:{name:'Mega Mawile',types:['steel','fairy'],img:'0303-Mega.png'},
   306:{name:'Mega Aggron',types:['steel'],img:'0306-Mega.png'},
   308:{name:'Mega Medicham',types:['fighting','psychic'],img:'0308-Mega.png'},
   310:{name:'Mega Manectric',types:['electric'],img:'0310-Mega.png'},
   319:{name:'Mega Sharpedo',types:['water','dark'],img:'0319-Mega.png'},
   323:{name:'Mega Camerupt',types:['fire','ground'],img:'0323-Mega.png'},
+  330:{name:'Mega Flygon',types:['ground','dragon'],img:'0330-Mega.png'},
   334:{name:'Mega Altaria',types:['dragon','fairy'],img:'0334-Mega.png'},
+  350:{name:'Mega Milotic',types:['water','fairy'],img:'0350-Mega.png'},
   354:{name:'Mega Banette',types:['ghost'],img:'0354-Mega.png'},
   359:{name:'Mega Absol',types:['dark'],img:'0359-Mega.png'},
   362:{name:'Mega Glalie',types:['ice'],img:'0362-Mega.png'},
   373:{name:'Mega Salamence',types:['dragon','flying'],img:'0373-Mega.png'},
   376:{name:'Mega Metagross',types:['steel','psychic'],img:'0376-Mega.png'},
+  380:{name:'Mega Latias',types:['dragon','psychic'],img:'0380-Mega.png'},
+  381:{name:'Mega Latios',types:['dragon','psychic'],img:'0381-Mega.png'},
+  384:{name:'Mega Rayquaza',types:['dragon','flying'],img:'0384-Mega.png'},
+  428:{name:'Mega Lopunny',types:['normal','fighting'],img:'0428-Mega.png'},
   445:{name:'Mega Garchomp',types:['dragon','ground'],img:'0445-Mega.png'},
   448:{name:'Mega Lucario',types:['fighting','steel'],img:'0448-Mega.png'},
   460:{name:'Mega Abomasnow',types:['grass','ice'],img:'0460-Mega.png'},
   475:{name:'Mega Gallade',types:['psychic','fighting'],img:'0475-Mega.png'},
+  531:{name:'Mega Audino',types:['normal','fairy'],img:'0531-Mega.png'},
+  719:{name:'Mega Diancie',types:['rock','fairy'],img:'0719-Mega.png'},
+};
+const GMAX_IMG = 'https://raw.githubusercontent.com/HybridShivam/Pokemon/master/assets/images/';
+const GMAX_MAP = {
+  3:{name:'Venusaur GMax',types:['grass','poison'],img:'0003-Gmax.png'},
+  6:{name:'Charizard GMax',types:['fire','flying'],img:'0006-Gmax.png'},
+  9:{name:'Blastoise GMax',types:['water'],img:'0009-Gmax.png'},
+  12:{name:'Butterfree GMax',types:['bug','flying'],img:'0012-Gmax.png'},
+  25:{name:'Pikachu GMax',types:['electric'],img:'0025-Gmax.png'},
+  52:{name:'Meowth GMax',types:['normal'],img:'0052-Gmax.png'},
+  99:{name:'Kingler GMax',types:['water'],img:'0099-Gmax.png'},
+  131:{name:'Lapras GMax',types:['water','ice'],img:'0131-Gmax.png'},
+  133:{name:'Eevee GMax',types:['normal'],img:'0133-Gmax.png'},
+  143:{name:'Snorlax GMax',types:['normal'],img:'0143-Gmax.png'},
+  809:{name:'Melmetal GMax',types:['steel'],img:'0809-Gmax.png'},
+  812:{name:'Rillaboom GMax',types:['grass'],img:'0812-Gmax.png'},
+  815:{name:'Cinderace GMax',types:['fire'],img:'0815-Gmax.png'},
+  818:{name:'Inteleon GMax',types:['water'],img:'0818-Gmax.png'},
+  823:{name:'Corviknight GMax',types:['flying','steel'],img:'0823-Gmax.png'},
+  825:{name:'Orbeetle GMax',types:['bug','psychic'],img:'0825-Gmax.png'},
+  826:{name:'Toxtricity GMax',types:['electric','poison'],img:'0826-Gmax.png'},
+  827:{name:'Garbodor GMax',types:['poison'],img:'0827-Gmax.png'},
+  834:{name:'Drednaw GMax',types:['water','rock'],img:'0834-Gmax.png'},
+  839:{name:'Coalossal GMax',types:['rock','fire'],img:'0839-Gmax.png'},
+  841:{name:'Flapple GMax',types:['grass','dragon'],img:'0841-Gmax.png'},
+  842:{name:'Appletun GMax',types:['grass','dragon'],img:'0842-Gmax.png'},
+  849:{name:'Toxtricity GMax',types:['electric','poison'],img:'0849-Gmax.png'},
+  851:{name:'Centiskorch GMax',types:['fire','bug'],img:'0851-Gmax.png'},
+  858:{name:'Hatterene GMax',types:['psychic','fairy'],img:'0858-Gmax.png'},
+  861:{name:'Grimmsnarl GMax',types:['dark','fairy'],img:'0861-Gmax.png'},
+  868:{name:'Alcremie GMax',types:['fairy'],img:'0868-Gmax.png'},
+  879:{name:'Copperajah GMax',types:['steel'],img:'0879-Gmax.png'},
+  884:{name:'Duraludon GMax',types:['steel','dragon'],img:'0884-Gmax.png'},
 };
 const MOVE_POOL = {
   normal:[{n:'Ultraballata',p:40,acc:100,cat:'physical'},{n:'Taglio',p:50,acc:95,cat:'physical'},{n:'Rapata',p:80,acc:100,cat:'physical'},{n:'Colpo',p:70,acc:100,cat:'physical'}],
@@ -1193,6 +1284,9 @@ function battleTurn(battleId, playerIdx, action) {
     b.log.push(msg);
     p.lastMove = action.type;
     if(killed) {
+      // Reset mega/dynamax for the fainted side
+      b.megaActive[1-playerIdx] = false;
+      b.dynamaxActive[1-playerIdx] = false;
       // Check if opponent has remaining Pokemon
       const aliveIdx = o.team.findIndex(pk=>!pk.fainted);
       if(aliveIdx === -1) { b.state = 'ended'; b.winner = p.id; return; }
@@ -1210,6 +1304,11 @@ function battleTurn(battleId, playerIdx, action) {
     if(!target||target.fainted) return;
     const oldName = pPoke ? pPoke.species : 'nessuno';
     p.currentPoke = idx;
+    // Reset mega/dynamax on switch
+    b.megaActive[playerIdx] = false;
+    b.dynamaxActive[playerIdx] = false;
+    if (pPoke && pPoke.isDynamax && pPoke.originalImg) { pPoke.img = pPoke.originalImg; delete pPoke.originalImg; pPoke.isDynamax = false; }
+    if (pPoke && pPoke.isDynamax && pPoke.originalSpecies) { pPoke.species = pPoke.originalSpecies; delete pPoke.originalSpecies; }
     b.log.push(`${p.nick} richiama ${oldName} e manda ${target.species}!`);
     b.turnPlayer = 1 - playerIdx;
     p.lastMove = action.type;
@@ -1225,6 +1324,8 @@ function battleTurn(battleId, playerIdx, action) {
           pk.maxHp = pk.originalMaxHp || pk.maxHp;
           pk.currentHp = Math.min(pk.currentHp, pk.maxHp);
           pk.moves.forEach(m => { if(m.originalPower) { m.p = m.originalPower; delete m.originalPower; }});
+          if (pk.originalImg) { pk.img = pk.originalImg; delete pk.originalImg; }
+          if (pk.originalSpecies) { pk.species = pk.originalSpecies; delete pk.originalSpecies; }
           b.log.push(`${b.players[i].nick}: Dynamax è finito!`);
         }
       }
@@ -1831,12 +1932,11 @@ io.on('connection', (socket) => {
     if (!poke) return;
     const bal = getBal(socket.id);
     if (bal < poke.price) { socket.emit('legendary:error', { msg: 'Saldo insufficiente!' }); return; }
+    if (!pokemonData[socket.id]) { pokemonData[socket.id] = { starter:null, currentForm:null, xp:0, team:[] }; }
     const pd = pokemonData[socket.id];
-    if (!pd) { socket.emit('legendary:error', { msg: 'Prima scegli un Pokémon starter con ⚡!' }); return; }
     if (pd.team && pd.team.length >= 5) { socket.emit('legendary:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
     casinoBals[socket.id] = bal - poke.price;
     socket.emit('casino:balance', casinoBals[socket.id]);
-    if (!pd.team) pd.team = [];
     pd.team.push({ name: poke.name, id: poke.id, img: POKE_IMG+poke.id+'.png', legendary: true, lv: 1 });
     saveNickData(socket.id);
     socket.emit('legendary:bought', { name: poke.name });
@@ -1857,17 +1957,78 @@ io.on('connection', (socket) => {
     if (!poke) return;
     const bal = getBal(socket.id);
     if (bal < poke.price) { socket.emit('competitive:error', { msg: 'Saldo insufficiente!' }); return; }
+    if (!pokemonData[socket.id]) { pokemonData[socket.id] = { starter:null, currentForm:null, xp:0, team:[] }; }
     const pd = pokemonData[socket.id];
-    if (!pd) { socket.emit('competitive:error', { msg: 'Prima scegli un Pokémon starter con ⚡!' }); return; }
     if (pd.team && pd.team.length >= 5) { socket.emit('competitive:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
     casinoBals[socket.id] = bal - poke.price;
     socket.emit('casino:balance', casinoBals[socket.id]);
-    if (!pd.team) pd.team = [];
     pd.team.push({ name: poke.name, id: poke.id, img: POKE_IMG+poke.id+'.png', competitive: true, lv: 1 });
     saveNickData(socket.id);
     socket.emit('competitive:bought', { name: poke.name });
     io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
     io.emit('chat message', { id:++msgCounter, nick:'⚔️ NEGOZIO COMP', avatar:'⚔️', msg:`${u.nick} ha acquistato ${poke.name}! 🔥`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+  });
+
+  // NEGOZIO MEGA EVOLUZIONE
+  socket.on('mega:list', () => {
+    const megaList = MEGA_SHOP.map(p => ({
+      ...p, mega: MEGA_MAP[p.id]
+    }));
+    socket.emit('mega:list', megaList);
+  });
+
+  socket.on('mega:buy', ({ id }) => {
+    const u = users[socket.id];
+    if (!u) return;
+    const poke = MEGA_SHOP.find(p => p.id === id);
+    if (!poke) return;
+    const bal = getBal(socket.id);
+    if (bal < poke.price) { socket.emit('legendary:error', { msg: 'Saldo insufficiente!' }); return; }
+    if (!pokemonData[socket.id]) { pokemonData[socket.id] = { starter:null, currentForm:null, xp:0, team:[] }; }
+    const pd = pokemonData[socket.id];
+    if (pd.team && pd.team.length >= 5) { socket.emit('legendary:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
+    casinoBals[socket.id] = bal - poke.price;
+    socket.emit('casino:balance', casinoBals[socket.id]);
+    pd.team.push({ name: poke.name + ' (Mega)', id: poke.id, img: MEGA_IMG+MEGA_MAP[poke.id].img, legendary: false, lv: 1 });
+    saveNickData(socket.id);
+    socket.emit('legendary:bought', { name: poke.name + ' (Mega)' });
+    io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
+    io.emit('chat message', { id:++msgCounter, nick:'🔮 NEGOZIO MEGA', avatar:'🔮', msg:`${u.nick} ha acquistato ${poke.name} (Mega)! 💜`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+  });
+
+  // NEGOZIO DYNAMAX
+  socket.on('dynamax:list', () => {
+    const dynamaxList = DYNAMAX_SHOP.map(p => ({
+      ...p, gmax: GMAX_MAP[p.id]
+    }));
+    socket.emit('dynamax:list', dynamaxList);
+  });
+
+  socket.on('dynamax:buy', ({ id }) => {
+    const u = users[socket.id];
+    if (!u) return;
+    const poke = DYNAMAX_SHOP.find(p => p.id === id);
+    if (!poke) return;
+    const bal = getBal(socket.id);
+    if (bal < poke.price) { socket.emit('legendary:error', { msg: 'Saldo insufficiente!' }); return; }
+    if (!pokemonData[socket.id]) { pokemonData[socket.id] = { starter:null, currentForm:null, xp:0, team:[] }; }
+    const pd = pokemonData[socket.id];
+    if (pd.team && pd.team.length >= 5) { socket.emit('legendary:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
+    casinoBals[socket.id] = bal - poke.price;
+    socket.emit('casino:balance', casinoBals[socket.id]);
+    pd.team.push({ name: poke.name + ' (GMax)', id: poke.id, img: GMAX_IMG+GMAX_MAP[poke.id].img, legendary: false, lv: 1 });
+    saveNickData(socket.id);
+    socket.emit('legendary:bought', { name: poke.name + ' (GMax)' });
+    io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
+    io.emit('chat message', { id:++msgCounter, nick:'⚡ NEGOZIO DYNAMAX', avatar:'⚡', msg:`${u.nick} ha acquistato ${poke.name} (GMax)! 🔴`, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), system:true, reactions:{} });
+  });
+
+  // NEGOZIO COMPETITIVE (tutti)
+  socket.on('competitive:all', () => {
+    const listWithFlags = COMPETITIVE_SHOP.map(p => ({
+      ...p, mega: !!MEGA_MAP[p.id], gmax: !!GMAX_MAP[p.id]
+    }));
+    socket.emit('competitive:all', listWithFlags);
   });
 
   // CARAMMELLA RARA - Buy levels
@@ -2251,7 +2412,9 @@ io.on('connection', (socket) => {
         { id: from, nick: users[from].nick, team: mkTeam(from), currentPoke: 0 },
         { id: socket.id, nick: users[socket.id].nick, team: mkTeam(socket.id), currentPoke: 0 }
       ],
-      state: 'playing', log: [], winner: null
+      state: 'playing', log: [], winner: null,
+      megaUsed: [false, false], dynamaxUsed: [false, false],
+      megaActive: [false, false], dynamaxActive: [false, false]
     };
     battles[id] = b;
     [from, socket.id].forEach(sid => {
@@ -2263,6 +2426,8 @@ io.on('connection', (socket) => {
         turnPlayer: b.turnPlayer, log: [], state: 'playing',
         canMega: b.players.map((p,i) => { const pk = p.team[0]; return pk && !!MEGA_MAP[pk.imgId]; }),
         canDynamax: b.players.map(() => true),
+        megaUsed: [false, false], dynamaxUsed: [false, false],
+        megaActive: [false, false], dynamaxActive: [false, false]
       });
     });
   });
@@ -2282,6 +2447,7 @@ io.on('connection', (socket) => {
           team: p2.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted, types:pk.types, isMega:!!pk.isMega, isDynamax:!!pk.isDynamax }))
         })),
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
       });
     });
@@ -2313,6 +2479,7 @@ io.on('connection', (socket) => {
           team: p2.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted, types:pk.types, isMega:!!pk.isMega, isDynamax:!!pk.isDynamax }))
         })),
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
       });
     });
@@ -2331,6 +2498,7 @@ io.on('connection', (socket) => {
     const pk = p.team[p.currentPoke];
     if(!pk || pk.fainted || !MEGA_MAP[pk.imgId]) return;
     b.megaUsed[pIdx] = true;
+    b.megaActive[pIdx] = true;
     const mega = MEGA_MAP[pk.imgId];
     pk.originalSpecies = pk.species;
     pk.species = mega.name;
@@ -2352,6 +2520,7 @@ io.on('connection', (socket) => {
         })),
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
         megaEffect: { playerIdx: pIdx, species: pk.species, img: pk.img }
       });
     });
@@ -2367,8 +2536,17 @@ io.on('connection', (socket) => {
     const pk = p.team[p.currentPoke];
     if(!pk || pk.fainted) return;
     b.dynamaxUsed[pIdx] = true;
+    b.dynamaxActive[pIdx] = true;
     b.dynamaxTurns[pIdx] = 3;
     pk.isDynamax = true;
+    const gmax = GMAX_MAP[pk.imgId];
+    if (gmax) {
+      pk.originalImg = pk.img;
+      pk.originalSpecies = pk.species;
+      pk.species = gmax.name;
+      pk.types = gmax.types;
+      pk.img = GMAX_IMG + gmax.img;
+    }
     pk.originalMaxHp = pk.maxHp;
     pk.maxHp = pk.maxHp * 2;
     pk.currentHp = Math.min(pk.currentHp * 2, pk.maxHp);
@@ -2382,6 +2560,7 @@ io.on('connection', (socket) => {
         })),
         turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
         dynamaxEffect: { playerIdx: pIdx, species: pk.species, img: pk.img, turnsLeft: 3 }
       });
     });
@@ -2397,6 +2576,7 @@ io.on('connection', (socket) => {
           team: p2.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted, types:pk.types, isMega:!!pk.isMega, isDynamax:!!pk.isDynamax }))
         })),
         turnPlayer: b.turnPlayer, log: b.log.concat([users[socket.id]?.nick + ' si è arreso!']), state: b.state, winner: b.winner,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
         megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
       });
     });
@@ -2430,9 +2610,78 @@ io.on('connection', (socket) => {
     if (!player) return;
     const opponent = b.players.find(p => p.id !== socket.id);
     if (!opponent || opponent.id.startsWith('bot_')) return;
-    const allowed = ['🔥','💪','😂','😢','👏','😡','💀','❤️','🎉'];
+    const allowed = ['😂','💀','😤','😭'];
     if (!emoji || allowed.indexOf(emoji) === -1) return;
     io.to(opponent.id).emit('battle:reaction', { emoji: emoji, from: player.nick });
+  });
+
+  // BATTLE MEGA EVOLVE — 1 use per battle, cosmetic only
+  socket.on('battle:mega', ({ battleId }) => {
+    const b = battles[battleId];
+    if (!b || b.state !== 'playing') return;
+    const pIdx = b.players.findIndex(p => p.id === socket.id);
+    if (pIdx === -1 || b.turnPlayer !== pIdx) return;
+    if (b.megaUsed[pIdx]) { socket.emit('battle:error', { msg: 'Hai già usato Mega Evolve!' }); return; }
+    if (b.megaActive[pIdx]) { socket.emit('battle:error', { msg: 'Sei già Mega Evolve!' }); return; }
+    const p = b.players[pIdx];
+    const poke = p.team[p.currentPoke];
+    if (!poke || poke.fainted) return;
+    b.megaUsed[pIdx] = true;
+    b.megaActive[pIdx] = true;
+    b.log.push(`✨ ${poke.species} Mega Evolve!`);
+    b.turnPlayer = 1 - pIdx;
+    b.players.forEach((pl) => {
+      io.to(pl.id).emit('battle:state', {
+        players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
+          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
+        })),
+        turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
+        megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
+      });
+    });
+    if (b.isBot && b.turnPlayer === 1) {
+      setTimeout(() => botAutoPlay(battleId), 1200);
+    }
+  });
+
+  // BATTLE DYNAMAX — 1 use per battle, cosmetic only
+  socket.on('battle:dynamax', ({ battleId }) => {
+    const b = battles[battleId];
+    if (!b || b.state !== 'playing') return;
+    const pIdx = b.players.findIndex(p => p.id === socket.id);
+    if (pIdx === -1 || b.turnPlayer !== pIdx) return;
+    if (b.dynamaxUsed[pIdx]) { socket.emit('battle:error', { msg: 'Hai già usato Dynamax!' }); return; }
+    if (b.dynamaxActive[pIdx]) { socket.emit('battle:error', { msg: 'Sei già in Dynamax!' }); return; }
+    const p = b.players[pIdx];
+    const poke = p.team[p.currentPoke];
+    if (!poke || poke.fainted) return;
+    b.dynamaxUsed[pIdx] = true;
+    b.dynamaxActive[pIdx] = true;
+    const gmax2 = GMAX_MAP[poke.imgId];
+    if (gmax2) {
+      poke.originalImg = poke.img;
+      poke.originalSpecies = poke.species;
+      poke.species = gmax2.name;
+      poke.types = gmax2.types;
+      poke.img = GMAX_IMG + gmax2.img;
+    }
+    b.log.push(`🔴 ${poke.species} Dynamax!`);
+    b.turnPlayer = 1 - pIdx;
+    b.players.forEach((pl) => {
+      io.to(pl.id).emit('battle:state', {
+        players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
+          team: p2.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted }))
+        })),
+        turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
+        megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
+        megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed,
+        dynamaxEffect: { playerIdx: pIdx, species: poke.species, img: poke.img, turnsLeft: 3 }
+      });
+    });
+    if (b.isBot && b.turnPlayer === 1) {
+      setTimeout(() => botAutoPlay(battleId), 1200);
+    }
   });
 
   // ===== BOT TRAINER (Allenamento 1v1) =====
@@ -2480,6 +2729,7 @@ io.on('connection', (socket) => {
         team: p.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, currentHp:pk.currentHp, maxHp:pk.maxHp, status:pk.status, fainted:pk.fainted, types:pk.types, isMega:!!pk.isMega, isDynamax:!!pk.isDynamax }))
       })),
       turnPlayer: b.turnPlayer, log: b.log, state: b.state, winner: b.winner,
+      megaActive: b.megaActive, dynamaxActive: b.dynamaxActive,
       megaUsed: b.megaUsed, dynamaxUsed: b.dynamaxUsed
     });
     if (b.state === 'ended') {
@@ -2547,7 +2797,9 @@ io.on('connection', (socket) => {
         { id: socket.id, nick: u.nick, team: mkTeam(socket.id), currentPoke: 0 },
         { id: 'bot_' + id, nick: '🤖 ' + botName, team: botTeam, currentPoke: 0 }
       ],
-      state: 'playing', log: [], winner: null
+      state: 'playing', log: [], winner: null,
+      megaUsed: [false, false], dynamaxUsed: [false, false],
+      megaActive: [false, false], dynamaxActive: [false, false]
     };
     b.log.push('Allenamento: ' + botName + ' ti sfida!');
     battles[id] = b;
@@ -2559,6 +2811,8 @@ io.on('connection', (socket) => {
       turnPlayer: b.turnPlayer, log: b.log, state: 'playing',
       canMega: [myTeam.map(pk => !!MEGA_MAP[pk.imgId]).some(Boolean), false],
       canDynamax: [true, false],
+      megaUsed: [false, false], dynamaxUsed: [false, false],
+      megaActive: [false, false], dynamaxActive: [false, false]
     });
     // If bot goes first, auto-play
     if (b.turnPlayer === 1) {
