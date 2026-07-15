@@ -2582,7 +2582,7 @@
 
   // Bot Training Button
   document.getElementById('botBattleBtn').addEventListener('click', function() {
-    if (!myPoke) { showChatMsg('Pokémon', '🤖', 'Devi prima scegliere il tuo Pokémon starter!', 'system'); return; }
+    if (!myPoke) { showChatMsg('Pokémon', '🤖', 'Devi prima entrare in lobby!', 'system'); return; }
     if (battleData) { showChatMsg('Pokémon', '🤖', 'Sei già in una battaglia!', 'system'); return; }
     socket.emit('battle:botChallenge');
   });

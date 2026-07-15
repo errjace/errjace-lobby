@@ -1934,12 +1934,13 @@ io.on('connection', (socket) => {
     if (!poke) return;
     const bal = getBal(socket.id);
     if (bal < poke.price) { socket.emit('legendary:error', { msg: 'Saldo insufficiente!' }); return; }
-    if (!pokemonData[socket.id]) { pokemonData[socket.id] = { starter:null, currentForm:null, xp:0, team:[] }; }
+    if (!pokemonData[socket.id]) { pokemonData[socket.id] = { starter:null, currentForm:poke.name, xp:0, team:[] }; }
     const pd = pokemonData[socket.id];
-    if (pd.team && pd.team.length >= 5) { socket.emit('legendary:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
+    if (pd.team && pd.team.length >= 6) { socket.emit('legendary:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
     casinoBals[socket.id] = bal - poke.price;
     socket.emit('casino:balance', casinoBals[socket.id]);
     pd.team.push({ name: poke.name, id: poke.id, img: POKE_IMG+poke.id+'.png', legendary: true, lv: 1 });
+    if (!pd.starter) pd.currentForm = poke.name;
     saveNickData(socket.id);
     socket.emit('legendary:bought', { name: poke.name });
     io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
@@ -1961,10 +1962,11 @@ io.on('connection', (socket) => {
     if (bal < poke.price) { socket.emit('competitive:error', { msg: 'Saldo insufficiente!' }); return; }
     if (!pokemonData[socket.id]) { pokemonData[socket.id] = { starter:null, currentForm:null, xp:0, team:[] }; }
     const pd = pokemonData[socket.id];
-    if (pd.team && pd.team.length >= 5) { socket.emit('competitive:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
+    if (pd.team && pd.team.length >= 6) { socket.emit('competitive:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
     casinoBals[socket.id] = bal - poke.price;
     socket.emit('casino:balance', casinoBals[socket.id]);
     pd.team.push({ name: poke.name, id: poke.id, img: POKE_IMG+poke.id+'.png', competitive: true, lv: 1 });
+    if (!pd.starter) pd.currentForm = poke.name;
     saveNickData(socket.id);
     socket.emit('competitive:bought', { name: poke.name });
     io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
@@ -1988,10 +1990,11 @@ io.on('connection', (socket) => {
     if (bal < poke.price) { socket.emit('legendary:error', { msg: 'Saldo insufficiente!' }); return; }
     if (!pokemonData[socket.id]) { pokemonData[socket.id] = { starter:null, currentForm:null, xp:0, team:[] }; }
     const pd = pokemonData[socket.id];
-    if (pd.team && pd.team.length >= 5) { socket.emit('legendary:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
+    if (pd.team && pd.team.length >= 6) { socket.emit('legendary:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
     casinoBals[socket.id] = bal - poke.price;
     socket.emit('casino:balance', casinoBals[socket.id]);
     pd.team.push({ name: poke.name + ' (Mega)', id: poke.id, img: MEGA_IMG+MEGA_MAP[poke.id].img, legendary: false, lv: 1 });
+    if (!pd.starter) pd.currentForm = poke.name;
     saveNickData(socket.id);
     socket.emit('legendary:bought', { name: poke.name + ' (Mega)' });
     io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
@@ -2015,10 +2018,11 @@ io.on('connection', (socket) => {
     if (bal < poke.price) { socket.emit('legendary:error', { msg: 'Saldo insufficiente!' }); return; }
     if (!pokemonData[socket.id]) { pokemonData[socket.id] = { starter:null, currentForm:null, xp:0, team:[] }; }
     const pd = pokemonData[socket.id];
-    if (pd.team && pd.team.length >= 5) { socket.emit('legendary:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
+    if (pd.team && pd.team.length >= 6) { socket.emit('legendary:error', { msg: 'Team pieno! Rilascia un Pokémon con /release <numero>' }); return; }
     casinoBals[socket.id] = bal - poke.price;
     socket.emit('casino:balance', casinoBals[socket.id]);
     pd.team.push({ name: poke.name + ' (GMax)', id: poke.id, img: GMAX_IMG+GMAX_MAP[poke.id].img, legendary: false, lv: 1 });
+    if (!pd.starter) pd.currentForm = poke.name;
     saveNickData(socket.id);
     socket.emit('legendary:bought', { name: poke.name + ' (GMax)' });
     io.emit('users online', Object.values(users).map(u2 => ({...u2, pokemon: pokemonData[u2.id] || null })));
@@ -2152,8 +2156,8 @@ io.on('connection', (socket) => {
     if (bal < CLAW_COST) { socket.emit('pokeclaw:result', { error: 'Ops! soldi terminati xD' }); return; }
     // Check team size before deducting
     const pokeData = pokemonData[socket.id];
-    if(pokeData && pokeData.team && pokeData.team.length >= 5) {
-      socket.emit('pokeclaw:result', { error: 'Hai già 5 Pokémon nel team! Rilasciane uno con /release <nome>' });
+    if(pokeData && pokeData.team && pokeData.team.length >= 6) {
+      socket.emit('pokeclaw:result', { error: 'Hai già 6 Pokémon nel team! Rilasciane uno con /release <nome>' });
       return;
     }
     casinoBals[socket.id] = bal - CLAW_COST;
@@ -2393,10 +2397,13 @@ io.on('connection', (socket) => {
       if (pd) migratePokemonData(pd);
       const lv = getPokemonLv(pd.xp);
       const stage = getPokeStage(lv);
-      const s = STARTERS[pd.starter];
-      const starter = generatePokeStats(pd.currentForm, POKE_IMG + s.imgs[stage] + '.png', POKE_TYPES[s.imgs[stage]]||['normal'], stage, false);
-      starter.xpLv = lv;
-      const team = [starter];
+      const team = [];
+      if (pd.starter && STARTERS[pd.starter]) {
+        const s = STARTERS[pd.starter];
+        const starter = generatePokeStats(pd.currentForm, POKE_IMG + s.imgs[stage] + '.png', POKE_TYPES[s.imgs[stage]]||['normal'], stage, false);
+        starter.xpLv = lv;
+        team.push(starter);
+      }
       if (pd.team && pd.team.length > 0) {
         pd.team.forEach(cp => {
           const cTypes = POKE_TYPES[cp.id] || ['normal'];
@@ -2407,6 +2414,7 @@ io.on('connection', (socket) => {
       }
       return team;
     };
+    if (mkTeam(from).length === 0 || mkTeam(socket.id).length === 0) { socket.emit('battle:error', { msg: 'Devi avere almeno un Pokémon!' }); return; }
     const b = {
       id, turnPlayer: Math.random() < 0.5 ? 0 : 1,
       megaUsed: [false, false], dynamaxUsed: [false, false], dynamaxTurns: [0, 0],
@@ -2761,10 +2769,13 @@ io.on('connection', (socket) => {
       if (pd2) migratePokemonData(pd2);
       const lv2 = getPokemonLv(pd2.xp);
       const stage2 = getPokeStage(lv2);
-      const s = STARTERS[pd2.starter];
-      const starter = generatePokeStats(pd2.currentForm, POKE_IMG + s.imgs[stage2] + '.png', POKE_TYPES[s.imgs[stage2]]||['normal'], stage2, false);
-      starter.xpLv = lv2;
-      const team = [starter];
+      const team = [];
+      if (pd2.starter && STARTERS[pd2.starter]) {
+        const s = STARTERS[pd2.starter];
+        const starter = generatePokeStats(pd2.currentForm, POKE_IMG + s.imgs[stage2] + '.png', POKE_TYPES[s.imgs[stage2]]||['normal'], stage2, false);
+        starter.xpLv = lv2;
+        team.push(starter);
+      }
       if (pd2.team && pd2.team.length > 0) {
         pd2.team.forEach(cp => {
           const cTypes = POKE_TYPES[cp.id] || ['normal'];
