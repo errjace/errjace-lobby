@@ -3388,11 +3388,26 @@
     renderBattle();
     // === 3D BATTLE ===
     setTimeout(function() {
-      b3dInit();
-      var me = battleData.players[myBattleIdx];
-      var opp = battleData.players[1 - myBattleIdx];
-      if (me && me.team[me.currentPoke]) b3dLoadPoke('player', me.team[me.currentPoke].img);
-      if (opp && opp.team[opp.currentPoke]) b3dLoadPoke('opponent', opp.team[opp.currentPoke].img);
+      try {
+        console.log('[3D_DBG] pre-b3dInit, battleData='+(!!battleData)+' myBattleIdx='+myBattleIdx);
+        b3dInit();
+        console.log('[3D_DBG] post-b3dInit, b3d.ready='+(b3d&&b3d.ready));
+        var me = battleData.players[myBattleIdx];
+        var opp = battleData.players[1 - myBattleIdx];
+        console.log('[3D_DBG] me='+(!!me)+' opp='+(!!opp)+' mePoke='+(me?me.currentPoke:'?')+' oppPoke='+(opp?opp.currentPoke:'?'));
+        if (me && me.team && me.team[me.currentPoke]) {
+          console.log('[3D_DBG] calling player b3dLoadPoke img='+me.team[me.currentPoke].img);
+          b3dLoadPoke('player', me.team[me.currentPoke].img);
+        } else {
+          console.log('[3D_DBG] SKIP player: me='+(!!me)+' team='+(me&&!!me.team)+' poke='+(me&&me.team&&me.team[me.currentPoke]));
+        }
+        if (opp && opp.team && opp.team[opp.currentPoke]) {
+          console.log('[3D_DBG] calling opponent b3dLoadPoke img='+opp.team[opp.currentPoke].img);
+          b3dLoadPoke('opponent', opp.team[opp.currentPoke].img);
+        } else {
+          console.log('[3D_DBG] SKIP opponent: opp='+(!!opp)+' team='+(opp&&!!opp.team)+' poke='+(opp&&opp.team&&opp.team[opp.currentPoke]));
+        }
+      } catch(e) { console.error('[3D_DBG] ERROR:', e.message, e.stack); }
     }, 50);
   });
   // Battle state update
