@@ -7375,7 +7375,8 @@
   }
 
   function b3dAnimate() {
-    if (!b3d || !b3d.scene) return;
+    if (!b3d || !b3d.scene || !b3d.particles) return;
+    try {
     b3d.animId = requestAnimationFrame(b3dAnimate);
     if (!b3d.ready || !b3d.renderer) return;
     var t = Date.now();
@@ -7461,6 +7462,7 @@
       b3d.shake *= 0.87;
     } else { b3d.shake = 0; }
     b3d.renderer.render(b3d.scene, b3d.camera);
+    } catch(e) {}
   }
   // === REALISTIC FLAME BUILDER ===
   // Creates procedural fire: layered cones + ember sparks + smoke + animated flicker
