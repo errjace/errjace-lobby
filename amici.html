@@ -2070,6 +2070,10 @@
 
   const socket = io({ transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 1000, reconnectionDelayMax: 15000, timeout: 20000 });
   let socketConnected = false;
+
+  var b3d = { scene:null, camera:null, renderer:null, player:null, opp:null, particles:[], ready:false, gltfLoader:null, dracoLoader:null, camDefault:null, camGoal:null, camLookGoal:null, shake:0, flashEl:null };
+
+  window.onerror = function(msg, url, line, col, err) { console.error('[TOP_ERROR]', msg, 'at line', line, 'col', col); };
   const ADMINS = ['ERRJACE'];
 
   // Token di persistenza (salvato in localStorage)
@@ -6739,7 +6743,6 @@
   });
 
   /* ============= 3D BATTLE RENDERER (Three.js) ============= */
-  var b3d = { scene:null, camera:null, renderer:null, player:null, opp:null, particles:[], ready:false, gltfLoader:null, dracoLoader:null, camDefault:null, camGoal:null, camLookGoal:null, shake:0, flashEl:null };
 
   function b3dInit() {
     console.log('[3D_DBG] b3dInit called, THREE='+(typeof THREE)+' GLTFLoader='+(typeof THREE!=='undefined'?typeof THREE.GLTFLoader:'undef')+' DRACOLoader='+(typeof THREE!=='undefined'?typeof THREE.DRACOLoader:'undef'));
