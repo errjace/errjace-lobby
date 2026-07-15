@@ -2610,8 +2610,13 @@
         var pct = Math.min(100, (xp - prev) / (next - prev) * 100);
         var isMe = window.myNick && u.nick === window.myNick;
         var pokeName = (u.pokemon.currentForm || '').replace(/[^\w\s]/g,'').trim();
-        var pokeId = POKE_IDS[pokeName] || 4;
-        if (isMe) myPoke = { starter: u.pokemon.starter, form: u.pokemon.currentForm, img: POKE_IMG+pokeId+'.png', xp: xp, team: u.pokemon.team || [] };
+        var pokeId = POKE_IDS[pokeName];
+        if (!pokeId && u.pokemon.team && u.pokemon.team.length > 0) {
+          pokeId = u.pokemon.team[0].id;
+        }
+        if (!pokeId) pokeId = 4;
+        var pokeImg = POKE_IMG + pokeId + '.png';
+        if (isMe) myPoke = { starter: u.pokemon.starter, form: u.pokemon.currentForm, img: pokeImg, xp: xp, team: u.pokemon.team || [] };
         var teamHtml = '';
         if (u.pokemon.team && u.pokemon.team.length > 0) {
           u.pokemon.team.forEach(function(tp) {
@@ -2619,7 +2624,7 @@
           });
           teamHtml = '<span class="team-imgs">' + teamHtml + '</span>';
         }
-        pokeHtml = '<div class="poke-sidebar" data-sid="'+u.id+'" data-self="'+(isMe?'1':'0')+'"><img src="'+POKE_IMG+pokeId+'.png" style="width:20px;height:20px;vertical-align:middle;display:inline">'+teamHtml+'<span class="plv">Lv'+lv+'</span><div class="pxp"><div class="pxp-fill" style="width:'+pct+'%"></div></div></div>';
+        pokeHtml = '<div class="poke-sidebar" data-sid="'+u.id+'" data-self="'+(isMe?'1':'0')+'"><img src="'+pokeImg+'" style="width:20px;height:20px;vertical-align:middle;display:inline">'+teamHtml+'<span class="plv">Lv'+lv+'</span><div class="pxp"><div class="pxp-fill" style="width:'+pct+'%"></div></div></div>';
       }
       var self = window.myNick && u.nick === window.myNick;
       var gameBtns = self ? '' : '<span class="battle-challenge-btn" data-to="'+u.id+'" title="Sfida a battaglia Pokémon">⚔️</span><span class="target-challenge-btn" data-to="'+u.id+'" title="Sfida a Tiro al Bersaglio">🎯</span>';

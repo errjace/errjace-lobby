@@ -2786,6 +2786,11 @@ io.on('connection', (socket) => {
       }
       return team;
     };
+    const playerTeam = mkTeam(socket.id);
+    if (playerTeam.length === 0) {
+      socket.emit('battle:error', { msg: 'Devi avere almeno un Pokémon! Comprane uno dal negozio.' });
+      return;
+    }
     // Build bot team — 6 random Pokemon
     const botTeamSize = 6;
     const botTeam = [];
@@ -2807,7 +2812,7 @@ io.on('connection', (socket) => {
       turnPlayer: Math.random() < 0.5 ? 0 : 1,
       megaUsed: [false, false], dynamaxUsed: [false, false], dynamaxTurns: [0, 0],
       players: [
-        { id: socket.id, nick: u.nick, team: mkTeam(socket.id), currentPoke: 0 },
+        { id: socket.id, nick: u.nick, team: playerTeam, currentPoke: 0 },
         { id: 'bot_' + id, nick: '🤖 ' + botName, team: botTeam, currentPoke: 0 }
       ],
       state: 'playing', log: [], winner: null,
@@ -2817,12 +2822,11 @@ io.on('connection', (socket) => {
     b.log.push('Allenamento: ' + botName + ' ti sfida!');
     battles[id] = b;
     // Send to real player only
-    const myTeam = mkTeam(socket.id);
     io.to(socket.id).emit('battle:start', {
       battleId: id, myIdx: 0, isBot: true,
       players: b.players.map(p => ({ id: p.id, nick: p.nick, team: p.team.map(pk => ({ species:pk.species, img:pk.img, imgId:pk.imgId, types:pk.types, stats:pk.stats, maxHp:pk.maxHp, currentHp:pk.currentHp, status:pk.status, moves:pk.moves, isMega:!!pk.isMega, isDynamax:!!pk.isDynamax })), currentPoke: p.currentPoke })),
       turnPlayer: b.turnPlayer, log: b.log, state: 'playing',
-      canMega: [myTeam.map(pk => !!MEGA_MAP[pk.imgId]).some(Boolean), false],
+      canMega: [playerTeam.map(pk => !!MEGA_MAP[pk.imgId]).some(Boolean), false],
       canDynamax: [true, false],
       megaUsed: [false, false], dynamaxUsed: [false, false],
       megaActive: [false, false], dynamaxActive: [false, false]
