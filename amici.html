@@ -2078,7 +2078,7 @@
   const CORRECT_PASSWORD = "diore";
   // ==========================
 
-  const socket = io({ transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: 10, reconnectionDelay: 1000 });
+  const socket = io({ transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 1000, reconnectionDelayMax: 15000, timeout: 20000 });
   let socketConnected = false;
   const ADMINS = ['ERRJACE'];
 
@@ -2106,8 +2106,24 @@
   });
   socket.on('disconnect', function() {
     socketConnected = false;
-    document.getElementById('connStatus').textContent = '● Disconnesso';
+    document.getElementById('connStatus').textContent = '● Riconnessione...';
     document.getElementById('connStatus').className = 'conn-status disconnected';
+  });
+  socket.on('reconnect_attempt', function(attempt) {
+    document.getElementById('connStatus').textContent = '● Riconnessione... (' + attempt + ')';
+  });
+  socket.on('reconnect', function() {
+    socketConnected = true;
+    document.getElementById('connStatus').textContent = '● Connesso';
+    document.getElementById('connStatus').className = 'conn-status connected';
+    if (window.myNick) {
+      socket.emit('join lobby', { nick: window.myNick, avatar: window.pendingAvatar || '😀', token: getToken(), pin: window.pendingPin || '' });
+    }
+  });
+  socket.on('reconnect_failed', function() {
+    document.getElementById('connStatus').textContent = '● Disconnesso — ricarica la pagina';
+    document.getElementById('connStatus').className = 'conn-status disconnected';
+    setTimeout(function() { location.reload(); }, 5000);
   });
 
   // ===== LIKE TOAST =====
