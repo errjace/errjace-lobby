@@ -3561,17 +3561,6 @@
     var type = getMoveAnimType(logEntry) || 'normal';
     var moveName = getMoveName(logEntry);
     playMoveSound(type);
-    // Show centered move text overlay
-    if (moveName) {
-      var overlay = document.getElementById('moveTextOverlay');
-      var txtEl = document.getElementById('moveTextContent');
-      if (overlay && txtEl) {
-        var pokeName = logEntry.split(' usa ')[0] || '';
-        txtEl.textContent = pokeName + ' usa ' + moveName + '!';
-        overlay.className = 'show';
-        setTimeout(function(){ overlay.className = 'hide'; }, 1600);
-      }
-    }
     var dmgMatch = logEntry.match(/\((\d+)\s*danni\)/);
     var damage = dmgMatch ? parseInt(dmgMatch[1]) : null;
     // 3D attack animation (if models loaded)
