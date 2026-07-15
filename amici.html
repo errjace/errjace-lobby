@@ -1175,8 +1175,8 @@
   @keyframes bfxShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
   .bfx-flash { animation:bfxFlash 0.3s ease-out; }
   @keyframes bfxFlash { 0%{filter:brightness(2)} 100%{filter:brightness(1)} }
-  .poke-bob { animation:pokeBob 2s ease-in-out infinite; }
-  .poke-bob-reverse { animation:pokeBob 2.5s ease-in-out infinite reverse; }
+  .poke-bob { }
+  .poke-bob-reverse { }
   @keyframes pokeBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
   .dmg-float {
     position:absolute;z-index:25;font-weight:900;font-size:1.5rem;
@@ -3582,10 +3582,10 @@
     var attacker = isMe ? document.getElementById('playerSprite') : document.getElementById('opponentSprite');
     var targetEl = isMe ? document.getElementById('opponentSprite') : document.getElementById('playerSprite');
     if (attacker) {
-      var dist = isMe ? '-55px' : '55px';
+      var dist = isMe ? '55px' : '-55px';
       attacker.style.transition = 'transform 0.22s cubic-bezier(0.25,0.46,0.45,0.94)';
       void attacker.offsetWidth;
-      attacker.style.transform = 'translateY('+dist+')';
+      attacker.style.transform = 'translateX('+dist+')';
       setTimeout(function(){
         bBlast(type, isMe, moveName);
         if (targetEl) showTypeBlast(type, targetEl);
@@ -7375,21 +7375,17 @@
     var dt = 1/60;
     // Idle bob + mixer update
     if (b3d.player) {
-      if (b3d.player.isGLB) {
-        b3d.player.mesh.position.y = b3d.player.origY + Math.sin(t*0.002)*0.03;
-      } else {
-        b3d.player.mesh.position.y = b3d.player.origY + Math.sin(t*0.002)*0.04;
+      if (b3d.player.mesh) {
+        b3d.player.mesh.position.y = b3d.player.origY;
       }
-      if (b3d.player.glow) b3d.player.glow.position.y = b3d.player.mesh.position.y;
+      if (b3d.player.glow) b3d.player.glow.position.y = b3d.player.mesh ? b3d.player.mesh.position.y : b3d.player.origY;
       if (b3d.player.mixer) b3d.player.mixer.update(dt);
     }
     if (b3d.opp) {
-      if (b3d.opp.isGLB) {
-        b3d.opp.mesh.position.y = b3d.opp.origY + Math.sin(t*0.0025+1)*0.03;
-      } else {
-        b3d.opp.mesh.position.y = b3d.opp.origY + Math.sin(t*0.0025+1)*0.04;
+      if (b3d.opp.mesh) {
+        b3d.opp.mesh.position.y = b3d.opp.origY;
       }
-      if (b3d.opp.glow) b3d.opp.glow.position.y = b3d.opp.mesh.position.y;
+      if (b3d.opp.glow) b3d.opp.glow.position.y = b3d.opp.mesh ? b3d.opp.mesh.position.y : b3d.opp.origY;
       if (b3d.opp.mixer) b3d.opp.mixer.update(dt);
     }
     // Smoke wisps
