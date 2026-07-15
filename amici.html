@@ -3244,34 +3244,31 @@
     }
     var dmgMatch = logEntry.match(/\((\d+)\s*danni\)/);
     var damage = dmgMatch ? parseInt(dmgMatch[1]) : null;
-    // 3D attack animation
-    if (b3d && b3d.ready) {
+    // 3D attack animation (if models loaded)
+    var has3DModels = b3d && b3d.ready && (b3d.player || b3d.opp);
+    if (has3DModels) {
       b3dAttack(type, isMe, damage, moveName);
-      // Keep 2D sprite lunge + damage number as fallback overlay
-      var targetEl = isMe ? document.getElementById('opponentSprite') : document.getElementById('playerSprite');
-      if (damage && targetEl) showDmgNumber(targetEl, damage, type);
-    } else {
-      // Fallback to 2D system
-      var attacker = isMe ? document.getElementById('playerSprite') : document.getElementById('opponentSprite');
-      var targetEl = isMe ? document.getElementById('opponentSprite') : document.getElementById('playerSprite');
-      if (attacker) {
-        var dist = isMe ? '-55px' : '55px';
-        attacker.style.transition = 'transform 0.22s cubic-bezier(0.25,0.46,0.45,0.94)';
-        void attacker.offsetWidth;
-        attacker.style.transform = 'translateY('+dist+')';
-        setTimeout(function(){
-          bBlast(type, isMe);
-          if (targetEl) showTypeBlast(type, targetEl);
-          if (damage && targetEl) showDmgNumber(targetEl, damage, type);
-        }, 240);
-        setTimeout(function(){
-          attacker.style.transform = '';
-          setTimeout(function(){ attacker.style.transition = ''; }, 350);
-        }, 650);
-      } else {
+    }
+    // Always run 2D effects (lunge, blast, damage number)
+    var attacker = isMe ? document.getElementById('playerSprite') : document.getElementById('opponentSprite');
+    var targetEl = isMe ? document.getElementById('opponentSprite') : document.getElementById('playerSprite');
+    if (attacker) {
+      var dist = isMe ? '-55px' : '55px';
+      attacker.style.transition = 'transform 0.22s cubic-bezier(0.25,0.46,0.45,0.94)';
+      void attacker.offsetWidth;
+      attacker.style.transform = 'translateY('+dist+')';
+      setTimeout(function(){
         bBlast(type, isMe);
         if (targetEl) showTypeBlast(type, targetEl);
-      }
+        if (damage && targetEl) showDmgNumber(targetEl, damage, type);
+      }, 240);
+      setTimeout(function(){
+        attacker.style.transform = '';
+        setTimeout(function(){ attacker.style.transition = ''; }, 350);
+      }, 650);
+    } else {
+      bBlast(type, isMe);
+      if (targetEl) showTypeBlast(type, targetEl);
     }
   }
   // Click handler for challenge buttons
