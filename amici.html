@@ -7322,7 +7322,7 @@
     b3dFormAuras[side] = light;
   }
   function b3dRemoveFormAura(side) {
-    if (!b3d) return;
+    if (!b3d || !b3d.scene) return;
     if (b3dFormAuras[side]) {
       b3d.scene.remove(b3dFormAuras[side]);
       b3dFormAuras[side] = null;
@@ -7357,7 +7357,7 @@
   }
 
   function b3dRemovePoke(side) {
-    if (!b3d) return;
+    if (!b3d || !b3d.scene) return;
     var obj = side === 'player' ? b3d.player : b3d.opp;
     if (!obj) return;
     b3dRemoveFormAura(side);
@@ -7368,7 +7368,7 @@
   }
 
   function b3dAnimate() {
-    if (!b3d) return;
+    if (!b3d || !b3d.scene) return;
     b3d.animId = requestAnimationFrame(b3dAnimate);
     if (!b3d.ready || !b3d.renderer) return;
     var t = Date.now();
