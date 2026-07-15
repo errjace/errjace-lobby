@@ -3742,7 +3742,7 @@
     // 3-second cooldown between turns — keep buttons disabled
     _movePending = true;
     clearTimeout(_turnCooldownTimer);
-    _turnCooldownTimer = setTimeout(function(){ _movePending = false; if (battleData) renderBattle(); }, 3000);
+    _turnCooldownTimer = setTimeout(function(){ _movePending = false; if (battleData) renderBattle(); }, 2000);
     // Detect new moves for animation
     if (data.log && data.log.length > prevLogLen) {
       var newLogs = data.log.slice(prevLogLen);

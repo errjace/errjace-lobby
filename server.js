@@ -2424,7 +2424,8 @@ io.on('connection', (socket) => {
       ],
       state: 'playing', log: [], winner: null,
       megaUsed: [false, false], dynamaxUsed: [false, false],
-      megaActive: [false, false], dynamaxActive: [false, false]
+      megaActive: [false, false], dynamaxActive: [false, false],
+      turnCooldownUntil: 0
     };
     battles[id] = b;
     [from, socket.id].forEach(sid => {
@@ -2449,7 +2450,9 @@ io.on('connection', (socket) => {
     const b = battles[battleId]; if(!b || b.state !== 'playing') return;
     const pIdx = b.players.findIndex(p => p.id === socket.id);
     if(pIdx === -1 || b.turnPlayer !== pIdx) return;
+    if(Date.now() < b.turnCooldownUntil) return;
     battleTurn(battleId, pIdx, { type:'move', index });
+    b.turnCooldownUntil = Date.now() + 2000;
     // Send updated state to both
     b.players.forEach((p, i) => {
       io.to(p.id).emit('battle:state', {
@@ -2475,14 +2478,16 @@ io.on('connection', (socket) => {
       });
       setTimeout(() => { delete battles[battleId]; }, 5000);
     } else if (b.isBot && b.turnPlayer === 1) {
-      setTimeout(() => botAutoPlay(battleId), 1200);
+      setTimeout(() => botAutoPlay(battleId), 2000);
     }
   });
   socket.on('battle:switch', ({ battleId, index }) => {
     const b = battles[battleId]; if(!b || b.state !== 'playing') return;
     const pIdx = b.players.findIndex(p => p.id === socket.id);
     if(pIdx === -1 || b.turnPlayer !== pIdx) return;
+    if(Date.now() < b.turnCooldownUntil) return;
     battleTurn(battleId, pIdx, { type:'switch', index });
+    b.turnCooldownUntil = Date.now() + 2000;
     b.players.forEach((p, i) => {
       io.to(p.id).emit('battle:state', {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
@@ -2494,7 +2499,7 @@ io.on('connection', (socket) => {
       });
     });
     if (b.isBot && b.turnPlayer === 1) {
-      setTimeout(() => botAutoPlay(battleId), 1200);
+      setTimeout(() => botAutoPlay(battleId), 2000);
     }
   });
 
@@ -2633,6 +2638,7 @@ io.on('connection', (socket) => {
     if (pIdx === -1 || b.turnPlayer !== pIdx) return;
     if (b.megaUsed[pIdx]) { socket.emit('battle:error', { msg: 'Hai già usato Mega Evolve!' }); return; }
     if (b.megaActive[pIdx]) { socket.emit('battle:error', { msg: 'Sei già Mega Evolve!' }); return; }
+    if (Date.now() < b.turnCooldownUntil) return;
     const p = b.players[pIdx];
     const poke = p.team[p.currentPoke];
     if (!poke || poke.fainted) return;
@@ -2640,6 +2646,7 @@ io.on('connection', (socket) => {
     b.megaActive[pIdx] = true;
     b.log.push(`✨ ${poke.species} Mega Evolve!`);
     b.turnPlayer = 1 - pIdx;
+    b.turnCooldownUntil = Date.now() + 2000;
     b.players.forEach((pl) => {
       io.to(pl.id).emit('battle:state', {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
@@ -2651,7 +2658,7 @@ io.on('connection', (socket) => {
       });
     });
     if (b.isBot && b.turnPlayer === 1) {
-      setTimeout(() => botAutoPlay(battleId), 1200);
+      setTimeout(() => botAutoPlay(battleId), 2000);
     }
   });
 
@@ -2663,6 +2670,7 @@ io.on('connection', (socket) => {
     if (pIdx === -1 || b.turnPlayer !== pIdx) return;
     if (b.dynamaxUsed[pIdx]) { socket.emit('battle:error', { msg: 'Hai già usato Dynamax!' }); return; }
     if (b.dynamaxActive[pIdx]) { socket.emit('battle:error', { msg: 'Sei già in Dynamax!' }); return; }
+    if (Date.now() < b.turnCooldownUntil) return;
     const p = b.players[pIdx];
     const poke = p.team[p.currentPoke];
     if (!poke || poke.fainted) return;
@@ -2678,6 +2686,7 @@ io.on('connection', (socket) => {
     }
     b.log.push(`🔴 ${poke.species} Dynamax!`);
     b.turnPlayer = 1 - pIdx;
+    b.turnCooldownUntil = Date.now() + 2000;
     b.players.forEach((pl) => {
       io.to(pl.id).emit('battle:state', {
         players: b.players.map(p2 => ({ id:p2.id, nick:p2.nick, currentPoke:p2.currentPoke,
@@ -2690,7 +2699,7 @@ io.on('connection', (socket) => {
       });
     });
     if (b.isBot && b.turnPlayer === 1) {
-      setTimeout(() => botAutoPlay(battleId), 1200);
+      setTimeout(() => botAutoPlay(battleId), 2000);
     }
   });
 
@@ -2753,7 +2762,7 @@ io.on('connection', (socket) => {
       setTimeout(() => { delete battles[battleId]; }, 5000);
     } else if (b.turnPlayer === botIdx) {
       // Bot goes again (e.g. after a switch)
-      setTimeout(() => botAutoPlay(battleId), 1200);
+      setTimeout(() => botAutoPlay(battleId), 2000);
     }
   }
   socket.on('battle:botChallenge', () => {
@@ -2817,7 +2826,8 @@ io.on('connection', (socket) => {
       ],
       state: 'playing', log: [], winner: null,
       megaUsed: [false, false], dynamaxUsed: [false, false],
-      megaActive: [false, false], dynamaxActive: [false, false]
+      megaActive: [false, false], dynamaxActive: [false, false],
+      turnCooldownUntil: 0
     };
     b.log.push('Allenamento: ' + botName + ' ti sfida!');
     battles[id] = b;
@@ -2833,7 +2843,7 @@ io.on('connection', (socket) => {
     });
     // If bot goes first, auto-play
     if (b.turnPlayer === 1) {
-      setTimeout(() => botAutoPlay(id), 1200);
+      setTimeout(() => botAutoPlay(id), 2000);
     }
   });
   // ===== TIRO AL BERSAGLIO 1v1 =====
