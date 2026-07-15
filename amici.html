@@ -2865,6 +2865,7 @@
   var battleData = null;
   var myBattleIdx = -1;
   var _movePending = false;
+  var _turnCooldownTimer = null;
   var prevLogLen = 0;
   var lastPlayerPoke = -1;
   var lastOppPoke = -1;
@@ -3671,6 +3672,7 @@
   });
   socket.on('battle:end', function(data) {
     _movePending = false;
+    clearTimeout(_turnCooldownTimer);
     if (data && data.reason) {
       var toast = document.createElement('div');
       toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:2px solid #fbbf24;border-radius:12px;padding:0.6rem 1.2rem;z-index:9999;font-size:0.85rem;color:#fbbf24;font-weight:700;animation:fadeIn 0.3s;';
@@ -3704,6 +3706,7 @@
     myBattleIdx = data.myIdx;
     prevLogLen = 0;
     _movePending = false;
+    clearTimeout(_turnCooldownTimer);
     myMegaUsed = false; myDynamaxUsed = false;
     myMegaActive = false; myDynamaxActive = false;
     oppMegaActive = false; oppDynamaxActive = false;
@@ -3747,7 +3750,10 @@
   // Battle state update
   socket.on('battle:state', function(data) {
     if (!battleData) return;
-    _movePending = false;
+    // 3-second cooldown between turns — keep buttons disabled
+    _movePending = true;
+    clearTimeout(_turnCooldownTimer);
+    _turnCooldownTimer = setTimeout(function(){ _movePending = false; }, 3000);
     // Detect new moves for animation
     if (data.log && data.log.length > prevLogLen) {
       var newLogs = data.log.slice(prevLogLen);
@@ -4065,6 +4071,7 @@
   document.getElementById('forfeitBtn').addEventListener('click', function() {
     if (!battleData) return;
     _movePending = false;
+    clearTimeout(_turnCooldownTimer);
     socket.emit('battle:forfeit', { battleId: battleData.battleId });
     document.getElementById('battleOverlay').classList.remove('active');
     battleData = null;
