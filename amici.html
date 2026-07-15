@@ -10110,7 +10110,328 @@
                 py += Math.sin(step*0.8)*0.025;
               } else if (type==='water') {
                 py += Math.sin(step*0.6)*0.03;
-              } else {
+    } else if (t === 'rock') {
+      bAddCustomAnim(function(ctx, progress) {
+        var p = Math.min(1, progress / 0.6);
+        if (p < 0.5) {
+          var rp = p / 0.5;
+          for (var i = 0; i < 8; i++) {
+            var delay2 = i * 0.06;
+            var rp2 = Math.max(0, Math.min(1, (rp - delay2) / 0.7));
+            if (rp2 <= 0) continue;
+            var rx = ex + (Math.random()-0.5)*50;
+            var ry = -20 + rp2 * (ey + 20);
+            var rot = progress * 8 + i;
+            var sz = 10 + Math.random() * 12;
+            var alpha = rp2 < 0.9 ? 0.9 : (1 - rp2) / 0.1;
+            ctx.globalAlpha = alpha;
+            ctx.save();
+            ctx.translate(rx, ry);
+            ctx.rotate(rot);
+            ctx.fillStyle = i%2===0 ? '#78716c' : '#a8a29e';
+            ctx.shadowBlur = 4; ctx.shadowColor = '#57534e';
+            ctx.beginPath();
+            ctx.moveTo(0, -sz); ctx.lineTo(sz*0.7, 0); ctx.lineTo(0, sz); ctx.lineTo(-sz*0.7, 0);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = i%3===0 ? '#57534e' : '#a8a29e';
+            ctx.fillRect(-sz*0.3, -sz*0.3, sz*0.4, sz*0.4);
+            ctx.restore();
+            ctx.shadowBlur = 0;
+          }
+        }
+        if (p >= 0.5) {
+          var imp = (p - 0.5) / 0.5;
+          var fade = imp < 0.8 ? 1 : (1 - imp) / 0.2;
+          for (var d = 0; d < 15; d++) {
+            var da = Math.random() * Math.PI * 2;
+            var dd = Math.random() * 35 * (1 + imp * 0.5);
+            ctx.globalAlpha = fade * 0.8;
+            ctx.fillStyle = Math.random() > 0.5 ? '#78716c' : '#a8a29e';
+            ctx.beginPath();
+            ctx.arc(ex + Math.cos(da)*dd, ey + Math.sin(da)*dd + imp*5, 2+Math.random()*4, 0, Math.PI*2);
+            ctx.fill();
+          }
+          if (imp > 0.2) {
+            for (var cr = 0; cr < 3; cr++) {
+              var crR = imp * 40 + cr * 10;
+              ctx.globalAlpha = Math.max(0, (1 - cr*0.3) * fade * 0.4);
+              ctx.strokeStyle = '#d6d3d1';
+              ctx.lineWidth = 1.5;
+              ctx.beginPath(); ctx.arc(ex, ey, crR, 0, Math.PI*2); ctx.stroke();
+            }
+          }
+          ctx.globalAlpha = 1;
+        }
+      }, 900);
+      bShake = 12;
+    } else if (t === 'poison') {
+      bAddCustomAnim(function(ctx, progress) {
+        var p = Math.min(1, progress / 0.55);
+        for (var i = 0; i < 20; i++) {
+          var frac = i/20;
+          if (frac > p) break;
+          var px2 = sx + dx*frac + Math.sin(frac*12+progress*6)*10;
+          var py2 = sy + dy*frac + Math.cos(frac*10+progress*4)*8;
+          var sz = 4+Math.random()*8;
+          var alpha = (1-frac*0.4)*(progress<0.9?1:(1-progress)/0.1);
+          ctx.globalAlpha = alpha * 0.8;
+          var pg = ctx.createRadialGradient(px2,py2,0,px2,py2,sz);
+          pg.addColorStop(0, 'rgba(216,180,254,0.9)');
+          pg.addColorStop(0.5, 'rgba(147,51,234,0.5)');
+          pg.addColorStop(1, 'rgba(147,51,234,0)');
+          ctx.fillStyle = pg;
+          ctx.beginPath(); ctx.arc(px2,py2,sz,0,Math.PI*2); ctx.fill();
+        }
+        if (p >= 1) {
+          for (var b2 = 0; b2 < 18; b2++) {
+            var ba = Math.random()*Math.PI*2;
+            var br = Math.random()*40;
+            var bs2 = 3+Math.random()*6;
+            ctx.globalAlpha = (1-progress)*0.7;
+            var bg2 = ctx.createRadialGradient(ex+Math.cos(ba)*br,ey+Math.sin(ba)*br,0,ex+Math.cos(ba)*br,ey+Math.sin(ba)*br,bs2);
+            bg2.addColorStop(0, 'rgba(192,132,252,0.8)');
+            bg2.addColorStop(1, 'rgba(147,51,234,0)');
+            ctx.fillStyle = bg2;
+            ctx.beginPath(); ctx.arc(ex+Math.cos(ba)*br,ey+Math.sin(ba)*br,bs2,0,Math.PI*2); ctx.fill();
+          }
+        }
+        ctx.globalAlpha = 1;
+      }, 850);
+    } else if (t === 'bug') {
+      bAddCustomAnim(function(ctx, progress) {
+        var p = Math.min(1, progress / 0.55);
+        if (p < 0.6) {
+          var bp = p / 0.6;
+          for (var i = 0; i < 10; i++) {
+            var delay2 = i * 0.05;
+            var bp2 = Math.max(0, Math.min(1, (bp - delay2) / 0.8));
+            if (bp2 <= 0) continue;
+            var bx2 = sx + dx * bp2 + Math.sin(progress*20+i*2)*15;
+            var by2 = sy + dy * bp2 + Math.cos(progress*18+i*3)*12;
+            var bsz = 3+Math.random()*2;
+            ctx.globalAlpha = bp2 < 0.9 ? 0.85 : (1-bp2)/0.1;
+            ctx.fillStyle = ['#65a30d','#84cc16','#a3e635','#4d7c0f'][i%4];
+            ctx.beginPath(); ctx.arc(bx2,by2,bsz,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#1a2e05';
+            ctx.beginPath(); ctx.arc(bx2+bsz,by2,bsz*0.3,0,Math.PI*2); ctx.fill();
+            ctx.fillRect(bx2-bsz*1.5,by2-bsz,bsz*0.8,bsz*0.3);
+            ctx.fillRect(bx2-bsz*1.5,by2+bsz*0.5,bsz*0.8,bsz*0.3);
+          }
+        }
+        if (p >= 0.6) {
+          var imp = (p-0.6)/0.4;
+          var fade = imp < 0.8 ? 1 : (1-imp)/0.2;
+          for (var i2 = 0; i2 < 8; i2++) {
+            var ang = i2*Math.PI/4 + progress*5;
+            var len = imp*30;
+            ctx.globalAlpha = fade*0.6;
+            ctx.strokeStyle = ['#65a30d','#a3e635'][i2%2];
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(ex,ey);
+            ctx.lineTo(ex+Math.cos(ang)*len,ey+Math.sin(ang)*len);
+            ctx.stroke();
+          }
+        }
+        ctx.globalAlpha = 1;
+      }, 800);
+    } else if (t === 'ground') {
+      bAddCustomAnim(function(ctx, progress) {
+        var p = Math.min(1, progress / 0.55);
+        if (p < 0.5) {
+          var gp = p/0.5;
+          var waveX = sx + dx * gp;
+          for (var i = 0; i < 30; i++) {
+            var wx = sx + (dx * gp) * (i/30) + (Math.random()-0.5)*8;
+            var wy = sy + (dy * gp) * (i/30) + Math.sin(i*0.8+progress*10)*6;
+            ctx.globalAlpha = 0.6*(1-i/30*0.5);
+            ctx.fillStyle = i%3===0 ? '#92400e' : i%3===1 ? '#d97706' : '#b45309';
+            ctx.beginPath(); ctx.arc(wx,wy,3+Math.random()*4,0,Math.PI*2); ctx.fill();
+          }
+          for (var w = 0; w < 6; w++) {
+            var waveY = -5 + w*8;
+            ctx.globalAlpha = 0.3*gp;
+            ctx.strokeStyle = '#92400e';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(sx+dx*gp-20, sy+dy*gp+waveY);
+            ctx.quadraticCurveTo(sx+dx*gp, sy+dy*gp+waveY-8, sx+dx*gp+20, sy+dy*gp+waveY);
+            ctx.stroke();
+          }
+        }
+        if (p >= 0.5) {
+          var imp = (p-0.5)/0.5;
+          var fade = imp < 0.8 ? 1 : (1-imp)/0.2;
+          for (var r = 0; r < 12; r++) {
+            var ra = Math.random()*Math.PI;
+            var rd = 10+Math.random()*35;
+            ctx.globalAlpha = fade*0.7;
+            ctx.fillStyle = Math.random()>0.5 ? '#92400e' : '#d97706';
+            var rs = 3+Math.random()*6;
+            ctx.save();
+            ctx.translate(ex+Math.cos(ra)*rd, ey+Math.sin(ra)*rd);
+            ctx.rotate(Math.random()*Math.PI);
+            ctx.fillRect(-rs/2,-rs/2,rs,rs);
+            ctx.restore();
+          }
+          ctx.globalAlpha = 1;
+        }
+      }, 850);
+      bShake = 10;
+    } else if (t === 'flying') {
+      bAddCustomAnim(function(ctx, progress) {
+        var p = Math.min(1, progress / 0.55);
+        for (var i = 0; i < 20; i++) {
+          var frac = i/20;
+          if (frac > p) break;
+          var fx = sx + dx*frac + Math.sin(frac*8+progress*6)*12;
+          var fy = sy + dy*frac + Math.cos(frac*6+progress*4)*8;
+          ctx.globalAlpha = (1-frac*0.5)*(progress<0.9?1:(1-progress)/0.1);
+          ctx.strokeStyle = i%3===0 ? '#7c3aed' : i%3===1 ? '#a78bfa' : '#c4b5fd';
+          ctx.lineWidth = 2;
+          ctx.shadowBlur = 6; ctx.shadowColor = '#a78bfa';
+          var wng = 8+Math.random()*6;
+          var angle = Math.sin(progress*15+i)*0.5;
+          ctx.beginPath();
+          ctx.moveTo(fx,fy);
+          ctx.quadraticCurveTo(fx-wng, fy-wng*0.8+angle*5, fx-wng*1.5, fy+angle*3);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(fx,fy);
+          ctx.quadraticCurveTo(fx+wng*0.3, fy-wng*0.6+angle*5, fx+wng, fy+angle*3);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        }
+        if (p >= 1) {
+          for (var w = 0; w < 10; w++) {
+            var wa = Math.random()*Math.PI*2;
+            var wr = Math.random()*35;
+            ctx.globalAlpha = (1-progress)*0.5;
+            ctx.fillStyle = Math.random()>0.5 ? '#c4b5fd' : '#ddd6fe';
+            ctx.beginPath();
+            ctx.arc(ex+Math.cos(wa)*wr, ey+Math.sin(wa)*wr, 1+Math.random()*3, 0, Math.PI*2);
+            ctx.fill();
+          }
+        }
+        ctx.globalAlpha = 1;
+      }, 850);
+    } else if (t === 'steel') {
+      bAddCustomAnim(function(ctx, progress) {
+        var p = Math.min(1, progress / 0.5);
+        if (p < 0.5) {
+          var sp2 = p / 0.5;
+          for (var i = 0; i < 12; i++) {
+            var delay2 = i * 0.04;
+            var sp3 = Math.max(0, Math.min(1, (sp2 - delay2) / 0.7));
+            if (sp3 <= 0) continue;
+            var mx = sx + dx * sp3 + (Math.random()-0.5)*10;
+            var my = sy + dy * sp3;
+            ctx.globalAlpha = sp3 < 0.9 ? 0.8 : (1-sp3)/0.1;
+            ctx.fillStyle = i%2===0 ? '#71717a' : '#d4d4d8';
+            ctx.shadowBlur = 4; ctx.shadowColor = '#a1a1aa';
+            var msz = 4+Math.random()*3;
+            ctx.save();
+            ctx.translate(mx,my);
+            ctx.rotate(progress*10+i);
+            ctx.fillRect(-msz,-msz*0.3,msz*2,msz*0.6);
+            ctx.fillRect(-msz*0.3,-msz,msz*0.6,msz*2);
+            ctx.restore();
+            ctx.shadowBlur = 0;
+          }
+        }
+        if (p >= 0.5) {
+          var imp = (p-0.5)/0.5;
+          var fade = imp < 0.8 ? 1 : (1-imp)/0.2;
+          for (var s = 0; s < 14; s++) {
+            var sa = Math.random()*Math.PI*2;
+            var sr = Math.random()*30;
+            ctx.globalAlpha = fade*0.7;
+            ctx.strokeStyle = Math.random()>0.5 ? '#d4d4d8' : '#fff';
+            ctx.lineWidth = 1.5;
+            var sz = 4+Math.random()*5;
+            ctx.beginPath();
+            ctx.moveTo(ex+Math.cos(sa)*sr, ey+Math.sin(sa)*sr-sz);
+            ctx.lineTo(ex+Math.cos(sa)*sr+sz, ey+Math.sin(sa)*sr);
+            ctx.lineTo(ex+Math.cos(sa)*sr, ey+Math.sin(sa)*sr+sz);
+            ctx.lineTo(ex+Math.cos(sa)*sr-sz, ey+Math.sin(sa)*sr);
+            ctx.closePath(); ctx.stroke();
+          }
+          ctx.globalAlpha = 1;
+        }
+      }, 800);
+      bShake = 8;
+    } else if (t === 'fairy') {
+      bAddCustomAnim(function(ctx, progress) {
+        var p = Math.min(1, progress / 0.55);
+        for (var i = 0; i < 22; i++) {
+          var frac = i/22;
+          if (frac > p) break;
+          var fx2 = sx + dx*frac + Math.sin(frac*10+progress*8)*12;
+          var fy2 = sy + dy*frac + Math.cos(frac*8+progress*6)*10;
+          var sz = 3+Math.random()*5;
+          var alpha = (1-frac*0.4)*(progress<0.9?1:(1-progress)/0.1);
+          ctx.globalAlpha = alpha * 0.8;
+          ctx.fillStyle = Math.random()>0.5 ? '#f9a8d4' : '#fce7f3';
+          ctx.shadowBlur = 8; ctx.shadowColor = '#ec4899';
+          ctx.beginPath();
+          for (var sp = 0; sp < 5; sp++) {
+            var pa = sp*Math.PI*2/5 - Math.PI/2;
+            var pr = sp%2===0 ? sz : sz*0.45;
+            if (sp===0) ctx.moveTo(fx2+Math.cos(pa)*pr, fy2+Math.sin(pa)*pr);
+            else ctx.lineTo(fx2+Math.cos(pa)*pr, fy2+Math.sin(pa)*pr);
+          }
+          ctx.closePath(); ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+        if (p >= 1) {
+          for (var sp2 = 0; sp2 < 12; sp2++) {
+            var spa = Math.random()*Math.PI*2;
+            var spr = Math.random()*35;
+            ctx.globalAlpha = (1-progress)*0.6;
+            ctx.fillStyle = Math.random()>0.5 ? '#f9a8d4' : '#fce7f3';
+            ctx.beginPath();
+            var ss = 2+Math.random()*3;
+            for (var ssp = 0; ssp < 5; ssp++) {
+              var ssa = ssp*Math.PI*2/5 - Math.PI/2;
+              var ssr = ssp%2===0 ? ss : ss*0.4;
+              if (ssp===0) ctx.moveTo(ex+Math.cos(spa)*spr+Math.cos(ssa)*ssr, ey+Math.sin(spa)*spr+Math.sin(ssa)*ssr);
+              else ctx.lineTo(ex+Math.cos(spa)*spr+Math.cos(ssa)*ssr, ey+Math.sin(spa)*spr+Math.sin(ssa)*ssr);
+            }
+            ctx.closePath(); ctx.fill();
+          }
+        }
+        ctx.globalAlpha = 1;
+      }, 850);
+    } else if (t === 'normal') {
+      bAddCustomAnim(function(ctx, progress) {
+        var p = Math.min(1, progress / 0.55);
+        for (var i = 0; i < 16; i++) {
+          var frac = i/16;
+          if (frac > p) break;
+          var nx2 = sx + dx*frac;
+          var ny2 = sy + dy*frac;
+          var sz = (5+Math.random()*8) * (1+Math.sin(progress*10+frac*4)*0.2);
+          var alpha = (1-frac*0.5)*(progress<0.9?1:(1-progress)/0.1);
+          ctx.globalAlpha = alpha * 0.8;
+          var ng = ctx.createRadialGradient(nx2,ny2,0,nx2,ny2,sz);
+          ng.addColorStop(0, 'rgba(228,228,231,0.9)');
+          ng.addColorStop(0.5, 'rgba(161,161,170,0.5)');
+          ng.addColorStop(1, 'rgba(161,161,170,0)');
+          ctx.fillStyle = ng;
+          ctx.beginPath(); ctx.arc(nx2,ny2,sz,0,Math.PI*2); ctx.fill();
+        }
+        if (p >= 1) {
+          for (var j = 0; j < 14; j++) {
+            var ja = Math.random()*Math.PI*2;
+            var jr = Math.random()*35;
+            ctx.globalAlpha = (1-progress)*0.6;
+            ctx.fillStyle = Math.random()>0.5 ? '#d4d4d8' : '#a1a1aa';
+            ctx.beginPath(); ctx.arc(ex+Math.cos(ja)*jr,ey+Math.sin(ja)*jr,2+Math.random()*4,0,Math.PI*2); ctx.fill();
+          }
+        }
+        ctx.globalAlpha = 1;
+      }, 800);
+    } else {
                 projGroup.rotation.x += 0.08;
                 projGroup.rotation.z += 0.06;
               }
